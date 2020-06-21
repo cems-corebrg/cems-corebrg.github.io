@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="Cache-Control" content="no-cache">
+		
+		<title>ITAhM</title>
+		
+		<style>
+@import "css/itahm.css";
+@import "css/style.css";
+@import "/css/fa.css";
+
+body {
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	background: url("img/world.png") no-repeat center center fixed;
+	background-size: cover;
+	display: flex; flex-direction: column;
+}
+
+body:not(.background)::before {
+	content: "";
+	position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+	background-color: rgba(0, 0, 0, 0.8);
+	z-index: -1;
+}
+
+body, input, button {
+	margin: 0;
+	padding: 0;
+}
+
+article {
+	flex: 1 1 auto;
+	position: relative;
+}
+
+aside {
+	position: absolute; top: 0; bottom: 0; left: 0;
+	display: flex; flex-direction: column;
+	pointer-events: none;
+	width: 300px;
+	box-sizing: border-box;
+	padding: .5em;
+	color: #fff;
+	text-shadow: 1px 1px 1px #000;
+}
+
+ul {
+	list-style: none;
+	padding: 0; margin: 0;
+}
+
+aside> .top {
+	flex: none;
+	height: 140px;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+}
+
+nav {
+    flex: none;
+	padding: 0.5em;
+    color: #fff;
+    display: flex;
+    background-color: #4d525a;
+}
+
+nav >* {
+    margin: 0 1px;
+}
+
+nav >span.icon {
+    font-family: 'Font Awesome 5 Free';
+    font-size: 2em;
+    cursor: pointer;
+    display: inline-block;
+    margin: 0 3px;
+}
+
+nav >span.icon.checked {
+    color: #fcba30;
+}
+
+nav >span.icon:hover {
+    color: #0084ff;
+}
+
+nav >img {
+    width: 2em; height: 2em;
+}
+
+nav >label.switch {
+    font-size: 2em;
+}
+
+nav >select {
+    height: 2em;
+    vertical-align: top;
+    box-sizing: border-box;
+}
+
+nav >form >input {
+    height: 2em;
+    box-sizing: border-box;
+}
+
+#summary_list {
+	position: relative;
+	overflow-y: auto;
+	pointer-events: auto;
+}
+
+.list {
+	padding: .5em 1em;
+}
+
+.summary {
+	display: flex;
+	justify-content: space-between;
+	font-weight: bold;
+	margin: 3px 0;
+	padding: 0.5em;
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+.summary> li:first-child {
+	width: 120px;
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+header {
+	flex: none;
+	margin-bottom: 1em;
+	text-align: center;
+}
+
+header> ul {
+	display: flex;
+}
+
+header> ul> li {
+	padding: .5em;
+	border-radius: 10px 10px 0 0;
+	box-shadow: 0 0 5px #fff inset;
+	flex: 1;
+}
+
+header> ul> li:nth-child(1) {
+	background-color: #f00;
+}
+
+header> ul> li:nth-child(2) {
+	background-color: #fc0;
+}
+
+header> ul> li:nth-child(3) {
+	background-color: #0f0;
+}
+
+iframe.fullscreen {
+	border: none;
+	width: 100%; height: 100%;
+}
+
+iframe.top {
+	position: absolute; top: 0; right: 0; bottom: 0;
+	width: 320px; height: 100%;
+	border: none;
+}
+
+div.nav {
+	flex: none;
+	pointer-events: all;
+}
+
+div.nav::after {
+	content: "\2796";
+}
+
+div.nav.hide::after {
+	content: "\2795";
+}
+
+div.nav.hide +#summary_list {
+	display: none;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.link {
+    pointer-events: all;
+    cursor: pointer;
+}
+
+/* bounce >> */
+.bounce {
+	position: relative;
+	width: 60px;
+	height: 120px;
+	color: #fff;
+	font-weight: bold;
+}
+
+.ball {
+	border-radius: 50%;
+	box-shadow: inset 0 -5px 15px rgba(255,255,255,0.4), inset -2px -1px 40px rgba(0,0,0,0.4), 0 0 1px #000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.bounce >.ball {
+	position: absolute; top: 0; left: 0;
+	width: 100%;
+	height: 50%;
+	animation: bounce 10s infinite;
+}
+
+.summary >.ball {
+	position: relative;
+	width: 40px; height: 40px;
+}
+
+.green.ball {
+	background-color: #0f0;
+}
+
+.orange.ball {
+	background-color: #ffa500;
+}
+
+.bounce >.orange.ball {
+	animation-delay: .5s;
+}
+
+.red.ball {
+	background: #f00;
+}
+
+.bounce >.red.ball {
+	animation-delay: 1s;
+}
+
+.ball:before {
+	content: "";
+	position: absolute;
+	width: 50%;
+	height: 25%;
+	border-radius: 50%;
+	left: 25%;
+	top: 5%;
+	background: linear-gradient(to bottom, rgba(232,232,232,1), rgba(255,255,255,0));
+}
+/*
+.ball::after {
+	content: attr(data-value);
+}
+*/
+.bounce div:last-child {
+	position: absolute; bottom: 0;
+	width: 100%;
+	height: 20%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.bounce div:last-child::after {
+	content: "";
+	width: 100%;
+	height: 80%;
+	border-radius: 50%;
+	background: rgba(100, 100, 100, 0.5);
+	animation: shadow 1s;
+	z-index: -1;
+}
+
+body:not(.exit) #exit {
+    display: none;
+}
+
+@keyframes bounce {
+	0% {
+		top: 0;
+		animation-timing-function: ease-in;
+	}
+	4% {
+		top: 40%;
+		height: 50%;
+		animation-timing-function: ease-out;
+	}
+	5% {
+		top: 45%;
+		height: 45%;
+		animation-timing-function: ease-in;
+	}
+	6% {
+		top: 30%;
+		height: 50%;
+		animation-timing-function: ease-out;
+	}
+	10% {
+		top: 0;
+		animation-timing-function: ease-in;
+	}
+}
+
+@keyframes shadow {
+	0% {
+		background: rgba(20, 20, 20, .1);
+		animation-timing-function: ease-in;
+	}
+	50% {
+		background: rgba(20, 20, 20, .3);
+		height: 40%;
+		width: 80%;
+		animation-timing-function: ease-out;
+	}
+	100% {
+		background: rgba(20, 20, 20, .1);
+		animation-timing-function: ease-in;
+	}
+}
+
+/* << bounce */
+
+		</style>
+		<script>
+// public
+function moveStage(id) {
+    if (id) {
+        window.sessionStorage.setItem("stage_id", String(id));
+    } else {
+        window.sessionStorage.removeItem("stage_id");
+    }
+
+    window.location.reload();
+}
+
+function onSelectStatus(e) {
+    window.sessionStorage.setItem("list_status", this.id);
+
+    top.selectMenu("node");
+}
+
+function getNodeData() {
+    return $.nodeData;
+}
+
+function getPositionData() {
+    return $.positionData;
+}
+
+function getLinkData() {
+    return $.linkData;
+}
+
+function getPathData() {
+    return $.pathData;
+}
+
+function getIconData() {
+    return $.iconData;
+}
+
+function getSettingData() {
+    return $.settingData;
+}
+
+function getMonitorList() {
+    return $.monitorList;
+}
+
+function getNodeList(status) {
+    switch(status) {
+    case "shutdown":
+        return $.shutdownList;
+    case "critical":
+        return $.criticalList;
+    }
+
+    return $.nodeList;
+}
+
+function showMessage(data) {
+    switch (data.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ data.status);
+    }
+
+    try {
+        console.log(JSON.parse(data.responseText).error);
+    } catch (e) {}
+}
+		</script>
+	</head>
+	
+	<body class="loading name">
+        <nav>
+            <span class="icon" title="편집 모드" id="edit">
+                &#xf013;
+            </span>
+            <span class="icon" title="지도 모드" id="mode_branch">
+                &#xf3c5;
+            </span>
+            <span class="icon" title="3D 모드" id="mode_3d">
+                &#xf1b2;
+            </span>
+            <span class="icon" title="IP주소 보기" id="display">
+                &#xf074;
+            </span>
+            <span class="icon" title="노드 검색" id="search">
+                &#xf002;
+            </span>
+            <span class="icon" title="상위 이동" id="exit">
+                &#xf2f5;
+            </span>
+        </nav>
+		<article>
+			<aside>
+				<header>
+					<ul>
+						<li>장애
+						<li>임계
+						<li>정상
+					</ul>
+				</header>
+				
+				<div class="top">
+					<div class="bounce link">
+						<div id="shutdown" class="ball red"></div>
+						<div></div>
+					</div>
+					<div class="bounce link">
+						<div id="critical"  class="ball orange"></div>
+						<div></div>
+					</div>
+					<div class="bounce link">
+						<div id="normal"  class="ball green"></div>
+						<div></div>
+					</div>
+				</div>
+				<div class="nav pointer"></div>
+				<div id="summary_list"></div>	
+			</aside>
+            <iframe id="map" class="fullscreen"></iframe>
+            <iframe id="branch" class="fullscreen"></iframe>
+            <iframe class="top"></iframe>
+		</article>
+
+        <div class="bg_loading"></div>
+
+        <script src="/js/ITAhM.js"></script>
+        <script src="/js/icon.js"></script>
+        <script src="/js/request.js"></script>
+		<script>
+
+const UPPER_POS = {
+		x: 0,
+		y: 0
+    };
+const $ = {
+    request: new Request(),
+    upper: window.sessionStorage.getItem("stage_id") && Number(window.sessionStorage.getItem("stage_id")) || undefined,
+    iconData: ITAhM.iconData,
+    monitorList: [], // 현재 스테이지의 모니터링 대상 노드
+    nodeList: [], // 현재 스테이지의 모든 노드
+    shutdownList: [],
+    criticalList: []
+};
+
+document.body.querySelector("div.nav").onclick = function (e) {
+	this.classList.toggle("hide");
+}
+
+document.getElementById("edit").onclick = function () {
+	window.location.href = "/map_edit.html";
+};
+
+document.getElementById("search").onclick = function (e) {
+    const keyword = prompt("노드 이름 또는 IP주소를 입력하세요.");
+    
+    if (!keyword) {
+        return;
+    }
+
+    var
+        found = false,
+        node;
+
+    for (let id in $.nodeData) {
+        node = $.nodeData[id];
+
+        if (keyword === node.ip || keyword === node.name) {
+            const pos = $.positionData[id];
+            
+            if (pos.parent) {
+                window.sessionStorage.setItem("stage_id", String(pos.parent));
+            } else {
+                window.sessionStorage.removeItem("stage_id");
+            }
+
+            window.sessionStorage.setItem("focus_id", String(id));
+
+            window.location.reload();
+
+            found = true;
+
+            break;
+        }
+    }
+
+    if (!found) {
+        alert("Information.\n\n검색 결과가 없습니다.");
+    }
+};
+
+function findParentFromStage(parent) {
+	for (let tmp; parent; parent = tmp) {
+		if (!(parent in $.positionData)) {
+			return;
+		}
+
+		tmp = $.positionData[parent].parent;
+		
+		if (tmp === $.upper) {
+			return parent;
+		}
+	}
+}
+
+(() => {
+	const labelMap = {};
+
+	function createStatusItem(label, count) {
+		const ul = document.createElement("ul");
+
+		ul.appendChild(document.createElement("li")).textContent = label;
+		ul.appendChild(document.createElement("li")).textContent = count.shutdown;
+		ul.appendChild(document.createElement("li")).textContent = count.critical;
+		ul.appendChild(document.createElement("li")).textContent = count.normal;
+		
+		ul.className = "summary";
+		
+		return ul;
+	}
+
+	window.parseLabel = (label, status) => {
+		if (label) {
+			label.split(",").forEach(function (label) {
+				if (!(label in labelMap)) {
+					labelMap[label] = {
+						shutdown: 0,
+						critical: 0,
+						normal: 0
+					}
+				}
+
+				labelMap[label][status]++;
+			});
+		}
+	};
+
+	window.buildLabel = () => {
+		const df = document.createDocumentFragment();
+
+		for (let label in labelMap) {
+			df.appendChild(createStatusItem(label, labelMap[label]));
+		}
+
+		return df;
+	};
+})();
+
+(button => {
+    button.onclick = function (e) {
+        const option = button.classList.contains("checked")? "name": "address";
+
+        document.body.classList.add("loading");
+
+        $.request.execute({
+            command: "set",
+            target: "setting",
+            key: "display",
+            value: option
+        }, function (e) {
+            switch (this.status) {
+            case 200:
+                $.settingData.display = option;
+
+                button.classList.toggle("checked");
+
+                document.querySelector("iframe.top").contentWindow.display(option);
+                
+                try {
+                    document.getElementById("map").contentWindow.display(option);
+                } catch (e) {}
+            
+                document.body.classList.remove("loading");
+
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    };
+})(document.getElementById("display"));
+
+(button => {
+    button.onclick = function (e) {
+        const mode = button.classList.contains("checked")? "default": "branch";
+
+        document.body.classList.add("loading");
+
+        $.request.execute({
+            command: "set",
+            target: "setting",
+            key: "mapMode",
+            value: mode
+        }, function (e) {
+            switch (this.status) {
+            case 200:
+                window.location.reload();
+            
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    };
+})(document.getElementById("mode_branch"));
+
+(button => {
+    button.onclick = function (e) {
+        const mode = button.classList.contains("checked")? "default": "3d";
+
+        document.body.classList.add("loading");
+
+        $.request.execute({
+            command: "set",
+            target: "setting",
+            key: "mapDim",
+            value: mode
+        }, function (e) {
+            switch (this.status) {
+            case 200:
+                window.location.reload();
+
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    };
+})(document.getElementById("mode_3d"));
+
+function initialize() {
+    const
+        SHUTDOWN = 0,
+        CRITICAL = 1,
+        NORMAL = 2;
+    var
+        sCount = 0,
+        cCount = 0,
+        nCount = 0,
+        node, pos, parent, status;
+        
+    if ($.upper) {
+        document.getElementById("exit").onclick = e => moveStage($.positionData[$.upper].parent);
+
+        document.body.classList.add("exit");
+    }
+
+    for (let id in $.nodeData) {
+        node = $.nodeData[id];
+        pos = $.positionData[id];
+        
+        // 동기화 안된 node의 pos 정보가 없음
+        if (!pos) {
+            $.positionData[id] = pos = {
+                x: 0,
+                y: 0
+            };
+        }
+        
+        // 상위 그룹이 삭제 되었음
+        if (pos.parent && !(pos.parent in $.nodeData)) {
+            pos.parent = undefined;
+        }
+
+        if (pos.parent === $.upper) {
+            $.nodeList.push(id);
+
+            if ("protocol" in node) {
+                $.monitorList.push(id);
+
+                if ("status" in node && !node.status) {
+                    status = "shutdown";
+                    
+                    $.shutdownList.push(id);
+
+                    sCount++;
+
+                    parseLabel(node.label, "shutdown");
+                }
+                else if ("critical" in node && node.critical) {
+                    status = "critical";
+                    
+                    $.criticalList.push(id);
+
+                    cCount++;
+                    
+                    parseLabel(node.label, "critical");
+                }
+                else {
+                    status = "normal";
+
+                    nCount++;
+
+                    parseLabel(node.label, "normal");
+                }
+            }
+        }
+        else if (parent = findParentFromStage(pos.parent)) {
+            // 하위
+            if ("protocol" in node) {
+                $.monitorList.push(id);
+
+                if ("status" in node && !node.status) {
+                    $.shutdownList.push(parent);
+
+                    sCount++;
+                    
+                    parseLabel(node.label, "shutdown");
+                }
+                else if ("critical" in node && node.critical) {
+                    $.criticalList.push(parent);
+
+                    cCount++;
+                    
+                    parseLabel(node.label, "critical");
+                }
+                else {
+                    nCount++;
+                    
+                    parseLabel(node.label, "normal");
+                }
+            }
+        }
+    }
+
+    document.getElementById("normal").textContent = nCount;
+    document.getElementById("critical").textContent = cCount;
+    document.getElementById("shutdown").textContent = sCount;
+
+    document.getElementById("normal").onclick =
+    document.getElementById("critical").onclick =
+    document.getElementById("shutdown").onclick = onSelectStatus;
+
+    document.getElementById("summary_list").appendChild(buildLabel());
+    
+    if ($.settingData.mapMode === "branch") {
+        if (window.sessionStorage.getItem("focus_id") || $.upper) {
+            document.getElementById("map").src = "/map.html";
+        } else {
+            document.getElementById("map").src = "/map_branch.html";
+        }
+    } else {
+        document.getElementById("map").src = "/map.html";
+    }
+    
+    document.querySelector("iframe.top").src = "/top.html";
+
+    window.onEvent = event => {
+		if ($.timer) {
+			clearTimeout($.timer);
+		}
+        
+        if (event.id) {
+            $.timer = setTimeout(() => {
+                requestAnimationFrame(t => {
+                    const
+                        id = String(event.id),
+                        pos = $.positionData[id];
+
+                    if (pos.parent) {
+                        window.sessionStorage.setItem("stage_id", String(pos.parent));
+                    } else {
+                        window.sessionStorage.removeItem("stage_id");
+                    }
+                    
+                    window.sessionStorage.setItem("focus_id", id);
+
+                    window.location.reload();
+                });
+            }, 1000);
+        }
+	};
+
+    document.body.classList.remove("loading");
+}
+
+function initNode(e) {
+    switch(this.status) {
+        case 200:
+            $.nodeData = JSON.parse(this.responseText);
+            
+            $.request.execute({
+                command: "get",
+                target: "path"
+            }, initPath);
+            
+            break;
+        default:
+            showMessage(this);
+    }
+}
+
+function initPath(e) {
+    switch(this.status) {
+        case 200:
+            $.pathData = JSON.parse(this.responseText);
+            
+            $.request.execute({
+                command: "get",
+                target: "link"
+            }, initLink);
+            
+            break;
+        default:
+            showMessage(this);
+    }
+}
+
+function initLink(e) {
+    switch(this.status) {
+        case 200:
+            $.linkData = JSON.parse(this.responseText);
+            
+            $.request.execute({
+                command: "get",
+                target: "position",
+                name: "position"
+            }, initPosition);
+        
+            break;
+        default:
+            showMessage(this);
+    }
+}
+
+function initPosition(e) {
+    switch(this.status) {
+        case 200:
+            $.positionData = JSON.parse(this.responseText);
+
+            $.request.execute({
+                command: "get",
+                target: "setting"
+            }, initSetting);            
+            
+            break;
+        default:
+            showMessage(this);
+    }
+}
+
+function initSetting(e) {
+    switch(this.status) {
+        case 200:
+            $.settingData = JSON.parse(this.responseText);
+            
+            if ("background" in $.settingData) {
+                document.body.style.backgroundImage = "url("+ $.settingData.background +")";
+
+                document.body.classList.add("background");
+            }
+
+            if ("display" in $.settingData && $.settingData.display === "address") {
+                document.getElementById("display").classList.add("checked");
+            }
+
+            if ("mapMode" in $.settingData) {
+                if ($.settingData.mapMode === "branch") {
+                    document.getElementById("mode_branch").classList.add("checked");
+                } else {
+
+                }
+            } else {
+
+            }
+
+            if ("mapDim" in $.settingData) {
+                if ($.settingData.mapDim == "3d") {
+                    document.getElementById("mode_3d").classList.add("checked");
+                } else {
+
+                }
+            } else {
+
+            }
+
+            $.request.execute({
+                command: "get",
+                target: "icon"
+            }, initIcon);
+
+            break;
+        default:
+            showMessage(this);
+    }
+}
+
+function initIcon(e) {
+    switch(this.status) {
+        case 200:
+            const iconData = JSON.parse(this.responseText);
+
+            for (let type in iconData) {
+                $.iconData[type] = iconData[type];
+            }
+
+            initialize();
+            
+            break;
+        default:
+            showMessage(this);
+    }
+}
+
+$.request.execute({
+    command: "get",
+    target: "node"
+},initNode);
+
+		</script>
+	
+	</body>
+	
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="Cache-Control" content="no-cache">
+		
+		<title>ITAhM</title>
+		
+		<style>
+@import "/css/style.css";
+@import "/css/fa.css";
+
+body {
+	font-family: arial, tahoma, "맑은 고딕";
+	font-size: 10pt;
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	border: 5px solid #f00;
+	margin: 0; padding: 0;
+}
+
+body, input, button {
+	margin: 0;
+	padding: 0; 
+}
+
+/* control */
+.control {
+    position: absolute; top: 5px; left: 5px;
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex;
+    align-items: flex-start;
+}
+
+/* button */
+.button {
+    font: 20px 'Font Awesome 5 Free';
+    color: #ffffff;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: flex; width: 32px; height: 32px;
+    align-items: center;
+    justify-content: center;
+}
+
+.button.enable {
+    border-radius: 50%;
+    background-color: #0084ff;
+    border-color: #0084ff;
+}
+
+.button.close {
+    background-color: #f00;
+    border-color: #f00;
+}
+
+.button.enable:hover {
+    background-color: rgba(0, 132, 255, 0.5);
+}
+
+.button.close:hover {
+    background-color: rgba(255, 0, 0, 0.5);
+}
+
+iframe {
+    width: 100%; height: 100%;
+    border: none;
+}
+
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    z-index: -1;
+}
+
+body::before {
+	top: 0; right: 50%; bottom: 0;
+	border-right: 1px dotted #ddd;
+}
+
+body::after {
+	top: 50%; right: 0; left: 0;
+	border-top: 1px dotted #ddd;
+}
+
+body:not(.root) .root {
+	display: none;
+}
+
+		</style>
+		
+		<script>
+
+function onEvent(e) {
+	if (e.origin === "search" && !window.loading) {
+		window.loading = true;
+	
+		alert("새로운 노드가 탐지되었습니다.");
+	
+		saveTmpReload();
+	}
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    default:
+        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+/**public**/
+function reload() {
+    document.querySelector("iframe").contentWindow.location.reload();
+}
+
+		</script>
+	</head>
+	
+	<body class="name">
+		<iframe id="editor"></iframe>
+		<ul class="control root">
+            <li>
+                <span class="button enable close" id="close" title="편집 종료">
+                    &#xf00d;
+                </span>
+            </li>
+            <li>
+                <span class="button enable" id="save" title="편집 내용 저장">
+                    &#xf0c7;
+                </span>
+            </li>
+		</ul>
+            
+		<div class="bg_loading"></div>
+
+        <script src="/js/ITAhM.js"></script>
+        <script src="/js/request.js"></script>
+		<script>
+
+const $ = {
+        request: new Request()
+    };
+
+var 
+    positionData = {},
+	scale = 1;
+
+
+if (top.account.level === 0) {
+	document.body.classList.add("root");
+}
+
+document.getElementById("close").onclick = function () {
+	window.location.href = "/itahm.html";
+}
+
+document.getElementById("save").onclick = function () {	
+	document.body.classList.add("loading");
+
+    $.request.execute({
+            command: "set",
+            target: "position",
+            name: "position",
+            position: window.positionData
+        }, function (e) {
+        switch (this.status) {
+        case 200:
+            alert("Information.\n\n구성의 변경사항을 저장하였습니다.");
+
+            document.body.classList.remove("loading");
+
+            break;
+        case -1:
+            console.trace(this.exception);
+        default:
+            showMessage(this);
+        }
+    });
+};
+
+function initNode(e) {
+    switch (this.status) {
+    case 200:
+        const nodeData = JSON.parse(this.responseText);
+    try {
+        for (let id in nodeData) {
+            if (!(id in window.positionData)) {
+                window.positionData[id] = {
+                    x: 0,
+                    y: 0
+                }
+            }
+        }
+    } catch(e) {console.trace(e);}
+        document.querySelector("iframe").src = "/map_editor.html";
+        
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function initPosition(e) {
+    switch (this.status) {
+    case 200:
+        window.positionData = JSON.parse(this.responseText);
+    case 204:
+        $.request.execute({
+            command: "get",
+            target: "node",
+        }, initNode);
+
+		break;
+    default:
+        showMessage(this);
+    }
+}
+
+$.request.execute({
+    command: "get",
+    target: "position",
+    name: "position"
+}, initPosition);
+
+		</script>
+	
+	</body>
+	
+</html>

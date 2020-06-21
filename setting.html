@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="Cache-Control" content="No-Cache">
+		
+		<title>Setting @ ITAhM</title>
+		
+		<style>
+@import "/css/style.css";
+@import "/css/fa.css";
+
+body {
+	max-width: 1024px;
+	padding: 10px;
+	margin: 0 auto;
+}
+
+h2 {
+	color: #fff;
+	font-size: 20px;
+	text-shadow: 1px 1px 1px #000;
+}
+
+ul {
+	list-style: none;
+}
+
+.item {
+	display: flex;
+	align-items: center;
+}
+
+.item span {
+	margin-left: 10px;
+	padding: .5em 2em;
+}
+
+.item span:hover {
+	cursor: pointer;
+	background-color: #ccc;
+	transition: background-color 0.5s linear;
+}
+
+.layout {
+	display: none;
+}
+
+.list {
+	max-height: 100px;
+	overflow: auto;
+	padding: 1em;
+	border: 1px solid #ddd;
+	background-color: #fdfdfd;
+}
+
+.box {
+	padding: 1em;
+	background-color: #fdfdfd;
+	box-shadow: 0 8px 10px -4px #000;
+}
+
+.container {
+	position: relative;
+}
+
+.top {
+	display: inline-block;
+	vertical-align: top;
+}
+
+#expire:empty {
+	display: none;
+}
+
+#expire:not(:empty)::before {
+	content: "라이선스 만료일: ";
+}
+
+input[type=checkbox] {
+	vertical-align: middle;
+}
+
+form {
+	position: relative;
+}
+
+form input,
+form select {
+	padding: 3px;
+}
+
+input[name="store_date"] {
+	width: 50px;
+	text-align: right;
+}
+
+#event.disabled .setting {
+	display: none;
+}
+
+ul.smtp {
+	display: inline-block;
+	width: 360px;
+}
+
+ul.smtp >li {
+	display: flex;
+}
+
+ul.smtp >li >span:first-child {
+	flex: 1;
+}
+
+ul.smtp >li >span:last-child {
+	flex: 2;
+}
+
+#path:not(:empty)::before {
+	content: "(";
+}
+
+#path:not(:empty)::after {
+	content: ")";
+}
+
+#link input[type=number] {
+	width: 50px;
+	text-align: right;
+}
+
+body:not(.loading) .container >.bg_loading {
+	position: absolute;
+    display: initial;
+}
+
+body:not(.loading) .container:not(.loading) >.bg_loading {
+	display: none;
+}
+
+.logo {
+	margin: 0 1em;
+	vertical-align: bottom;
+}
+
+span.logo {
+    font: 24px "Font Awesome 5 Free";
+    color: #0084ff;
+}
+
+.button {
+	border:none;
+	display:inline-block;
+	width: 2em; height: 2em;
+	vertical-align:middle;
+	overflow:hidden;
+	color:#000;
+	background-color:#0ff;
+	text-align:center;
+	cursor:pointer;
+	white-space:nowrap;
+	user-select:none;
+	transition:opacity 0s;
+	font-weight: bold;
+	outline: none;
+	border-radius:50%;
+	vertical-align: top;
+}
+
+.button:active{
+	opacity:0.5
+}
+
+.button:hover{
+  box-shadow:0 8px 16px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+}
+
+.button:disabled {
+  cursor:not-allowed;
+  opacity:0.3
+}
+
+.button:disabled:hover {
+  box-shadow:none
+}
+
+/* switch button*/
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 2em;
+    height: 1em;
+    font-size: 20px;
+}
+
+.switch >input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch >.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 0.5em;
+}
+
+.switch >.slider:before {
+    position: absolute;
+    content: "";
+    height: 0.6em;
+    width: 0.6em;
+    left: 0.2em;
+    bottom: 0.2em;
+    background-color: #fff;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked +.slider {
+    background-color: #424242;
+}
+
+input:focus +.slider {
+    box-shadow: 0 0 1px #424242;
+}
+
+input:checked + .slider:before {
+    transform: translateX(1em);
+}
+
+body:not(.root) .root {
+    display: none;
+}
+
+		</style>
+		<script>
+
+function createItem(src, key, data, func) {
+	const li = document.createElement("li"),
+		img = document.createElement("img"),
+		span = document.createElement("span");
+
+	img.width = 20;
+	img.height = 20;
+	img.src = src;
+
+	span.textContent = key;
+	span.onclick = func.bind(undefined, key, data);
+	
+	li.appendChild(img);
+	li.appendChild(span);
+	li.className = "item";
+
+	return li;
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    default:
+        alert(`Error!\n\n오류코드: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+	</head>
+	
+	<body>
+		<h2>
+			<span class="logo">
+                &#xf05a;
+            </span>
+			정보
+		</h2>
+		<div id="information" class="box container loading">
+			<p>
+				자바 버전 : <span id="java"></span>
+			</p>
+			<p>
+				에이전트 버전 : <span id="version"></span>
+			</p>
+			<p>
+				에이전트 저장공간 여유 :
+				<span id="space"></span>
+				<i id="path"></i>
+			</p>
+			<p>
+				전일 디스크 사용량 : <span id="usage"></span>
+            </p>
+            <p>
+				데이터베이스 연결 : <span id="max_conn"></span>
+			</p>
+			<p>
+				관리 리소스 갯수 : <span id="resource"></span>
+			</p>
+			<p id="expire"></p>
+			<div class="bg_loading"></div>
+		</div>
+		<h2>
+			<span class="logo">
+                &#xf013;
+            </span>
+			동작
+		</h2>
+		<div id="common" class="box container loading">
+            <p>
+				<form id="request_interval">
+					Ping 요청 주기(초) :
+					<select name="request_interval">
+						<option value="3000">3
+						<option value="5000">5
+						<option value="10000" selected>10
+						<option value="30000">30
+						<option value="60000">60
+					</select>
+					<input type="submit" value="적용" class="root">
+				</form>
+			</p>
+            <p>
+				<form id="timeout">
+					Ping Timeout(초):
+                    <select name="timeout">
+                        <option value="1000">1
+                        <option value="2000">2
+                        <option value="3000">3
+                        <option value="5000">5
+                        <option value="10000" selected>10
+                    </select>
+                    <input type="submit" value="적용" class="root">
+                </form>
+			</p>
+            <p>
+				<form id="retry">
+					Ping Retry(초):
+                    <select name="retry">
+                        <option value="0" selected>0
+                        <option value="1">1
+                        <option value="2">2
+                    </select>
+                    <input type="submit" value="적용" class="root">
+                </form>
+			</p>
+			<p>
+				<form id="store_date">
+					데이터 보관 기간(일) :
+					<input type="number" min="0" max="365" name="store_date">
+					<input type="submit" value="적용" class="root">
+					<i>(데이터 정리 기능을 사용하지 않는 경우 0)</i>
+				</form>
+			</p>
+			<p>
+				<form id="save_interval">
+					데이터 저장 단위(분) :
+					<select name="save_interval">
+						<option value="60000">1
+						<option value="120000">2
+						<option value="180000">3
+						<option value="300000">5
+						<option value="600000">10
+					</select>
+					<input type="submit" value="적용" class="root">
+				</form>
+			</p>
+			
+			<div class="bg_loading"></div>
+		</div>
+		<h2>
+			<span class="logo">
+                &#xf458;
+            </span>
+			UI
+		</h2>
+		<div id="setting" class="container box loading">
+			<p>
+				<form id="menu">
+					메뉴 고정 : 
+					<select name="menu">
+						<option value="false">자동
+						<option value="true">고정
+					</select>
+					<input type="submit" value="적용" class="root">
+				</form>
+			</p>
+			<p>
+				<form id="background">
+					대시보드 배경 : 
+					<input type="text" name="background">
+					<input type="submit" value="적용" class="root">
+				</form>
+			</p>
+			<p>
+				<form id="node">
+					노드정보 항목 추가 : 
+					<input type="text" name="custom" placeholder="항목1 [,항목2 ...]">
+					<input type="submit" value="적용" class="root">
+					<i>콤마(,)로 구분</i>
+				</form>
+			</p>
+			<p>
+				<form id="line">
+					회선정보 항목 추가 : 
+					<input type="text" name="custom" placeholder="항목1 [,항목2 ...]">
+					<input type="submit" value="적용" class="root">
+					<i>콤마(,)로 구분</i>
+				</form>
+			</p>
+			<p>
+				<form id="link_color">
+					기본 연결선 색 :
+					<input type="color" name="color" value="#ffffff">
+					<input type="submit" value="적용" class="root">
+				</form>
+            </p>
+            <p>
+				<form id="link_size">
+					기본 연결선 두께:
+					<input type="number" name="size" value="2" min="0">
+					PX
+					<input type="submit" value="적용" class="root">
+				</form>
+            </p>
+            <p>
+				<form id="mute">
+					소리 설정:
+					<select name="mute">
+						<option value="false" selected>기본
+						<option value="true">음소거
+					</select>
+					<input type="submit" value="적용" class="root">
+				</form>
+			</p>
+			<div class="bg_loading"></div>
+		</div>
+		
+		<form id="account" class="container loading">
+			<h2>
+				<span class="logo">
+                    &#xf500;
+                </span>
+				계정
+				<input class="button" type="submit" value="+" title="계정 추가" class="root">
+			</h2>
+			<div class="box">
+				<ul id="account_list" class="list"></ul>
+			</div>
+			<div class="bg_loading"></div>
+		</form>
+		
+		<form id="profile" class="container loading">
+			<h2>
+				<span class="logo">
+                    &#xf2bb;
+                </span>
+				SNMP 프로파일
+				<input class="button" type="submit" value="+" title="프로파일 추가" class="root">
+			</h2>
+			<div class="box">
+				<ul id="profile_list" class="list"></ul>
+				<i>등록된 Profile은 변경할 수 없습니다. 삭제후 추가하십시오. (사용중인 Profile은 삭제할 수 없습니다.)</i>
+			</div>
+			<div class="bg_loading"></div>
+		</form>
+		
+		<form id="event" class="container loading disabled">
+			<h2>
+				<span class="logo">
+                    &#xf658;
+                </span>
+                <label class="switch" title="이벤트 통지 활성화">
+                    <input type="checkbox" id="snmp_enable">
+                    <span class="slider"></span>
+                </label>
+                이벤트 통지
+				<input class="button" type="button" name="add" value="+" title="수신자 추가" class="root">
+			</h2>
+			<div class="box">
+                <div class="setting">
+                    <ul class="smtp">
+                        <li>
+                            <span>
+                                SMTP 서버:
+                            </span>
+                            <span>
+                                <input type="text" name="server" placeholder="smtp.example.com" required>
+                            </span>
+                        </li>
+                        <li>
+                            <span>
+                                보안 프로토콜:
+                            </span>
+                            <span>
+                                <select name="protocol" required>
+                                    <option value="tls">TLS</option>
+                                    <option value="ssl">SSL</option>
+                                    <option value="smtp" selected>사용안함</option>
+                                </select>
+                            </span>
+                        </li>
+                        <li>
+                            <span>
+                                계정:
+                            </span>
+                            <span>
+                                <input type="text" name="username" placeholder="홍길동@example.com" required>
+                            </span>
+                        </li>
+                        <li>
+                            <span>
+                                비밀번호:
+                            </span>
+                            <span>
+                                <input type="password" name="password" placeholder="계정 비밀번호" required>
+                            </span>
+                        </li>
+                        <li>
+                            <span>
+                                상태:
+                            </span>
+                            <span>
+                                <input type="text" name="status" disabled>
+                            </span>
+                        </li>
+                    </ul>
+                    <input type="submit" value="적용" class="root">
+                </div>
+				<ul id="user_list" class="list"></ul>
+			</div>
+			<div class="bg_loading"></div>
+        </form>
+		<h2>
+            <span class="logo">
+                &#xf1da;
+            </span>
+            백업
+        </h2>
+        <form class="box" id="backup">
+            <input type=submit value="설정 백업">
+        </form>
+        <h2>
+            <span class="logo">
+                &#xf05e;
+            </span>
+            서비스
+        </h2>
+        <form class="box" id="stop">
+            <input type=submit value="서비스 중지">
+        </form>
+        <div class="bg_loading"></div>
+
+		<script src="js/ITAhM.js"></script>
+		<script src="js/object.js"></script>
+        <script src="js/md5.js"></script>
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+		<script>
+
+const
+    ERROR_EVENT_ENABLE_FAIL = "이벤트 메일 통지 활성화 요청 실패",
+    ERROR_EVENT_ENABLE_SUCCESS = "이벤트 메일 통지 활성화 요청 성공.";
+
+const $ = {
+        request: new Request()
+    };
+
+if (top.account.level > 0) {
+	[].forEach.call(document.querySelectorAll(".root"),
+		function (e) {
+			e.disabled = true;
+		});
+} else {
+    document.body.classList.add("root");
+}
+function initInformation() {
+    switch (this.status) {
+        case 200:
+            const information = JSON.parse(this.responseText);
+
+            document.getElementById("java").textContent = information.java;
+            document.getElementById("version").textContent = information.version;
+            document.getElementById("resource").textContent = information.resource;
+            document.getElementById("max_conn").textContent = information.maxConnection;
+            document.getElementById("usage").textContent
+                = information.usage && ITAhM.util.toBytesString(information.usage) || "제공하지 않음.";
+            document.getElementById("space").textContent = ITAhM.util.toBytesString(information.space);
+            document.getElementById("path").textContent = information.path;
+            document.getElementById("expire").textContent
+                = information.expire > 0? new Date(information.expire).toLocaleString(): "";
+
+            document.getElementById("information").classList.remove("loading");	
+
+            $.request.execute({
+                command: "get",
+                target: "config"
+            }, initConfig);
+    
+            break;
+        default:
+            showMessage(this);
+    }
+}
+
+(function (container) {
+	container.elements["add"].onclick = function () {
+		top.showDialog.call(window, "/dialog/user.html");
+	};
+
+    document.getElementById("snmp_enable").onclick = function (e) {
+        if (this.checked) {
+            container.classList.remove("disabled");
+
+            container.querySelector("[type=submit").click();
+        } else {
+            $.request.execute({
+                command: "set",
+                target: "config",
+                key: "smtpServer"
+            }, function (e) {
+                switch (this.status) {
+                    case 200:
+                        container.classList.add("disabled");
+
+                        alert("Information.\n\n이벤트 메일 통지 비활성화 요청 성공.");
+
+                        break;
+                    default:
+                        alert("Error!\n\n오류코드 "+ this.status);
+
+                        console.log(this.responseText && JSON.parse(this.responseText).error);
+                }
+            });
+        }
+    }
+
+    container.onsubmit = function (e) {
+        e.preventDefault();
+
+        $.request.execute({
+            command: "set",
+            target: "config",
+            key: "smtpServer",
+            value: {
+                server: container.elements["server"].value,
+                user: container.elements["username"].value,
+                password: container.elements["password"].value,
+                protocol: container.elements["protocol"].value
+            }
+        }, function (e) {
+            switch (this.status) {
+                case 200:
+                    alert(`Information.\n\n${ERROR_EVENT_ENABLE_SUCCESS}`);
+
+                    break;
+                case 501:
+                    alert(`Error!.\n\n${ERROR_EVENT_ENABLE_FAIL}.`);
+
+                    break;
+                default:
+                    showMessage(this);
+            }
+        });
+    }
+
+	function onSelectUser(name, user) {
+		top.showDialog.call(window, "/dialog/user.html", name, user);
+	}
+
+    window.initSMTP = config => {
+        container.elements["server"].value = config.smtpServer || "";
+        container.elements["username"].value = config.smtpUser || "",
+        container.elements["password"].value = config.smtpPassword || "";
+        container.elements["protocol"].value = config.smtpProtocol || "";
+        container.elements["status"].value = config.smtpRunning? "정상": "오류";
+
+        if (document.getElementById("snmp_enable").checked = config.smtpEnable) {
+            container.classList.remove("disabled");
+        }
+    };
+
+    window.initUser = function () {
+        switch (this.status) {
+            case 200:
+                const
+                    userData = JSON.parse(this.responseText),
+                    df = document.createDocumentFragment();
+
+                for (let name in userData) {
+                    df.appendChild(createItem("/img/email.png", name, userData[name], onSelectUser));
+                }
+
+                document.getElementById("user_list").appendChild(df);
+
+                container.classList.remove("loading");
+
+                $.request.execute({
+                    command: "get",
+                    target: "setting"
+                }, initSetting);
+
+                break;
+            default:
+                showMessage(this);
+        }
+    };
+}) (document.getElementById("event"));
+
+(function(container) {
+	document.getElementById("timeout").onsubmit = function (e) {
+		e.preventDefault();
+		
+		container.classList.add("loading");
+		
+		$.request.execute({
+            command: "set",
+            target: "config",
+			key: "timeout",
+			value: this.elements["timeout"].value
+		}, function () {
+			switch(this.status) {
+			case 200:
+				alert("Ping 응답 제한 시간을 설정 하였습니다.");
+				
+				break;
+			case 400:
+				alert("현재 버전에서 지원하지 않는 설정입니다.");
+				
+				break;
+			default:
+				showMessage(this);
+			}
+			
+			container.classList.remove("loading");
+		});	
+	};
+	
+    document.getElementById("retry").onsubmit = function (e) {
+		e.preventDefault();
+		
+		container.classList.add("loading");
+		
+		$.request.execute({
+            command: "set",
+            target: "config",
+			key: "retry",
+			value: this.elements["retry"].value
+		}, function () {
+			switch(this.status) {
+			case 200:
+				alert("Ping 재시도 횟수를 설정 하였습니다.");
+				
+				break;
+			case 400:
+				alert("현재 버전에서 지원하지 않는 설정입니다.");
+				
+				break;
+			default:
+				showMessage(this);
+			}
+			
+			container.classList.remove("loading");
+		});	
+	};
+
+	document.getElementById("request_interval").onsubmit = function (e) {
+		e.preventDefault();
+		
+		container.classList.add("loading");
+		
+		$.request.execute({
+			command: "set",
+            target: "config",
+			key: "requestInterval",
+			value: this.elements["request_interval"].value
+		}, function () {
+			switch(this.status) {
+			case 200:
+				alert("Ping 요청 주기를 설정 하였습니다.");
+				
+				break;
+			default:
+				showMessage(this);
+			}
+			
+			container.classList.remove("loading");
+		});	
+	};
+
+	document.getElementById("store_date").onsubmit = function (e) {	
+		e.preventDefault();
+
+		window.common.classList.add("loading");
+
+		$.request.execute({
+			command: "set",
+            target: "config",
+			key: "storeDate",
+			value: this.elements["store_date"].value || "0"
+		}, function (response) {
+			switch (this.status) {
+			case 200:
+				alert("데이터 보관 기간을 설정하였습니다.");
+
+				break;
+			default:
+                showMessage(this);
+			}
+
+			container.classList.remove("loading");
+		});
+	};
+
+	document.getElementById("save_interval").onsubmit = function (e) {	
+		e.preventDefault();
+
+		container.classList.add("loading");
+		
+		$.request.execute({
+			command: "set",
+            target: "config",
+			key: "saveInterval",
+			value: this.elements["save_interval"].value
+		}, function () {
+			switch(this.status) {
+			case 200:
+				alert("SNMP 정보 저장 주기를 설정하였습니다.");
+				
+				break;
+			default:
+                showMessage(this);
+			}
+
+			container.classList.remove("loading");
+		});
+	};
+    
+    window.initConfig = function () {
+		switch (this.status) {
+			case 200:
+				const config = JSON.parse(this.responseText);
+                
+				document.querySelector("input[name=store_date]").value = config.storeDate;
+				document.querySelector("select[name=request_interval]").value = config.requestInterval;
+                document.querySelector("select[name=timeout]").value =  config.timeout;
+                document.querySelector("select[name=retry]").value = config.retry;
+                document.querySelector("select[name=save_interval]").value = config.saveInterval;
+
+                initSMTP(config);
+
+				container.classList.remove("loading");
+
+                $.request.execute({
+                    command: "get",
+                    target: "user"
+                }, initUser);
+
+				break;
+			default:
+                showMessage(this);
+		}
+    }
+}) (document.getElementById("common"));
+
+(function (container) {
+    var settingData;
+    
+	function postRequest(key, value, callback) {
+        const request = {
+			command: "set",
+			target: "setting",
+			key: key
+		};
+
+        if (value) {
+            request.value = value;
+        }
+
+		container.classList.add("loading");
+
+        $.request.execute(request , function () {
+			switch(this.status) {
+			case 200:
+		        settingData[key] = value;
+
+				callback && callback(key, value);
+
+				alert("UI 설정을 변경하였습니다.");
+				
+				break;
+			default:
+                showMessage(this);
+			}
+
+			container.classList.remove("loading");
+		});
+	}
+
+	document.getElementById("menu").onsubmit = function (e) {
+		e.preventDefault();
+		
+		postRequest("menu", this.elements["menu"].value, function () {
+            top.location.reload();
+        });
+	};
+
+	document.getElementById("background").onsubmit = function (e) {
+		e.preventDefault();
+		
+		postRequest("background", this.elements["background"].value);
+	};
+
+	document.getElementById("node").onsubmit = function (e) {
+		e.preventDefault();
+		
+		const customs = this.elements["custom"].value.split(",");
+		
+		for (var i=0, _i=customs.length; i<_i; i++) {
+			customs[i] = customs[i].trim();
+		}
+		
+		postRequest("custom", customs.join(","));
+	};
+
+	document.getElementById("line").onsubmit = function (e) {
+		e.preventDefault();
+		
+		const customs = this.elements["custom"].value.split(",");
+		
+		for (var i=0, _i=customs.length; i<_i; i++) {
+			customs[i] = customs[i].trim();
+		}
+		
+		postRequest("customLink", customs.join(","));
+	};
+
+	document.getElementById("link_color").onsubmit = function (e) {
+		e.preventDefault();
+		
+		postRequest("linkColor", this.elements["color"].value);
+	};
+
+    document.getElementById("link_size").onsubmit = function (e) {
+		e.preventDefault();
+		
+		postRequest("linkSize", Math.max(this.elements["size"].value, 0).toString());
+	};
+
+    document.getElementById("mute").onsubmit = function (e) {
+		e.preventDefault();
+		
+        if (confirm(CONFIRM_APPLY_MUTE)) {
+		    postRequest("mute", this.elements["mute"].value);
+        }
+    };
+    
+    window.initSetting = function () {
+        switch (this.status) {
+            case 200:
+                settingData = JSON.parse(this.responseText);
+ 
+                if ("menu" in settingData) {
+                    document.querySelector("select[name=menu]").value = settingData.menu;
+                }
+                
+                if ("background" in settingData) {
+                    container.querySelector("input[name=background]").value = settingData.background;
+                }
+
+                if ("custom" in settingData) {
+                    document.getElementById("node").querySelector("[name=custom]")
+                        .value = settingData.custom.split(",").join(", ");
+                }
+                
+                if ("customLink" in settingData) {
+                    document.getElementById("line").querySelector("[name=custom]")
+                        .value = settingData.customLink.split(",").join(", ");
+                }
+
+                if ("linkColor" in settingData) {
+                    document.getElementById("link_color").querySelector("[name=color]").value = settingData.linkColor;
+                }
+
+                if ("linkSize" in settingData) {
+                    document.getElementById("link_size").querySelector("[name=size]").value = settingData.linkSize;
+                }
+
+                if ("mute" in settingData) {
+                    document.getElementById("mute").querySelector("[name=mute]").value = settingData.mute;
+                }
+                
+                container.classList.remove("loading");
+
+                $.request.execute({
+                    command: "get",
+                    target: "account",
+                }, initAccount);
+    
+                break;
+            default:
+                showMessage(this);
+        }
+    };
+
+}) (document.getElementById("setting"));
+
+(function (container) {
+	container.onsubmit = function (e) {
+		e.preventDefault();
+
+		top.showDialog.call(window, "/dialog/account.html");
+	};
+
+	function onSelectAccount(name, account) {
+		top.showDialog.call(window, "/dialog/account.html", name, account);
+	}
+    
+    window.initAccount = function () {
+		switch (this.status) {
+		case 200:
+			const
+				account = JSON.parse(this.responseText);
+				df = document.createDocumentFragment();
+
+			for (let name in account) {
+				df.appendChild(createItem(
+					account[name].level === 0? 
+					"/img/svg/root.svg":
+					"img/svg/user.svg", name, account[name], onSelectAccount));
+			}
+
+			document.getElementById("account_list").appendChild(df);
+    
+            container.classList.remove("loading");
+
+            $.request.execute({
+                command: "get",
+                target: "profile"
+            }, initProfile);
+            
+			break;
+		default:
+			showMessage(this);
+		}
+    };
+}) (document.getElementById("account"));
+
+(function (container) {
+	container.onsubmit = function(e) {
+		e.preventDefault();
+
+		onSelectProfile();
+	}
+
+	function onSelectProfile(name, profile) {
+		top.showDialog.call(window, "/dialog/profile.html", name, profile);
+	}
+
+    window.initProfile = function () {
+		switch (this.status) {
+			case 200:
+				const
+					profileData = JSON.parse(this.responseText)
+					df = document.createDocumentFragment();
+
+				for (let name in profileData) {
+					df.appendChild(createItem("/img/svg/list.svg", name, profileData[name], onSelectProfile));
+				}
+
+				document.getElementById("profile_list").appendChild(df);
+
+				container.classList.remove("loading");	
+
+				break;
+			default:
+                showMessage(this);
+		}
+    };
+}) (document.getElementById("profile"));
+
+(function(form) {
+	form.onsubmit = function (e) {
+		e.preventDefault();
+    
+        document.body.classList.add("loading");
+
+        $.request.execute({
+            command: "backup",
+            service: "nms"
+        }
+        , function () {
+            switch (this.status) {
+            case 200:
+                alert("Information.\n\n"+
+                    "백업 정상.");
+
+                document.body.classList.remove("loading");
+
+                break;
+            default:
+                alert("Error!\n\n"+
+                    "오류코드: "+ this.status);
+                
+                try {
+                    console.log(JSON.parse(this.responseText).error);
+                } catch (e) {}
+            }
+        });
+	};
+}) (document.getElementById("backup"));
+
+(function(form) {
+	form.onsubmit = function (e) {
+		e.preventDefault();
+    
+        document.body.classList.add("loading");
+
+        $.request.execute({
+                command: "stop",
+                service: "nms"
+            }, function () {
+            switch (this.status) {
+            case 200:
+                top.location.replace("/service.html");
+
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+	};
+}) (document.getElementById("stop"));
+
+$.request.execute({
+    command: "get",
+    target: "information"
+}, initInformation);
+
+		</script>
+	
+	</body>
+	
+</html>

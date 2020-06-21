@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>CeMS Console</title>
+		
+		<style>
+
+@import "/css/index.css";
+
+body.auto header {
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    transform: translateX(-100%);
+    transition: 0.5s;
+    background-color: #4d525a;
+}
+
+body.auto header:hover {
+    transform: none;
+}
+
+body.auto header::after {
+	content: "";
+	position: absolute; top: 50%; right: -1em;
+	width: 1em; height: 2em;
+	box-sizing: border-box;
+	background-color: red;
+	border-top-right-radius: 1em;
+	border-bottom-right-radius: 1em;
+	transform: translateY(-50%);
+}
+
+
+		</style>
+		<script>
+
+// public
+function setMenu(showMenu) {
+	document.body.classList[showMenu? "remove": "add"]("auto");
+} 
+
+// public
+function showDialog() {
+	var opener = this,
+		url = [].shift.call(arguments),
+		args = arguments;
+	
+	$.dialog.onload = function () {
+		this.contentWindow.initialize.apply(opener, args);
+		
+		document.body.classList.add("dialog");
+	};
+	
+	$.dialog.src = url;
+}
+
+// public
+function closeDialog() {
+	document.body.classList.remove("dialog");
+}
+
+function clearLog() {
+	$.logCount = 0;
+    
+    closeDialog();
+
+	document.body.classList.remove("log");
+}
+
+function initialize() {
+    $.request.listen(onEvent);
+
+    $.request.echo(onUpdate);
+
+    document.body.classList.add("authorized");
+}
+
+function onUpdate(status, elapse) {
+    const
+        container = document.getElementById("status"),
+	    item = container.firstElementChild;
+
+    if (!item.classList.contains("normal")) {
+        item = container.insertBefore(container.lastElementChild, item);
+    }
+
+    switch(status) {
+    case 200:
+        item.textContent = elapse + " ms";
+        item.className = "normal";
+        
+        break;
+
+    case 0:
+        item.textContent = "지연";
+        item.className = "shutdown";
+
+        break;
+    
+    default:
+        item.textContent = "상태 "+ status;
+        item.className = "status";
+    }
+
+    item.title = new Date().toLocaleString();
+}
+
+function onEvent(event) {
+    if (event == null) {
+        alert("Error!\n\n"+
+            "리스너 응답 없음.");
+
+        window.location.reload();
+    }
+
+    if (event.level < 0) {
+        alert("Notice.\n\n"+
+            "관리자가 서비스를 종료하였습니다.");
+
+        return signOut();
+    }
+
+	if ($.isClosed) {
+		return;
+	}
+
+    $.logCount++;
+    
+    $.count.textContent = $.logCount > 9? "9+": $.logCount;
+
+    switch(event.origin) {
+    case "critical":
+    case "status":
+    case "snmp":
+    case "updown":
+        break;
+
+    case "register":
+    case "search":
+    case "system":
+    case "warning":
+        break;
+    }
+
+    if (event.level == 2 && $.sound) {
+        try {
+            $.sound.play();
+        } catch (e) {
+            console.log(e);
+        };
+    }
+
+    $.log.textContent = `${event.name || event.ip || ""} ${event.message}`;
+
+    try {
+        $.frame.contentWindow.onEvent(event);
+    }
+    catch (e) {}
+    
+    document.body.classList.add("log");
+}
+
+function signIn (account) {
+    $.request = new Request();
+    
+    document.getElementById("signout").title = account.username +" 로그아웃";
+
+    window.account = account;
+
+    document.title = $.request.agent;
+
+    $.request.execute({
+        command: "get",
+        target: "setting"
+    }, function () {
+        switch (this.status) {
+        case 200:
+            const settingData = JSON.parse(this.responseText);
+            
+            setMenu(settingData.menu === "true");
+
+            if (!("mute" in settingData) || settingData.mute === "false") {
+                $.sound = new Audio("siren.mp3");
+            }
+
+            initialize();
+
+            $.frame.src="/itahm.html";
+
+            break;
+        default:
+            alert(`Error!\n\n오류코드 ${this.status}.`);
+
+            try {
+                console.log(JSON.parse(this.responseText).error);
+            } catch (e) {}
+        }
+    });
+}
+
+function signOut() {
+    document.body.classList.add("loading");
+
+    $.request.execute({
+        command: "signout"
+    }, function () {
+        window.location.reload();
+    });
+}
+
+		</script>
+	</head>
+	
+	<body>
+		<article class="itahm">
+			<header>
+				<div>
+					<ul class="logo">
+						<li>
+							<img src="/img/logo.png">
+						</li>
+					</ul>
+					<ul class="icon">
+                        <li>
+							<a href="/itahm.html" id="dashboard" target="main" class="selected">
+								<img src="/img/header/dashboard.png">
+							</a>
+							대시보드
+						</li>
+						<li>
+							<a href="/list.html" id="node" target="main">
+								<img src="/img/header/list.png">
+							</a>
+							노드
+						</li>
+                        <li>
+							<a href="/link.html" id="line" target="main">
+								<img src="/img/header/line.png">
+							</a>
+							링크
+						</li>
+						<li>
+							<a href="/event.html" id="event" target="main">
+								<img src="/img/header/event.png">
+							</a>
+							이벤트
+						</li>
+						<li>
+							<a href="/setting.html" id="setting" target="main">
+								<img src="/img/header/setting.png">
+							</a>
+							설정
+						</li>
+						<li>
+							<a href="/icon.html" id="icon" target="main">
+								<img src="/img/header/icon.png">
+							</a>
+							아이콘
+						</li>
+						<li>
+							<a id="signout">
+								<img src="/img/header/signout.png">
+							</a>
+							로그아웃
+						</li>
+					</ul>
+					<ul id="status" class="status">
+						<li class="normal"></li>
+						<li></li>
+						<li></li>
+					</ul>
+				</div>
+			</header>
+			<main>
+				<iframe id="frame" name="main"></iframe>
+            </main>
+		</article>
+		<article class="signin">
+            <iframe id="signin" src="/connect.html"></iframe>
+        </article>
+		<div class="log">
+			<a href="/event.html" target="main">
+				<span id="count">99</span>
+				<span id="log">message</span>
+			</a>
+		</div>
+		
+		<iframe id="dialog"></iframe>
+		
+		<div class="bg_loading"></div>
+		
+		<script src="/js/ITAhM.js"></script>
+        <script src="/js/object.js"></script>
+        <script src="/js/request.js"></script>
+        <script src="/js/icon.js"></script>
+        
+		<script>
+
+const $ = {
+        frame: document.getElementById("frame"),
+        count: document.getElementById("count"),
+        dialog: document.getElementById("dialog"),
+        log: document.getElementById("log"),
+        sound: new Audio("siren.mp3"),
+        isClosed: false,
+        logCount: 0
+    };
+
+document.querySelector("div.log").onclick = function () {
+	selectMenu("event");
+};
+
+(function (list) {
+	function remove(a) {
+		a.classList.remove("selected");
+	}
+
+	function addEvent(a) {
+		a.onclick = onClick;
+	}
+
+	function onClick(e) {
+        window.sessionStorage.removeItem("stage_id");
+        
+		[].forEach.call(list, remove);
+
+		this.classList.add("selected");
+	}
+	
+	[].forEach.call(list, addEvent);
+
+	window.selectMenu = id => {
+		document.getElementById(id).click();
+	};
+}) (document.querySelector("header").querySelectorAll("a"));
+
+document.getElementById("signout").onclick =  function () {
+	if (confirm("Confirm.\n\n로그아웃 하겠습니까?")) {
+        $.isClosed = true;		
+        
+        signOut();
+	}
+};
+		</script>
+	
+	</body>
+	
+</html>

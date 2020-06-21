@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		
+		<title>List @ ITAhM</title>
+		
+		<style>
+@import "/css/glyphicon.css";
+@import "/css/fa.css";
+
+body {
+    font: 12px "맑은 고딕", Tahoma, Arial;
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	margin: 0; padding: 1em;
+}
+
+article {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+aside {
+	display: flex;
+	justify-content: space-between;
+    margin: 3px 0;
+}
+
+#list {
+	flex: 1;
+	background-color: #fff;
+	overflow-y: auto;
+}
+
+header {
+	background-color: #343a40;
+	color: #fff;
+	font-weight: bold; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+	border-bottom: 4px solid #92a7af;
+	border-radius: 3px 3px 0 0;
+	padding: 0.5em 0;
+}
+
+#header >li {
+	position: relative;
+	display: flex; align-items: center; justify-content: center;
+}
+
+button >img {
+	vertical-align: middle;
+	margin: 0.5em;
+	height: 1em; width: 1em;
+}
+
+#header >li:not(:last-child) {
+	border-right-color: #ddd;
+}
+
+aside input,
+aside select {
+	padding: .5em;
+}
+
+form input[type="text"] {
+	flex: 1;
+	min-width: 0;
+}
+
+nav {
+	display: flex;
+	align-items: center;
+}
+
+nav> div {
+	margin-right: 5px;
+}
+
+nav >img {
+	cursor: pointer;
+}
+
+ul {
+	margin: 0; padding: 0;
+	list-style: none;
+	display: flex;
+}
+
+li {
+	border: 1px solid transparent;
+	padding: 0.5em;
+	width: 120px;
+	box-sizing: border-box;
+}
+
+#list li {
+	color: #373d3f;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+li:last-child {
+    white-space: initial;
+    word-wrap: break-word;
+	flex: 1;
+}
+
+#list >ul {
+	border-bottom: 1px solid #c1c3d1;
+}
+
+#list> ul:nth-child(odd) {
+	background-color: #ebebeb;
+}
+
+@keyframes grow {
+	from {
+		transform: scale(1);
+	}
+	to {
+		transform: scale(1.5);
+	}
+}
+
+span.column.container {
+    position: relative;
+    height: 100%;
+    display: none;
+}
+
+.button.glyph.column:hover +span.column.container,
+span.column.container:hover {
+    display: initial;
+}
+
+#column {
+    position: absolute; top: 100%; right: 0;
+    background-color: #eee;
+    border: 1px solid #777;
+    z-index: 1;
+}
+
+#list >ul.hidden,
+body.keyword #list> ul:not(.keyword),
+body.normal #list> ul:not([data-normal]),
+body.critical #list> ul:not([data-critical]),
+body.shutdown #list> ul:not([data-shutdown]),
+body.disabled #list> ul:not([data-disabled]) {
+	display: none;
+}
+
+div.find input {
+    box-sizing: border-box;
+    height: 2em;
+    font: 12px "맑은 고딕", Tahoma, Arial;
+}
+
+#list li.status {
+    color: #fff;
+    font-weight: bold;
+    text-align: center;
+}
+
+#list li.emergency {
+    background-color: #800000;
+}
+
+#list li.alert {
+    background-color: #f00;
+}
+
+#list li.critical {
+    background-color: #b598c1;
+}
+
+#list li.error {
+    background-color: #ffa500;
+}
+
+#list li.warning {
+    background-color: #fae187;
+}
+
+#list li.notice {
+    background-color: #a0d995;
+}
+
+#list li.informational {
+    background-color: #48789f;
+}
+
+#list li.debug {
+    background-color: #b3bac2;
+}
+
+#save {
+    font-family: "Font Awesome 5 Free";
+    position: absolute; left: 10px; bottom: 10px;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+#save:hover {
+    color: #fcba30;
+    transition: color 0.5s linear;
+}
+
+/*button glyphicon*/
+span.glyph {
+    display: inline-block;
+    padding: 0.5em 1em 0.5em 4em;
+    color: #fff;
+    vertical-align: middle;
+    position: relative;
+    cursor: pointer;
+    margin-left: 0.5em;
+}
+
+span.glyph::before {
+    font-family: "Glyphicons Halflings";
+    background: rgba(0,0,0,0.15);
+    position: absolute; top: 0; bottom: 0; left: 0; width: 3em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+span.glyph {
+    background-color: #fff;
+    color: #333;
+    border:1px solid #ccc;
+    width: 3em;
+}
+
+span.glyph:hover,
+span.glyph:focus {
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+
+span.glyph.column {
+    background-color: #5cb85c;
+    border-color: #4cae4c;
+    color: #fff;
+    width: 4em;
+}
+
+span.glyph.column:hover,
+span.glyph.column:focus {
+    background-color: #47a447;
+    border-color: #398439;
+}
+
+span.glyph.realtime {
+    color: #fff;
+    background-color: #5bc0de;
+    border-color: #46b8da;
+    width: 4em;
+}
+
+span.glyph.realtime:hover,
+span.glyph.realtime:focus {
+    background-color: #39b3d7;
+    border-color: #269abc;
+}
+
+span.glyph.export {
+    color: #fff;
+    background-color: #f0ad4e;
+    border-color: #eea236;
+}
+
+span.glyph.export:hover,
+span.glyph.export:focus {
+    background-color: #ed9c28;
+    border-color: #d58512;
+}
+
+span.glyph.cancel {
+    background-color: #d9534f;
+    border-color: #d43f3a;
+}
+
+span.glyph.cancel:hover,
+span.glyph.cancel:focus {
+    background-color: #d2322d;
+    border-color: #ac2925;
+}
+
+span.glyph:active {
+    box-shadow: inset 0 3px 5px rgba(0,0,0,0.125);
+}
+
+span.glyph.apply::before {
+    content: "\e013";
+}
+
+span.glyph.cancel::before {
+    content: "\e014";
+}
+
+span.glyph.column::before {
+    content: "\e011";
+}
+
+span.glyph.find::before {
+    content: "\e003";
+}
+
+span.glyph.realtime::before {
+    content: "\e031";
+}
+
+span.glyph.export::before {
+    content: "\e025";
+}
+
+/**/
+
+		</style>
+				
+	</head>
+	
+	<body class="">
+		<article>
+			<aside>
+                <div class="find">
+                    <input type="date">
+                    <input type="date">
+                    <input type="text">
+                    <span class="glyph button find" title="Search from database">Find</span>
+                </div>
+                <nav>
+                    <span class="glyph button export" title="Export to csv file">Export</span>
+                    <span class="glyph button realtime" title="Show realtime log">Realtime</span>
+                    <span class="glyph button column" title="Select columns">Columns</span>
+                    <span class="column container">
+                        <table id="column">
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Date</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Time</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Facility</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Severity</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Hostname</td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>Message</td>
+                            </tr>
+                        </table>
+                    </span>
+				</nav>
+			</aside>
+			
+			<header>
+				<ul id="header">
+                    <li>Date</li>
+                    <li>Time</li>
+                    <li>Facility</li>
+                    <li>Severity</li>
+                    <li>Hostname</li>
+                    <li>Message</li>
+				</ul>
+			</header>
+			
+			<div id="list">
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>08:13:47</li>
+                    <li>system daemons</li>
+                    <li class="status critical">Critical</li>
+                    <li>192.168.0.10</li>
+                    <li>인가되지 않은 사용자 접속 시도</li>
+                </ul>
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>10:29:01</li>
+                    <li>local use 0</li>
+                    <li class="status informational">Informational</li>
+                    <li>192.168.0.25</li>
+                    <li>원격 로그인 접속 Host 172.16.10.9 User administrator</li>
+                </ul>
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>12:05:08</li>
+                    <li>system daemons</li>
+                    <li class="status emergency">Emergency</li>
+                    <li>172.16.5.200</li>
+                    <li>System Down</li>
+                </ul>
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>13:49:58</li>
+                    <li>local use 3</li>
+                    <li class="status alert">Alert</li>
+                    <li>192.168.200.50</li>
+                    <li>Host 172.16.30.4 Application X not work</li>
+                </ul>
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>14:08:01</li>
+                    <li>mail system</li>
+                    <li class="status error">Error</li>
+                    <li>192.168.80.10</li>
+                    <li>너무 많은 메일 수신 시도</li>
+                </ul>
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>15:15:36</li>
+                    <li>clock daemon</li>
+                    <li class="status warning">Warning</li>
+                    <li>192.168.30.99</li>
+                    <li>동기화 오류 발생</li>
+                </ul>
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>16:50:11</li>
+                    <li>user-level messages</li>
+                    <li class="status debug">Debug</li>
+                    <li>192.168.40.123</li>
+                    <li>화면 보호기 동작중</li>
+                </ul>
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>17:09:22</li>
+                    <li>security/authorization messages</li>
+                    <li class="status notice">Notice</li>
+                    <li>192.168.100.50</li>
+                    <li>보안 감사 시작</li>
+                </ul>
+                <ul>
+                    <li>2019-10-01</li>
+                    <li>18:20:33</li>
+                    <li>local use 0</li>
+                    <li class="status informational">Informational</li>
+                    <li>192.168.0.25</li>
+                    <li>원격 로그인 종료 Host 172.16.10.9 User administrator</li>
+                </ul>
+            </div>
+			<footer>
+                
+				<a id="save" title="CSV 내보내기">
+					&#xf019; Download
+				</a>
+			</footer>
+		</article>
+		
+		<div class="bg_loading"></div>
+	
+	</body>
+	
+</html>
