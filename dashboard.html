@@ -605,6 +605,7 @@ function initialize() {
 
     $.request.listen(onEvent);
 }
+
 function initNode() {
     switch (this.status) {
     case 200:
@@ -632,7 +633,6 @@ function initSetting () {
             target: "node"
         }, initNode);
 
-        init
         break;
     default:
         showMessage(this);

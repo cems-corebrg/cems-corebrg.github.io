@@ -5,6 +5,7 @@
         WIDTH = 10,
         DEPTH = 15,
         THICK = 0.5,
+        BORDER = 0.5,
         Label = function() {
             this.initialize(arguments);
         },
@@ -186,13 +187,18 @@
             this.position.x -= (box.max.x - box.min.x) /2;
             this.position.z += (box.max.z - box.min.z) /2;
 
+            if (this.device.getObjectByName("status")) {
+                this.position.x += (THICK +BORDER);
+                this.position.z -= BORDER;
+            }
+
             const position = this.position.project(camera);    
 
             position.x = (position.x +1) /2 * size.width;
             position.y = -(position.y -1) /2 * size.height;
             
-            this.label.style.left = position.x +"px";
-            this.label.style.top = position.y +"px";
+            this.label.style.left = `${position.x}px`;
+            this.label.style.top = `${position.y}px`;
         }
     };
 
@@ -266,23 +272,25 @@
         }
 
         if (args.status) {
-            const marker = new THREE.Mesh(new THREE.BoxBufferGeometry(WIDTH +3, args.model.unit -0.2, DEPTH +1), new THREE.MeshBasicMaterial({
+            const status = new THREE.Mesh(new THREE.BoxBufferGeometry(WIDTH + THICK *2 + BORDER *2, args.model.unit -0.2, DEPTH + BORDER *2), new THREE.MeshBasicMaterial({
                 transparent: true,
                 opacity: 0.5
             }))
             
             switch(args.status) {
             case "shutdown":
-                marker.material.color = new THREE.Color("#ff0000");
+                status.material.color = new THREE.Color("#ff0000");
 
                 break;
             case "critical":
-                marker.material.color = new THREE.Color("#ff5a00");
+                status.material.color = new THREE.Color("#ff5a00");
 
                 break;
             }
 
-            device.add(marker);
+            status.name = "status";
+
+            device.add(status);
         }
 
         intersectArray.push(model);
