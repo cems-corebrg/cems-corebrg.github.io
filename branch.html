@@ -50,44 +50,7 @@ nav >span:hover {
     background-color: #0084ff;
 }
 
-aside {
-    position: absolute; top: 0; right: 0; left: 0;
-    padding: 1em;
-    text-align: center;
-    font-weight: bold;
-    color: #fff;
-    pointer-events: none;
-}
-
-#event {
-    cursor: pointer;
-    pointer-events: all;
-}
-
-#event::before,
-#event::after {
-    display: inline-flex; align-items: center; justify-content: center;
-    background-color: #ffa500;
-    border: 1px solid #c46c00;
-    height: 3em;
-    box-sizing: border-box;
-}
-
-#event::before {
-    content: attr(data-count);
-    width: 3em; 
-	border-radius: 50%;
-}
-
-#event::after {
-    content: attr(data-message);
-    padding: 0 1em 0 1em;
-	margin-left: 1em;
-	border-radius: 1.5em 0 0 1.5em;
-}
-
 body:not(.dialog) #dialog,
-body:not(.event) #event,
 body:not(.popup) nav {
     display: none;
 }
@@ -119,42 +82,12 @@ function resetDialog() {
     document.getElementById("frame").contentWindow.location.reload();
 }
 
-function findParentFromStage(id) {
-    const upper = String($.upper);
-
-    for (let parent=String(id), tmp; parent; parent = tmp) {
-        if (!(parent in $.positionData)) {
-            return;
-        }
-
-        tmp = String($.positionData[parent].parent);
-        
-        if (tmp === upper) {
-            return parent;
-        }
-    }
-}
-
 function showChart(id) {
     const popup = window.open();
 
     popup.sessionStorage.setItem("node_id", id);
 
     popup.location.replace("/chart.html");
-}
-
-function onEvent(event) {
-    $.event.dataset.count = (count => {
-        if (isNaN(count)) {
-            return "9+";
-        } else {
-            return ++count > 9? "9+": count;
-        }
-    }) (Number($.event.dataset.count));
-
-    $.event.dataset.message = `${event.name || event.ip || ""} ${event.message}`;
-
-    document.body.classList.add("event");
 }
 
 function getPositionData() {
@@ -182,36 +115,13 @@ function showMessage(xhr) {
             <main>
                 <iframe id="frame"></iframe>
             </main>
-            <nav>
-                <span id="restore" title="창 복원">
-                    &#xf2d0;
-                </span>
-            </nav>
-            <aside>
-                <span id="event" data-count="0" data-message="No message."></span>
-            </aside>
             <iframe id="dialog"></iframe>
+
         <script>
-if (opener) {
-    window.account = opener.account;
-
-    if (opener.onRestore) {
-        document.body.classList.add("popup");
-        
-        document.getElementById("restore").onclick = e => {
-            if (opener && !opener.closed) {
-                opener.onRestore("branch");
-
-                close();
-            } else {
-                alert("Error!\n\n창 복원 오류.");
-            }
-        };
-    }
+if (opener && opener.account) {
+    window.account = JSON.parse(JSON.stringify(opener.account));
 } else if (top !== window && top.account) {
-    window.account = top.account;
-
-    document.body.classList.add("frame");
+    window.account = JSON.parse(JSON.stringify(top.account));
 } else {
     throw window.location.replace("/warning.html");
 }
@@ -220,15 +130,8 @@ if (opener) {
         <script>
 
 const $ = {
-        request: new Request(),
-        event: document.getElementById("event")
+        request: new Request()
     };
-
-document.getElementById("event").onclick = e => {
-    document.body.classList.remove("event");
-
-    $.event.dataset.count = 0;
-};
 
 $.request.execute({
     command: "get",

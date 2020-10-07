@@ -130,7 +130,8 @@
             svgAddr = document.createElementNS(SVG_NS_URI, "tspan"),
             svgName = document.createElementNS(SVG_NS_URI, "tspan"),
             svgBG = document.createElementNS(SVG_NS_URI, "circle"),
-            size = args.size || ICON_SIZE;
+            size = args.size || ICON_SIZE,
+            radius = size * Math.sin(Math.PI /4);
 
         svgIcon.setAttribute("x", -size /2);
         svgIcon.setAttribute("y", -size /2);
@@ -139,7 +140,8 @@
         
         svgDevice.setAttribute("transform", "translate("+ pos.x +","+ pos.y +")");
         
-        svgBG.setAttribute("r", size * Math.sin(Math.PI /4));
+        svgBG.setAttribute("r", radius);
+        svgBG.setAttribute("stroke-width", radius);
         svgBG.setAttribute("cx", 0);
         svgBG.setAttribute("cy", 0);
 
@@ -170,9 +172,9 @@
         svgLabel.setAttribute("y", size);
         svgLabel.setAttribute("dominant-baseline", "top");
 
+        svgDevice.appendChild(svgBG);
         svgDevice.appendChild(svgIcon);
         svgDevice.appendChild(svgLabel);
-        svgDevice.appendChild(svgBG);
         
         svgDevice.classList.add("node");
         
@@ -201,10 +203,6 @@
         return svgDevice;
     };
 
-    /**
-    맵 상에 peer가 존재하거나 하위 그룹에 존재하면 Path
-    상위에 존재하면 Uplink
-    **/
     window.addPath = function (args) {
         const
             nodeFrom = args.nodeFrom,

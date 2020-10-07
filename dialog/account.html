@@ -5,6 +5,7 @@
 		<title>dialog</title>
 		
 		<style>
+
 @import "/css/style.css";
 @import "/css/fa.css";
 		
@@ -64,23 +65,15 @@ main {
     position: relative;
 }
 
-footer{
+footer {
 	display: flex;
+	margin-top: 1em;
 }
 
-footer> input {
-	flex: 1;
-	border-radius: 1.2em;
-	background-color: #0084ff;
-	color: #fff;
-	border: .2em solid transparent;
-	padding: .5em;
-}
-
-footer> input:hover {
-	background-color: #fff;
-	color: #0084ff;
-	border-color: #0084ff;
+footer input {
+    flex: 1;
+    font-family: "Font Awesome 5 Free";
+    font-weight: bold;
 }
 
 #close {
@@ -99,12 +92,153 @@ footer> input:hover {
 	position: absolute;
 }
 
+body:not(.root) footer,
 body:not(.edit) input[type=reset] {
 	display: none;
 }
 
         </style>
         <script>
+
+function initialize(account) {
+    if (account) {
+        $.form.elements["username"].value = account.username;
+        $.form.elements["username"].disabled = true;
+        $.form.elements["level"].value = account.level;
+        
+        $.password = account.password;
+
+        $.form.elements["password"].required = false;
+        $.form.elements["password2"].required = false;
+        
+        document.body.classList.add("edit");
+    }
+    
+    document.body.classList.remove("loading");
+}
+    
+function onReset (e) {
+    e.preventDefault();
+
+    if (!confirm("Confirm.\n\n계정을 삭제하겠습니까?")) {
+        return;
+    }
+
+    document.body.classList.add("loading");
+
+    new Request().execute({
+        command: "remove",
+        target: "account",
+        username: $.form.elements["username"].value
+    }, function () {
+        switch (this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            document.body.classList.remove("loading");
+
+            break;
+        case 409:
+            alert("Error!\n\n계정 삭제 실패.");
+
+            document.body.classList.remove("loading");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function isValidPassword(password) {
+    return /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{10,}$/.test(password);
+}
+
+function onSubmit (e) {
+    e.preventDefault();
+    
+    const
+        request = {
+            target: "account",
+            username: $.form.elements["username"].value,
+            account: {
+                username: $.form.elements["username"].value,
+                level: parseInt($.form.elements["level"].value)
+            }
+        };
+        
+    if (document.body.classList.contains("edit")) {
+        // 수정
+        if ($.form.elements["password"].value !== $.form.elements["password2"].value) {
+            if ($.form.elements["password"].value) {
+                alert("Error!\n\n비밀번호가 확인 비밀번호와 일치하지 않습니다.");
+
+                $.form.elements["password2"].select();
+            }
+            else {
+                alert("Error!\n\n비밀번호를 입력하세요.");
+
+                $.form.elements["password"].select();
+            }
+            
+            return;
+        }
+        else if ($.form.elements["password"].value){
+            if (!isValidPassword($.form.elements["password"].value)) {
+                $.form.elements["password"].select();
+
+                return alert("Error!\n\n비밀번호는 10자 이상이고\n숫자, 문자, 특수문자를 모두 포함해야 합니다.");
+            }
+
+            request.account.password = hex_md5($.form.elements["password"].value);
+        }
+        else {
+            request.account.password = $.password;
+        }
+
+        request.command = "set";
+    }
+    else {
+        // 생성
+        if ($.form.elements["password"].value !== $.form.elements["password2"].value) {
+            alert("Error!\n\n비밀번호가 확인 비밀번호와 일치하지 않습니다.");
+
+            $.form.elements["password2"].select();
+            
+            return;
+        }
+
+        request.command = "add";
+        
+        request.account.password = hex_md5($.form.elements["password"].value);
+    }
+    
+    document.body.classList.add("loading");
+
+    new Request().execute(request, function () {
+        switch (this.status) {
+        case 200:
+            top.closeDialog(true);
+            
+            close();
+
+            document.body.classList.remove("loading");
+
+            break;
+        case 409:
+
+            alert(`Error!\n\n계정 ${request.command == "add"? "추가": "수정"} 실패`);
+
+            document.body.classList.remove("loading");
+
+            break;
+        default:
+            alert(top.getMessage(this.status));
+
+            console.log(this.responseText && JSON.parse(this.responseText).error);
+        }
+    });
+}
 
 function showMessage(xhr) {
     switch (xhr.status) {
@@ -149,6 +283,11 @@ function showMessage(xhr) {
                         </td>
                     </tr>
                     <tr>
+                        <td colspan="2">
+                            * 숫자, 문자, 특수문자(!@#$%^*+=-) 포함
+                        </td>
+                    </tr>
+                    <tr>
                         <th>confirm password</th>
                         <td>
                             <input type="password" name="password2"
@@ -169,8 +308,8 @@ function showMessage(xhr) {
                 </table>
                 <i>※ 더이상 Root 레벨 계정이 존재하지 않는 경우 삭제할 수 없습니다.</i>
                 <footer>
-                    <input type="reset" value="삭제" disabled>
-                    <input type="submit" value="확인" disabled>
+                    <input type="reset" value="&#xf1f8; 삭제">
+				    <input type="submit" value="&#xf0c7; 저장">
                 </footer>
                 <div class="bg_loading"></div>
             </main>
@@ -180,164 +319,50 @@ function showMessage(xhr) {
         <script src="/js/request.js"></script>
 		<script>
 
-function close() {
-	top.closeDialog(true);
-}
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        username: search.get("username") || undefined,
+        form: document.querySelector("form")
+    };
 
 document.addEventListener("keydown", function (e) {
 	switch (e.keyCode) {
 	case 27:
-		close();
+        top.closeDialog();
 		
 		break;
 	}
 });
 
-document.getElementById("close").onclick = close;
+document.getElementById("close").onclick = e => top.closeDialog();
 
 if (top.account.level === 0) {
-	document.querySelector("input[type=submit]").disabled = false;
-	document.querySelector("input[type=reset]").disabled = false;
+    $.form.onsubmit = onSubmit;
+    $.form.onreset = onReset;
+
+    document.body.classList.add("root");
 }
 
-(function (form) {
-    var
-        opener, password;
+if ($.username) {
+    $.request.execute({
+        command: "get",
+        target: "account",
+        username: $.username
+    }, function () {
+        switch (this.status) {
+        case 200:
+            initialize(JSON.parse(this.responseText));
 
-	form.onreset = function(e) {
-		e.preventDefault();
-
-		if (!confirm("Confirm.\n\n계정을 삭제하겠습니까?")) {
-            return;
+            break;
+        default:
+            showMessage(this);
         }
-
-        document.body.classList.add("loading");
-
-        new Request().execute({
-            command: "remove",
-            target: "account",
-            username: form.elements["username"].value
-        }, function () {
-            switch (this.status) {
-            case 200:
-                opener.location.reload();
-                
-                close();
-
-                document.body.classList.remove("loading");
-
-                break;
-            case 409:
-                alert("Error!\n\n계정 삭제 실패.");
-
-                document.body.classList.remove("loading");
-
-                break;
-            default:
-                showMessage(this);
-            }
-        });
-	};
-
-	form.onsubmit = function (e) {
-		e.preventDefault();
-        
-        const
-            request = {
-                target: "account",
-                username: form.elements["username"].value,
-                account: {
-                    username: form.elements["username"].value,
-                    level: parseInt(form.elements["level"].value)
-                }
-            };
-            
-        if (document.body.classList.contains("edit")) {
-            // 수정
-            if (form.elements["password"].value !== form.elements["password2"].value) {
-                if (form.elements["password"].value) {
-                    alert("Error!\n\n비밀번호가 확인 비밀번호와 일치하지 않습니다.");
-
-                    form.elements["password2"].select();
-                }
-                else {
-                    alert("Error!\n\n비밀번호를 입력하세요.");
-
-                    form.elements["password"].select();
-                }
-                
-                return;
-            }
-            else if (form.elements["password"].value){
-                request.account.password = hex_md5(form.elements["password"].value);
-            }
-            else {
-                request.account.password = password;
-            }
-
-            request.command = "set";
-        }
-        else {
-            // 생성
-            if (form.elements["password"].value !== form.elements["password2"].value) {
-                alert("Error!\n\n비밀번호가 확인 비밀번호와 일치하지 않습니다.");
-
-                form.elements["password2"].select();
-                
-                return;
-            }
-
-            request.command = "add";
-            
-            request.account.password = hex_md5(form.elements["password"].value);
-        }
-		
-        document.body.classList.add("loading");
-
-		new Request().execute(request, function () {
-            switch (this.status) {
-            case 200:
-                opener.location.reload();
-                
-                close();
-
-                document.body.classList.remove("loading");
-
-                break;
-            case 409:
-
-                alert("Error!\n\n계정 "+(request.command == "add"? "추가": "수정")+" 실패");
-
-                document.body.classList.remove("loading");
-
-                break;
-            default:
-                alert(top.getMessage(this.status));
-
-                console.log(this.responseText && JSON.parse(this.responseText).error);
-            }
-        });
-	};
-
-	window.initialize = function (username, account) {
-		opener = this;
-		
-		if (username) {	
-			form.elements["username"].value = username;
-			form.elements["username"].disabled = true;
-			form.elements["level"].value = account.level;
-			
-            password = account.password;
-
-            form.elements["password"].required = false;
-            form.elements["password2"].required = false;
-            
-			document.body.classList.add("edit");
-		}
-		
-		document.body.classList.remove("loading");
-	};
-}) (document.querySelector("form"));
+    });
+} else {
+    initialize();
+}
 
 		</script>
 	

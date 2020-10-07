@@ -254,7 +254,7 @@ function onCloseDetails (e) {
     document.body.classList.remove("details");
 }
 
-function onCreateLink (e) {
+function onCreatePath (e) {
     document.body.classList.add("loading");
 
     $.request.execute({
@@ -343,8 +343,7 @@ function onAddLink (e) {
     $.request.execute({
         command: "add",
         target: "link",
-        nodeFrom: $.idFrom,
-        nodeTo: $.idTo
+        path: $.id
     }, function () {
         switch(this.status) {
         case 409:                
@@ -365,8 +364,6 @@ function onRemoveLink (e) {
     $.request.execute({
         command: "remove",
         target: "link",
-        nodeFrom: $.idFrom,
-        nodeTo: $.idTo,
         id: Number(document.querySelector(".summary.selected").dataset.id)
     }, function () {
         switch(this.status) {
@@ -388,11 +385,13 @@ function onSubmit (e) {
     e.preventDefault();
 
     const path = {
-            nodeFrom: $.idFrom,
-            nodeTo: $.idTo
+            id: $.id,
+            type: "",
+            color: "",
+            size: 0
         };
 
-    ["type", "color", "size"].forEach(name => {
+    $.options.forEach(name => {
         if ($.form.elements["use_"+ name].checked && $.form.elements[name].value) {
             path[name] = $.form.elements[name].value;
         }
@@ -401,8 +400,6 @@ function onSubmit (e) {
     $.request.execute({
         command: "set",
         target: "path",
-        nodeFrom: $.idFrom,
-        nodeTo: $.idTo,
         path: path
     }, function () {
         switch(this.status) {
@@ -419,13 +416,7 @@ function onSubmit (e) {
 function onReset (e) {
     e.preventDefault();
 
-    if ($.linkData) {
-        alert("Notice!\n\n경로에 링크가 존재합니다.\n링크를 먼저 삭제하십시오.");
-    
-        return;
-    }
-
-    if (!(confirm("Confirm.\n\n경로를 삭제하겠습니까?"))) {
+    if (!(confirm(CONFIRM_REMOVE(CONST_PATH["kr"])["kr"]))) {
         return;
     }
 
@@ -434,8 +425,7 @@ function onReset (e) {
     $.request.execute({
         command: "remove",
         target: "path",
-        nodeFrom: $.idFrom,
-        nodeTo: $.idTo,
+        id: $.id
     }, function () {
         switch(this.status) {
         case 200:
@@ -451,11 +441,11 @@ function onReset (e) {
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert(`Notice!\n\n세션 만료.`);
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -550,6 +540,7 @@ function showMessage(xhr) {
 		</article>
         
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
 		<script>
 
 const
@@ -560,6 +551,7 @@ const
         customInputMap: {},
         idFrom: Number(search.get("from")) || undefined,
         idTo: Number(search.get("to")) || undefined,
+        options: ["type", "color", "size"]
     };
 
 document.addEventListener("keydown", function (e) {
@@ -576,7 +568,7 @@ if (top.account.level === 0) {
 }
 
 document.getElementById("close").onclick = e => top.closeDialog();
-document.getElementById("create").onclick = onCreateLink;
+document.getElementById("create").onclick = onCreatePath;
 document.getElementById("add_link").onclick = onAddLink;
 document.getElementById("set_link").onclick = onSaveLink;
 document.getElementById("remove_link").onclick = onRemoveLink;
@@ -585,7 +577,7 @@ document.body.querySelector("nav").onclick = onCloseDetails;
 $.form.onsubmit = onSubmit;
 $.form.onreset = onReset;
 
-["type", "color", "size"].forEach(name => {
+$.options.forEach(name => {
     $.form.elements["use_"+ name].onclick = e => {
         const element = $.form.elements[name];
 
@@ -709,9 +701,11 @@ function initPath() {
         switch (this.status) {
         case 200:
             const path = JSON.parse(this.responseText);
+            
+            $.id = path.id;
 
-            ["type", "color", "size"].forEach(name => {
-                if (name in path) {
+            $.options.forEach(name => {
+                if (path[name]) {
                     $.form.elements[name].value = path[name];
                     $.form.elements[name].disabled = false;
                     $.form.elements["use_"+ name].checked = true;
@@ -719,6 +713,8 @@ function initPath() {
             });
             
             initLink(JSON.parse(this.responseText));
+
+            document.body.classList.add("initialized");
 
             break;
         case 204:
@@ -732,13 +728,10 @@ function initPath() {
 }
 
 function initLink(path) {
-    document.body.classList.add("initialized");
-
     $.request.execute({
         command: "get",
         target: "link",
-        nodeFrom: $.idFrom,
-        nodeTo: $.idTo
+        path: $.id
     }, function () {
         switch(this.status) {
         case 200:
@@ -795,7 +788,7 @@ function openLinkDialog() {
 
     if (link) {
         if (link.indexFrom) {
-            document.getElementById("index_from").value = link.indexTo;
+            document.getElementById("index_from").value = link.indexFrom;
         } else {
             document.getElementById("index_from").selectedIndex = -1;
         }

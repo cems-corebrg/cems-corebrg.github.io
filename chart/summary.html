@@ -41,7 +41,7 @@ section {
 }
 
 section.information {
-    flex: none;
+    flex: 1 0;
 }
 
 section.hr_processor_load {
@@ -49,11 +49,11 @@ section.hr_processor_load {
 }
 
 section.hr_storage_memory {
-	flex: 1 1 250px;
+	flex: none;
 }
 
 section.response_time {
-	flex: 1 1 400px;
+	flex: none;
 }
 
 section.hr_storage_used {
@@ -64,15 +64,19 @@ section.throughput {
     flex: 1 1 1024px;
 }
 
-.selectable:not(.not):hover {
+.selectable:hover {
     cursor: pointer;
     outline:3px dotted #ddd;
 }
 
-.not.selectable,
-.not.selectable .selectable {
-	cursor: not-allowed;
+.error.selectable:hover {
     outline: none;
+    background-color: rgba(255, 255, 255, 0.5);
+    color: #000000;
+}
+
+.not.selectable {
+	pointer-events: none;
 }
 
 section.status::after {
@@ -134,22 +138,28 @@ section.status.critical::after {
 
 .processor.bar.green {
     transform: rotate(calc(-180deg * 0.3));
-    background-color: rgb(0, 255, 0);
+    background-color: rgb(0, 137, 123);
 }
 
 .processor.bar.orange {
     transform: rotate(calc(180deg * 0.7));
-    background-color: rgb(255, 180, 0);
+    background-color: rgb(246, 191, 38);
 }
 
 .processor.bar.red {
     transform: rotate(calc(180deg * 0.9));
-    background-color: rgb(255, 0, 0);
+    background-color: rgb(142, 36, 170);
 }
 
 .processor.bar.mask {
     background-color: #fefefe;
-    transition: 1s linear;
+    animation: pGauge 1s cubic-bezier(0, 1, 1, 1.2);
+}
+
+@keyframes pGauge {
+    from {
+		transform: rotate(0deg);
+	}
 }
 
 .processor.label {
@@ -169,10 +179,6 @@ ul {
     display: flex;
 }
 
-.response.chart {
-     flex: 1 1 auto;
-}
-
 .response.time {
     position: relative;
     width: 120px;
@@ -186,15 +192,25 @@ ul {
     border-radius: 50%;
     background-color: #333;
     box-shadow: 0px 0px 3px 2px #aaa;
+    display: flex; justify-content: center; align-items: center;
 }
 
 #response {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
     color: #0084ff;
     font-size: 1.6em;
     font-weight: bolder;
     text-shadow: 0 2px 3px #000;
+    animation: time 1s cubic-bezier(0, 1, 1, 1.2);
+}
+
+@keyframes time {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1.5);
+    }
 }
 
 .response iframe {
@@ -205,11 +221,18 @@ ul {
 /*memory*/
 .memory.container {
     display: flex;
+    padding: 0 1em;
 }
 
 .memory.gauge {
     flex: none;
     position: relative;
+}
+
+.memory.gauge.green .red,
+.memory.gauge.green .orange,
+.memory.gauge.orange .red {
+    display: none;
 }
 
 .memory.used {
@@ -276,7 +299,14 @@ ul {
 	position: absolute; left: 0; right: 0; bottom: -5em;
 	height: 0;
     padding-top: 3em;
-    transition: 1s linear;
+    animation: mGauge 1s cubic-bezier(0, 1, 1, 1.2);
+}
+
+@keyframes mGauge {
+    from {
+        bottom: 0;
+        height: 0;
+    }
 }
 
 .fill,
@@ -291,26 +321,26 @@ ul {
 }
 
 .fill.red {
-    background-color: rgba(255, 0, 0, 0.5);
+    background-color: rgba(142, 36, 170, 0.5);
 }
 
 .fill.red::before {
-    background-color: rgb(255, 0,0);
+    background-color: rgb(142, 36, 170);
 }
 
 .fill.orange {
-    background-color: rgba(255, 180, 0, 0.5);
+    background-color: rgba(246, 191, 38, 0.5);
 }
 .fill.orange::before {
-    background-color: rgb(255, 180, 0);
+    background-color: rgb(246, 191, 38);
 }
 
 .fill.green {
-    background-color: rgba(0, 255, 0, 0.5);
+    background-color: rgba(0, 137, 123, 0.5);
 }
 
 .fill.green::before {
-    background-color: rgb(0, 255, 0);
+    background-color: rgb(0, 137, 123);
 }
 /**/
 
@@ -447,7 +477,7 @@ storage
 .throughput.gauge {
     height: 2em;
     box-sizing: border-box;
-    background: linear-gradient(to right, rgb(0, 255, 0) 70%, rgb(255, 180, 0) 70% 90%, rgb(255, 0, 0) 90%);
+    background: linear-gradient(to right, rgb(0, 137, 123) 70%, rgb(246, 191, 38) 70% 90%, rgb(142, 36, 170) 90%);
     position: relative;
 }
 
@@ -463,7 +493,13 @@ storage
 .throughput.mask {
     background-color: #424242;
     position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-    transition: 1s linear;
+    animation: tGauge 1s cubic-bezier(0, 1, 1, 1.2);
+}
+
+@keyframes tGauge {
+    from {
+		left: 0;
+	}
 }
 
 .hr_storage_used >li {
@@ -565,10 +601,6 @@ body.filter .throughput.item.disabled {
 	display: none;
 }
 
-#frame_response {
-    pointer-events: none;
-}
-
 body:not(.hr_processor_load) section.hr_processor_load,
 body:not(.hr_storage_used) section.hr_storage_used,
 body:not(.hr_storage_memory) section.hr_storage_memory,
@@ -576,24 +608,6 @@ body:not(.throughput) section.throughput,
 body:not(.debug) .throughput >li.debug,
 .application {
 	display: none;
-}
-
-@keyframes vbar {
-	0% {
-		transform: scale(1, 0);
-	}
-	100% {
-		transform: scale(1, 1);
-	}
-}
-
-@keyframes hbar {
-	0% {
-		transform: scale(0, 1);
-	}
-	100% {
-		transform: scale(1, 1);
-	}
 }
 
 /* switch button*/
@@ -652,25 +666,24 @@ input:checked + .slider:before {
 		<script>
 		
 function createStorageItem(index, label) {
-	const item = storageItem.cloneNode(true);
+	const item = document.querySelector(".layout>.hr_storage_used.item").cloneNode(true);
 	
 	item.children[1].textContent = label;
 
-    window.storageIndexObj[index] = {
+    $.storageIndexObj[index] = {
         item: item,
         used: item.children[3],
         size: item.children[2],
-        gauge: item.children[4],
-        mask: item.children[4].querySelector(".mask")
+        gauge: item.children[4]
     }
 
 	return item;
 }
 
 function createIFaceItem(index, name, descr, alias, type) {
-	const item = iFaceItem.cloneNode(true);
+	const item = document.body.querySelector(".layout>.throughput.item").cloneNode(true);
 
-    window.throughputIndexObj[index] = {
+    $.throughputIndexObj[index] = {
         item: item,
         speed: item.children[4],
         in: item.children[5],
@@ -707,98 +720,104 @@ function initialize(node) {
         //sysName
         (function(sysName) {
             if (sysName) {
-                document.getElementById("sys_name").textContent = sysName;
+                document.getElementById("sys_name").textContent = sysName.value;
             }
-        })(indexData["1.3.6.1.2.1.1.5"]);
+        })(indexData[ITAhM.snmp.oid.sysName]);
 
         //sysDescr
         (function(sysDescr) {
             if (sysDescr) {
-                document.getElementById("sys_name").title = sysDescr;
+                document.getElementById("sys_name").title = sysDescr.value;
             }
-        })(indexData["1.3.6.1.2.1.1.1"]);
+        })(indexData[ITAhM.snmp.oid.sysDescr]);
 
         //sysObjectID
         (function(sysObjectID) {
             if (sysObjectID) {
-                document.getElementById("sys_enterprise").textContent = ITAhM.util.enterpriseFromOID(sysObjectID);
+                document.getElementById("sys_enterprise").textContent = ITAhM.util.enterpriseFromOID(sysObjectID.value);
             }
-        })(indexData["1.3.6.1.2.1.1.2"]);
+        })(indexData[ITAhM.snmp.oid.sysObjectID]);
 
-        //lastResponse
-        (function(lastResponse) {
-            if (lastResponse) {
-                document.getElementById("last_response").textContent = toDateString(lastResponse);
+        //responseTime
+        (function(rtt) {
+            if (rtt) {
+                document.getElementById("response").textContent = `${rtt.value}ms`;
+                document.getElementById("last_response").textContent = toDateString(rtt.timestamp);
             }
-        })(indexData["1.3.6.1.4.1.49447.2"]);
-
+        })(indexData[ITAhM.snmp.oid.responseTime]);
+        
         //스토리지, 물리 메모리
         (function(type, used, size, units, descr) {
-            if (type && used && size && units) {
+            if (type && used && size && units && Number(size.value) > 0) {
                 const data = {
-                        used: Number(used),
-                        size: Number(size),
-                        units: Number(units),
-                        descr: descr || undefined
+                        used: Number(used.value),
+                        size: Number(size.value),
+                        units: Number(units.value),
+                        descr: descr.value || undefined
                     };
                 
-                if (type == "1.3.6.1.2.1.25.2.1.2") {
+                switch(type.value) {
+                case ITAhM.snmp.oid.hrStorageRam:
                     hrStorageMemory[index] = data;
 
-                    window.memoryIndexArray.push(index);
-                } else if (type == "1.3.6.1.2.1.25.2.1.4") {
-                    hrStorageUsed[index] = data;
+                    $.memoryIndexArray.push(index);
+
+                    break;
+                case ITAhM.snmp.oid.hrStorageFixedDisk:
+                hrStorageUsed[index] = data;
+
+                    break;
                 }
             }
-        })(indexData["1.3.6.1.2.1.25.2.3.1.2"]
-            , indexData["1.3.6.1.2.1.25.2.3.1.6"]
-            , indexData["1.3.6.1.2.1.25.2.3.1.5"]
-            , indexData["1.3.6.1.2.1.25.2.3.1.4"]
-            , indexData["1.3.6.1.2.1.25.2.3.1.3"]);
+        })(indexData[ITAhM.snmp.oid.hrStorageType]
+            , indexData[ITAhM.snmp.oid.hrStorageUsed]
+            , indexData[ITAhM.snmp.oid.hrStorageSize]
+            , indexData[ITAhM.snmp.oid.hrStorageAllocationUnits]
+            , indexData[ITAhM.snmp.oid.hrStorageDescr]);
         
         // 인터페이스
         (function(descr, type, bandwidth, ifHighSpeed, ifSpeed, aStatus, oStatus, inOcts, outOcts, inErrs, outErrs, name, alias) {
             if (inOcts && outOcts && (bandwidth || ifHighSpeed || ifSpeed) && inErrs && outErrs && aStatus && oStatus) {
                 const data = {
-                        speed: bandwidth && Number(bandwidth) || ifHighSpeed && Number(ifHighSpeed) *1000000 || ifSpeed && Number(ifSpeed),
-                        inOcts: Number(inOcts),
-                        outOcts: Number(outOcts),
-                        inErrs: Number(inErrs),
-                        outErrs: Number(outErrs),
-                        aStatus: Number(aStatus),
-                        oStatus: Number(oStatus),
-                        type: type && Number(type) || undefined,
-                        descr: descr || undefined,
-                        name: name || undefined,
-                        alias: alias || undefined
+                        speed: bandwidth && Number(bandwidth.value) || ifHighSpeed && Number(ifHighSpeed.value) *1000000 || ifSpeed && Number(ifSpeed.value),
+                        inOcts: Number(inOcts.value),
+                        outOcts: Number(outOcts.value),
+                        inErrs: Number(inErrs.value),
+                        outErrs: Number(outErrs.value),
+                        aStatus: Number(aStatus.value),
+                        oStatus: Number(oStatus.value),
+                        type: type && Number(type.value) || undefined,
+                        descr: descr && descr.value || undefined,
+                        name: name && name.value|| undefined,
+                        alias: alias && alias.value|| undefined
                     };
                 ifEntry[index] = data;
             }
-        })(indexData["1.3.6.1.2.1.2.2.1.2"]
-            , indexData["1.3.6.1.2.1.2.2.1.3"]
+        })(indexData[ITAhM.snmp.oid.ifDescr]
+            , indexData[ITAhM.snmp.oid.ifType]
             , indexData[ITAhM.snmp.oid.bandwidth]
             , indexData[ITAhM.snmp.oid.ifHighSpeed]
-            , indexData["1.3.6.1.2.1.2.2.1.5"]
-            , indexData["1.3.6.1.2.1.2.2.1.7"]
-            , indexData["1.3.6.1.2.1.2.2.1.8"]
-            , indexData["1.3.6.1.4.1.49447.3.1"]
-            , indexData["1.3.6.1.4.1.49447.3.2"]
-            , indexData["1.3.6.1.4.1.49447.3.3"]
-            , indexData["1.3.6.1.4.1.49447.3.4"]
-            , indexData["1.3.6.1.2.1.31.1.1.1.1"]
-            , indexData["1.3.6.1.2.1.31.1.1.1.18"]);
+            , indexData[ITAhM.snmp.oid.ifSpeed]
+            , indexData[ITAhM.snmp.oid.ifAdminStatus]
+            , indexData[ITAhM.snmp.oid.ifOperStatus]
+            , indexData[ITAhM.snmp.oid.inBPS]
+            , indexData[ITAhM.snmp.oid.outBPS]
+            , indexData[ITAhM.snmp.oid.inErrs]
+            , indexData[ITAhM.snmp.oid.outErrs]
+            , indexData[ITAhM.snmp.oid.ifName]
+            , indexData[ITAhM.snmp.oid.ifAlias]);
             
         //CPU
         (function(load) {
             if (load) {
-                hrProcessorLoad.push(Number(load));
+                hrProcessorLoad.push(Number(load.value));
 
-                window.processorIndexArray.push(index);
+                $.processorIndexArray.push(index);
             }
-        })(indexData["1.3.6.1.2.1.25.3.3.1.2"]);
+        })(indexData[ITAhM.snmp.oid.hrProcessorLoad]);
     }
 	
-	document.getElementById("ip").textContent = window.node.ip;
+	document.getElementById("ip").textContent = node.ip;
 	
 	if (!("status" in node) || !node.status) {
 		document.body.classList.add("shutdown");
@@ -811,34 +830,41 @@ function initialize(node) {
             sum = hrProcessorLoad.reduce((a, b) => Number(a)+ Number(b)),
             avg = sum / hrProcessorLoad.length,
             section = document.querySelector("section.hr_processor_load");
-            
-        window.requestAnimationFrame(setProcessor.bind(window, min, avg, max, node.critical["0"] && node.critical["0"]["1.3.6.1.2.1.25.3.3.1.2"]));
         
-        section.onclick = onSelectResource.bind(undefined, "/chart/processor.html", "0");
+        let critical = false;
+        
+        try {
+            critical = node.resource["0"][ITAhM.snmp.oid.cpu].critical;
+        } catch (e) {}
+
+        setProcessor(min, avg, max, critical);
+        
+        section.onclick = onSelectResource.bind(section, "/chart/processor.html", "0");
 
         document.body.classList.add("hr_processor_load");
     }
 
     if (Object.keys(hrStorageMemory).length > 0) {
+        let critical;
+
         for (let index in hrStorageMemory) {
             const
                 indexData = hrStorageMemory[index],
                 section = document.querySelector("section.hr_storage_memory");
 
-            window.requestAnimationFrame(setMemory.bind(window,
+            critical = false;
+
+            try {
+                critical = node.resource[index][ITAhM.snmp.oid.hrStorageUsed].critical;
+            } catch (e) {}
+
+            setMemory(
                 indexData.used,
                 indexData.size,
                 indexData.units,
-                node.critical[index] &&
-                node.critical[index]["1.3.6.1.2.1.25.2.3.1.6"]));
+                critical);
 
-            section.onclick = onSelectResource.bind(window, "/chart/memory.html", index);
-
-            try {
-                if ([index]) {
-                    section.classList.add("critical");
-                }
-            } catch (e) {}
+            section.onclick = onSelectResource.bind(section, "/chart/storage.html", index);
 
             break;
         }
@@ -847,35 +873,40 @@ function initialize(node) {
     }
 
     if (Object.keys(hrStorageUsed).length > 0) {
-        let item, indexData;
+        let item, indexData, critical;
 
         for (let index in hrStorageUsed) {
             indexData = hrStorageUsed[index];
 
-            item = window.storageArea.appendChild(
+            item = document.getElementById("hr_storage_used").appendChild(
                 createStorageItem(index, indexData.descr));
 
-            window.requestAnimationFrame(setStorage.bind(window,
+            critical = false;
+
+            try {
+                critical = node.resource[index][ITAhM.snmp.oid.hrStorageUsed].critical;
+            } catch (e) {}
+
+            setStorage(
                 index,
                 indexData.used,
                 indexData.size,
                 indexData.units,
-                node.critical[index] &&
-                node.critical[index]["1.3.6.1.2.1.25.2.3.1.6"]));
+                critical);
 
-            item.onclick = onSelectResource.bind(window, "/chart/storage.html", index);
+            item.onclick = onSelectResource.bind(item, "/chart/storage.html", index);
             
             document.body.classList.add("hr_storage_used");
         }
     }
     
     if (Object.keys(ifEntry).length > 0) {
-        let item, indexData, usageIn, usageOut;
+        let item, indexData, usageIn, usageOut, critical;
 
         for (let index in ifEntry) {
             indexData = ifEntry[index];
 
-            item = window.interfaceArea.appendChild(
+            item = document.getElementById("throughput").appendChild(
                 createIFaceItem(
                     index,
                     indexData.name,
@@ -890,20 +921,25 @@ function initialize(node) {
                 item.classList.add("shutdown");
             }
             
-            window.requestAnimationFrame(setThroughput.bind(window,
+            critical = false;
+
+            try {
+                critical = node.resource[index][ITAhM.snmp.oid.inBPS].critical
+                    || node.resource[index][ITAhM.snmp.oid.outBPS].critical
+                    || node.resource[index][ITAhM.snmp.oid.inErrs].critical
+                    || node.resource[index][ITAhM.snmp.oid.outErrs].critical;
+            } catch (e) {}
+
+            setThroughput(
                 index,
                 indexData.speed,
                 indexData.inOcts,
                 indexData.outOcts,
-                Math.max(indexData.inErrs, indexData.outErrs)),
-                node.critical[index] &&
-                (node.critical[index]["1.3.6.1.4.1.49447.3.1"] ||
-                node.critical[index]["1.3.6.1.4.1.49447.3.2"] ||
-                node.critical[index]["1.3.6.1.4.1.49447.3.3"] ||
-                node.critical[index]["1.3.6.1.4.1.49447.3.4"]));
+                Math.max(indexData.inErrs, indexData.outErrs),
+                critical);
                 
             if (indexData.speed > 0) {
-                item.onclick = onSelectResource.bind(window, "/chart/throughput.html", index);
+                item.onclick = onSelectResource.bind(item, "/chart/throughput.html", index);
                 
                 item.children[9].onclick = function (index, e) {
                     e.stopPropagation();
@@ -919,9 +955,36 @@ function initialize(node) {
         document.body.classList.add("throughput");
     }
 
-    setDraggable();
+    [].forEach.call(document.body.querySelectorAll("section"), section => {
+		section.draggable = true;
+		
+		section.addEventListener("dragstart", function (e) {
+			e.stopPropagation();
+			
+			$.draggable = this;
+		});
+		
+		section.addEventListener("dragover", function (e) {
+			e.preventDefault();
+			
+			if ($.draggable === this) {
+				return;
+			}
+			
+			switch ($.draggable) {
+			case this.previousElementSibling:
+				this.parentNode.insertBefore(this, $.draggable);
+				
+				break;
+			default:
+				this.parentNode.insertBefore($.draggable, this);
+			}
+		});
+	});
 
-	document.body.classList.remove("loading");
+    document.body.classList.remove("loading");
+    
+    refresh();
 }
 
 function setProcessor(min, avg, max, critical) {
@@ -935,8 +998,14 @@ function setProcessor(min, avg, max, critical) {
     minItem.dataset.rate = min.toFixed(2) +"%";
 
     maxItem.querySelector(".mask").style.transform = "rotate(calc(180deg * "+ (max /100) +"))";
+    
+    maxItem.parentNode.replaceChild(maxItem.cloneNode(true), maxItem);
+
     avgItem.querySelector(".mask").style.transform = "rotate(calc(180deg * "+ (avg /100) +"))";
+    avgItem.parentNode.replaceChild(avgItem.cloneNode(true), avgItem);
+
     minItem.querySelector(".mask").style.transform = "rotate(calc(180deg * "+ (min /100) +"))";
+    minItem.parentNode.replaceChild(minItem.cloneNode(true), minItem);
 
     document.querySelector("section.hr_processor_load").classList[critical? "add": "remove"]("critical");
 }
@@ -955,71 +1024,91 @@ function setMemory(used, size, units, critical) {
         height = 12 - 3;
         
     if (rate > 90) {
+        gauge.className = "memory gauge red";
+
         red.style.height = (height *0.1 * (rate -90) /10)+ "em";
         red.style.bottom = height *0.9 +"em";
+        red.parentNode.replaceChild(red.cloneNode(true), red);
+
         orange.style.height = height *0.2 +"em";
         orange.style.bottom = height *0.7 +"em";
+        orange.parentNode.replaceChild(orange.cloneNode(true), orange);
+
         green.style.height = height *0.7 +"em";
         green.style.bottom = 0;
+        green.parentNode.replaceChild(green.cloneNode(true), green);
     }
     else if (rate > 70) {
-        red.style.height = 0;
-        red.style.bottom = padding;
+        gauge.className = "memory gauge orange";
+
         orange.style.height = (height *0.2 * (rate -70) /20) +"em";
         orange.style.bottom = height *0.7 +"em";
+        orange.parentNode.replaceChild(orange.cloneNode(true), orange);
+
         green.style.height = height *0.7 +"em";
         green.style.bottom = 0;
+        green.parentNode.replaceChild(green.cloneNode(true), green);
     }
     else {
-        red.style.height = 0;
-        red.style.bottom = padding;
-        orange.style.height = 0;
-        orange.style.bottom = padding;
+        gauge.className = "memory gauge green";
+
         green.style.height = (height *0.7 * rate /70) +"em";
         green.style.bottom = 0;
+        green.parentNode.replaceChild(green.cloneNode(true), green);
     }
     
     gauge.dataset.rate = rate +"%";
     gauge.dataset.size = ITAhM.util.toBytesString(size * units);
     document.querySelector(".memory.used").textContent = ITAhM.util.toBytesString(used * units);
-
+    
     document.querySelector("section.hr_storage_memory").classList[critical? "add": "remove"]("critical");
 }
 
 function setStorage(index, used, size, units, critical) {
     const
-        obj = window.storageIndexObj[index],
+        obj = $.storageIndexObj[index],
         rate = used *100 / size;
+    var mask;
 
     obj.size.textContent = ITAhM.util.toBytesString(size * units);
     obj.used.textContent = ITAhM.util.toBytesString(used * units);
     obj.gauge.dataset.rate = rate.toFixed(2) +"%";
-    obj.mask.style.left = rate +"%";
+
+    mask = obj.gauge.querySelector(".mask");
+    mask.style.left = `${rate}%`;
     
+    mask.parentNode.replaceChild(mask.cloneNode(true), mask);
+
     obj.item.classList[critical? "add": "remove"]("critical");
 }
 
 function setThroughput(index, speed, inOcts, outOcts, errors, critical) {
     const
-        obj = window.throughputIndexObj[index];
+        obj = $.throughputIndexObj[index];
 
     obj.speed.textContent = ITAhM.util.toBPSString(speed);
 
     if (speed > 0) {
-        let rate;
+        let rate, mask;
 
         obj.in.textContent = ITAhM.util.toBPSString(inOcts);
         obj.out.textContent = ITAhM.util.toBPSString(outOcts);
 
         rate = inOcts *100 /speed;
-
+        
         obj.inGauge.dataset.rate = rate.toFixed(2) +"%";
-        obj.inGauge.querySelector(".mask").style.left = rate +"%";
+        
+        mask = obj.inGauge.querySelector(".mask");
+        mask.style.left = rate +"%";
+        mask.parentNode.replaceChild(mask.cloneNode(true), mask);
 
         rate = outOcts *100 /speed;
 
         obj.outGauge.dataset.rate = rate.toFixed(2) +"%";
-        obj.outGauge.querySelector(".mask").style.left = rate +"%";
+
+        mask = obj.outGauge.querySelector(".mask");
+        mask.style.left = rate +"%";
+        mask.parentNode.replaceChild(mask.cloneNode(true), mask);
     }
     
     obj.err.textContent = errors;
@@ -1028,35 +1117,43 @@ function setThroughput(index, speed, inOcts, outOcts, errors, critical) {
 }
 
 function refresh() {
-    $.request.execute({
-        command: "get",
-        target: "node",
-        id: Number(window.sessionStorage.getItem("node_id")),
-        resource: true
-    }, onUpdate);
+    setTimeout(function () {
+        $.request.execute({
+            command: "get",
+            target: "node",
+            id: $.id,
+            resource: true
+        }, function (e) {
+            switch (this.status) {
+            case 200:
+                window.requestAnimationFrame(t => update(JSON.parse(this.responseText)));
+            }
+        })
+    }, INTERVAL);
 }
 
 function update(node) {
-    const
-        resourceData = node.resource,
-        criticalData = node.critical;
+    const resourceData = node.resource;
 
     if (!resourceData) {
         return;
     }
 
     try {
-        window.realtimeObj.data.put(Number(resourceData["0"]["1.3.6.1.4.1.49447.1"]));
+        let
+            e = document.getElementById("response"),
+            rt = resourceData["0"][ITAhM.snmp.oid.responseTime];
+        
+        e.textContent = Number(rt.value) +"ms";
+        e.parentNode.replaceChild(e.cloneNode(true), e);
 
-        document.getElementById("frame_response").contentWindow.draw(window.realtimeObj);
-
-        document.getElementById("response").textContent = window.realtimeObj.data.last +"ms";
+        document.getElementById("last_response").textContent = toDateString(rt.timestamp);
 
         document.querySelector("section.response_time")
-            .classList[criticalData["0"] && criticalData["0"]["1.3.6.1.4.1.49447.1"]? "add": "remove"]("critical");
+            .classList[rt.critical? "add": "remove"]("critical");
     } catch (e) {}
 
-    if (window.processorIndexArray.length > 0) {
+    if ($.processorIndexArray.length > 0) {
         try {
 
         } catch (e) {}
@@ -1064,81 +1161,70 @@ function update(node) {
         try {
             const load = [];
 
-            window.processorIndexArray.forEach (index => load.push(Number(resourceData[index]["1.3.6.1.2.1.25.3.3.1.2"])));
-
+            $.processorIndexArray.forEach (index => load.push(Number(resourceData[index][ITAhM.snmp.oid.hrProcessorLoad].value)));
+            
             setProcessor(Math.min.apply(undefined, load),
                 load.reduce((a, b) => a +b) / load.length,
                 Math.max.apply(undefined, load),
-                criticalData["0"] &&
-                criticalData["0"]["1.3.6.1.2.1.25.3.3.1.2"]);
+                resourceData["0"][ITAhM.snmp.oid.cpu].critical);
         } catch (e) {}
     }
 
-    if (window.memoryIndexArray.length > 0) {
+    if ($.memoryIndexArray.length > 0) {
         try {
             const
-                index = window.memoryIndexArray[0],
+                index = $.memoryIndexArray[0],
                 indexData = resourceData[index];
             
             setMemory(
-                Number(indexData["1.3.6.1.2.1.25.2.3.1.6"]), // used
-                Number(indexData["1.3.6.1.2.1.25.2.3.1.5"]), // size
-                Number(indexData["1.3.6.1.2.1.25.2.3.1.4"]), // units
-                criticalData[index] && criticalData[index]["1.3.6.1.2.1.25.2.3.1.6"]);
+                Number(indexData[ITAhM.snmp.oid.hrStorageUsed].value), // used
+                Number(indexData[ITAhM.snmp.oid.hrStorageSize].value), // size
+                Number(indexData[ITAhM.snmp.oid.hrStorageAllocationUnits].value), // units
+                resourceData[index][ITAhM.snmp.oid.hrStorageUsed].critical);
         } catch (e) {}
     }
 
-    if (Object.keys(window.storageIndexObj).length > 0) {
+    if (Object.keys($.storageIndexObj).length > 0) {
         try {
             let indexData;
 
-            for (let index in window.storageIndexObj) {
+            for (let index in $.storageIndexObj) {
                 indexData = resourceData[index];
 
                 setStorage(index,
-                    Number(indexData["1.3.6.1.2.1.25.2.3.1.6"]), // used
-                    Number(indexData["1.3.6.1.2.1.25.2.3.1.5"]), // size
-                    Number(indexData["1.3.6.1.2.1.25.2.3.1.4"]), //units
-                    criticalData[index] && criticalData[index]["1.3.6.1.2.1.25.2.3.1.6"]); 
+                    Number(indexData[ITAhM.snmp.oid.hrStorageUsed].value), // used
+                    Number(indexData[ITAhM.snmp.oid.hrStorageSize].value), // size
+                    Number(indexData[ITAhM.snmp.oid.hrStorageAllocationUnits].value), //units
+                    resourceData[index][ITAhM.snmp.oid.hrStorageUsed].critical); 
             }
         } catch (e) {}
     }
 
-    if (Object.keys(window.throughputIndexObj).length > 0) {
+    if (Object.keys($.throughputIndexObj).length > 0) {
         try {
             let indexData;
 
-            for (let index in window.throughputIndexObj) {
+            for (let index in $.throughputIndexObj) {
                 indexData = resourceData[index];
 
                 setThroughput(index,
-                    indexData[ITAhM.snmp.oid.bandwidth] && Number(indexData[ITAhM.snmp.oid.bandwidth]) ||
-                    indexData[ITAhM.snmp.oid.ifHighSpeed] && Number(indexData[ITAhM.snmp.oid.ifHighSpeed]) *1000000|| // ifHighSpeed
-                    indexData["1.3.6.1.2.1.2.2.1.5"] && Number(indexData["1.3.6.1.2.1.2.2.1.5"]), // ifSpeed
-                    Number(indexData["1.3.6.1.4.1.49447.3.1"]), // in
-                    Number(indexData["1.3.6.1.4.1.49447.3.2"]), // out
-                    Math.max(Number(indexData["1.3.6.1.4.1.49447.3.3"]), Number(indexData["1.3.6.1.4.1.49447.3.4"])), //err
-                    criticalData[index] &&
-                    (criticalData[index]["1.3.6.1.4.1.49447.3.1"] ||
-                    criticalData[index]["1.3.6.1.4.1.49447.3.2"] ||
-                    criticalData[index]["1.3.6.1.4.1.49447.3.3"] ||
-                    criticalData[index]["1.3.6.1.4.1.49447.3.4"]));
+                    indexData[ITAhM.snmp.oid.bandwidth] && Number(indexData[ITAhM.snmp.oid.bandwidth].value) ||
+                    indexData[ITAhM.snmp.oid.ifHighSpeed] && Number(indexData[ITAhM.snmp.oid.ifHighSpeed].value) *1000000|| // ifHighSpeed
+                    indexData[ITAhM.snmp.oid.ifSpeed] && Number(indexData[ITAhM.snmp.oid.ifSpeed].value), // ifSpeed
+                    Number(indexData[ITAhM.snmp.oid.inBPS].value), // in
+                    Number(indexData[ITAhM.snmp.oid.outBPS].value), // out
+                    Math.max(Number(indexData[ITAhM.snmp.oid.inErrs].value), Number(indexData[ITAhM.snmp.oid.outErrs].value)), //err
+                    resourceData[index][ITAhM.snmp.oid.inBPS].critical ||
+                    resourceData[index][ITAhM.snmp.oid.outBPS].critical ||
+                    resourceData[index][ITAhM.snmp.oid.inErrs].critical ||
+                    resourceData[index][ITAhM.snmp.oid.outErrs].critical);
             }
         } catch (e) {
             console.trace(e);
         }
     }
-}
 
-function onUpdate() {
-    switch (this.status) {
-    case 200:
-        update(JSON.parse(this.responseText));
-
-        break;
-    }
-
-    setTimeout(refresh, 10000);
+    refresh();
 }
 
 function toDateString(millis) {
@@ -1155,64 +1241,22 @@ function toDateString(millis) {
 	return ar[0] +"-"+ ar[1] +"-"+ ar[2] +" "+ ar[3] +":"+ ar[4] +":"+ ar[5];
 }
 
-//public
-function selectResource(resource, index) {
-	requestAnimationFrame(function f () {
-		if (window.node) {
-			onSelectResource(resource, index);	
-		}
-		else {
-			requestAnimationFrame(f);
-		}
-	});
-}
-
 //private
 function onSelectResource(chart, index) {
-    window.sessionStorage.setItem("chart", chart);
-    window.sessionStorage.setItem("index", index);
-    window.sessionStorage.setItem("previous", "/chart/summary.html");
+    const date = new Date();
 
-    window.location.replace("/chart/chart.html");
-}
-
-function setDraggable() {
-    [].forEach.call(document.body.querySelectorAll("section"), section => {
-		section.draggable = true;
-		
-		section.addEventListener("dragstart", function (e) {
-			e.stopPropagation();
-			
-			window.draggable = this;
-		});
-		
-		section.addEventListener("dragover", function (e) {
-			e.preventDefault();
-			
-			if (window.draggable === this) {
-				return;
-			}
-			
-			switch (window.draggable) {
-			case this.previousElementSibling:
-				this.parentNode.insertBefore(this, window.draggable);
-				
-				break;
-			default:
-				this.parentNode.insertBefore(window.draggable, this);
-			}
-		});
-	});
+    window.location
+        .replace(`/chart/chart.html?id=${$.id}&name=${chart}&index=${index}&from=${date.setHours(0, 0, 0, 0)}&to=${date.setDate(date.getDate() +1)}`);
 }
 
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -1250,7 +1294,18 @@ function showMessage(xhr) {
 					</tr>
 				</table>
 			</section>
-			
+            
+            <section class="response_time resource status selectable">
+                <h2>응답 시간</h2>
+                <div class="response container">
+                    <div class="response time">
+                        <div class="response circle">
+                            <span id="response"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
 			<section class="hr_processor_load resource status selectable">
 				<h2>프로세서 로드</h2>
 				<div class="processor container">
@@ -1298,20 +1353,6 @@ function showMessage(xhr) {
                     <div class="memory used">
                     </div>
 				</div>
-			</section>
-			
-			<section class="response_time resource status selectable">
-                <h2>응답 시간</h2>
-                <div class="response container">
-                    <div class="response time">
-                        <div class="response circle">
-                            <span id="response">20ms</span>
-                        </div>
-                    </div>
-                    <div class="response chart">
-                        <iframe id="frame_response"></iframe>
-                    </div>
-                </div>
 			</section>
             
             <section class="hr_storage_used resource">
@@ -1385,59 +1426,46 @@ function showMessage(xhr) {
 		<script src="/js/ITAhM.js"></script>
         <script src="/js/snmp.js"></script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
 		<script>
 
-const $ = {
-        request: new Request()
+const
+    INTERVAL = 10000,
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: Number(search.get("id")),
+        processorIndexArray: [],
+        memoryIndexArray: [],
+        storageIndexObj: {},
+        throughputIndexObj: {}
     };
 
-var 
-	processorArea = document.getElementById("hr_processor_load"),
-	storageArea = document.getElementById("hr_storage_used"),
-	interfaceArea = document.getElementById("throughput"),
-	gauge = document.querySelector(".gauge"),
-	storageItem = document.querySelector(".hr_storage_used.item"),
-    iFaceItem = document.querySelector(".throughput.item"),
-    processorIndexArray = []
-    memoryIndexArray = [],
-    storageIndexObj = {},
-    throughputIndexObj = {};
+if (!$.id) {
+    throw top.location.replace("/warning.html");
+}
 
-document.querySelector(".response_time").onclick = onSelectResource.bind(window, "/chart/responseTime.html", "0");
+document.querySelector(".response_time").onclick = e => onSelectResource("/chart/responseTime.html", "0");
 
 document.getElementById("filter").onclick = function (e) {
 	document.body.classList[this.checked? "remove": "add"]("filter");
 };
 
-document.getElementById("frame_response").onload = function (e) {
-    window.realtimeObj = {
-        data: new this.contentWindow.RealtimeData()
-    };
+$.request.execute({
+    command: "get",
+    target: "node",
+    id: $.id,
+    resource: true
+}, function () {
+    switch (this.status) {
+        case 200:
+            break;
+        default:
+            return showMessage(this);
+    }
 
-    refresh();
-};
-
-if (window.sessionStorage.getItem("node_id")) {
-    $.request.execute({
-        command: "get",
-        target: "node",
-		id: Number(window.sessionStorage.getItem("node_id")),
-		resource: true
-	}, function () {
-		switch (this.status) {
-			case 200:
-				window.node = JSON.parse(this.responseText);
-                    
-                initialize(window.node);
-
-                document.getElementById("frame_response").src ="/chart/realtime_response.html";
-
-				break;
-			default:
-				showMessage(this);
-		}
-	});	
-}
+    initialize(JSON.parse(this.responseText));
+});
 
 		</script>
 	

@@ -27,11 +27,11 @@ iframe {
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -45,52 +45,67 @@ function showMessage(xhr) {
 	<body>
         <iframe></iframe>
 
-        <script>
-if (opener) {
-    window.account = opener.account;
-} else if (top !== window && top.account) {
-    window.account = top.account;
-} else {
-    throw window.location.replace("/warning.html");
-}
-        </script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
 		<script>
 
 const $ = {
-        request: new Request()
+        request: new Request(),
+        id: Number(window.sessionStorage.getItem("id")),
+        chart: window.sessionStorage.getItem("chart"),
+        index: window.sessionStorage.getItem("index")
     };
 
-function initialize () {
+if (window === top) {
+    if (!$.request.try(function (e) {
+        if (this.status === 200) {
+            window.account = JSON.parse(this.responseText);
+        } else {
+            throw window.location.replace("/warning.html");    
+        }
+    })) {
+        throw window.location.replace("/warning.html");
+    }
+} else if (top.account) {
+    window.account = JSON.parse(JSON.stringify(top.account));
+
+    document.body.classList.add("frame");
+} else {
+    throw window.location.replace("/warning.html");
+}
+
+if ($.id) {
     $.request.execute({
         command: "get",
         target: "node",
-		id: Number(window.sessionStorage.getItem("node_id")),
+		id: $.id,
 		resource: true
 	}, function () {
 		switch (this.status) {
-			case 200:
-				const node = JSON.parse(this.responseText);
-                
-                document.title = node.name || node.ip || "Chart";
-
-                if (window.sessionStorage.getItem("chart")) {
-                    document.querySelector("iframe").src = "/chart/chart.html";
-                } else {
-                    document.querySelector("iframe").src = "/chart/summary.html";
-                }
-
-				break;
-			default:
-				showMessage(this);
+        case 200:
+            break;
+        default:
+            return showMessage(this);
 		}
-	});	
-}
 
-if (window.sessionStorage.getItem("node_id")) {
-    initialize();
+        const node = JSON.parse(this.responseText);
+                
+        document.title = node.name || node.ip || "Chart";
+        
+        if ($.chart && $.index) {
+            const date = new Date();
+
+            window.sessionStorage.removeItem("chart");
+            window.sessionStorage.removeItem("index");
+
+            document.querySelector("iframe").src
+                = `/chart/chart.html?id=${$.id}&index=${$.index}&name=${$.chart}&from=${date.setHours(0, 0, 0, 0)}&to=${date.setDate(date.getDate() +1)}`;
+        } else {
+            document.querySelector("iframe").src = `/chart/summary.html?id=${$.id}`;
+        }
+	});	
 } else {
-    throw window.location.replace("/warning.html");
+    window.location.replace("/warning.html");
 }
 
 		</script>

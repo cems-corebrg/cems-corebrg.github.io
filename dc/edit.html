@@ -34,6 +34,7 @@ nav {
     display: flex;
     font: 20px "Font Awesome 5 Free";
     color: #ffffff;
+    user-select: none;
 }
 
 nav >span {
@@ -168,15 +169,7 @@ const $ = {
         request: new Request()
     };
 
-document.getElementById("close").onclick = function () {
-    window.sessionStorage.setItem("rack_mode", "view");
-
-    window.location.replace("/dc/view.html");
-};
-
 document.getElementById("add").onclick = function () {
-    window.sessionStorage.removeItem("rack_id");
-
     top.showDialog("/dc/dialog/rack.html");
 };
 

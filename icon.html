@@ -5,18 +5,17 @@
 		<title>icon @ ITAhM</title>
 		
 		<style>
-@import "css/itahm.css";
+@import "/css/style.css";
+@import "/css/fa.css";
 
 body {
-    max-width: 1024px;
-	padding: 10px;
-	margin: 0 auto;
-	color: #fff;
+	padding: 1em; margin: 0;
 }
 
 h1 {
 	font-size: 20px;
-	text-shadow: 0 2px 3px #000;
+    color: #4d525a;
+	text-shadow: 0 2px 2px #ddd;
 }
 
 header {
@@ -80,67 +79,53 @@ header {
 	color: #000;
 }
 
-#add {
-    position: absolute; top: 1em; right: 1em;
-	border:none;
-	display:block;
-	width: 2em; height: 2em;
-	overflow:hidden;
-	color:#000;
-	background-color:#0ff;
-	text-align:center;
-	cursor:pointer;
-	white-space:nowrap;
-	user-select:none;
-	transition:opacity 0s;
-	font-weight: bold;
-	outline: none;
-	border-radius:50%;
+nav {
+    position: fixed; top: 1em; right: 1em;
+    font: 2em "Font Awesome 5 Free";
+    user-select:none;
 }
 
-#add:active{
-	opacity:0.5
+.button {
+	display:inline-block;
+    cursor: pointer;
 }
 
-#add:hover{
-  box-shadow:0 8px 16px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+.button:hover{
+    transform: translateY(-2px);
+    text-shadow: 0 2px 2px #dddddd;
 }
 
-#add:disabled {
-  cursor:not-allowed;
-  opacity:0.3
+.button:active{
+    transform: none;
 }
 
-#add:disabled:hover {
-  box-shadow:none
-}
-
+body:not(.root) .root,
 .layout {
     display: none;
 }
+
 		</style>
         <script>
         
-function onSelectIcon(type, icon) {
-	top.showDialog.call(window, "/dialog/icon.html", type, icon);
+function onSelectIcon(type) {
+	top.showDialog(`cems/dialog/icon.html?type=${type}`);
 }
 
 function createGroup(name) {
-	var clone = group.cloneNode(true);
+	var group = $.group.cloneNode(true);
 	
-	clone.children[0].textContent = name;
+	group.children[0].textContent = name;
 	
-	return clone;
+	return group;
 }
 
 function createIcon(src, label) {
-	var clone = icon.cloneNode(true);
+	var icon = $.icon.cloneNode(true);
 	
-	clone.querySelector("img").src = src;
-	//clone.children[0].src = src;
-	clone.children[1].textContent = label;
+	icon.querySelector("img").src = src;
+	icon.children[1].textContent = label;
 	
-	return clone;
+	return icon;
 }
 
 function initIcon(iconData) {
@@ -149,7 +134,7 @@ function initIcon(iconData) {
 		map = {}, span, clone;
 	
 	
-	for (type in iconData) {
+	for (let type in iconData) {
 		icon = iconData[type];
 		
 		groupName = icon.group;
@@ -164,7 +149,7 @@ function initIcon(iconData) {
 			map[groupName] = groupElement;
 		}
 		
-		groupElement.appendChild(createIcon(icon.src, type)).onclick = onSelectIcon.bind(undefined, type, iconData[type]);
+		groupElement.appendChild(createIcon(icon.src, type)).onclick = e => onSelectIcon(type);
 	}
 	
 	return df;
@@ -189,11 +174,10 @@ function showMessage(xhr) {
 	</head>
 	
 	<body class="loading">
-		<ul id="list">
-            <button id="add" title="아이콘 추가" class="root">+</button>
-        </ul>
-        
-        		
+        <ul id="list"></ul>
+        <nav>
+            <span id="add" title="아이콘 추가" class="root button">&#xf055;</span>
+        </nav>
 		<div class="layout">
 			<ul>
 				<li class="group">
@@ -208,22 +192,24 @@ function showMessage(xhr) {
 
 		<div class="bg_loading"></div>
         
-        <script src='/js/ITAhM.js'></script>
-        <script src='/js/icon.js'></script>
-        <script src='/js/request.js'></script>
+        <script src="/js/ITAhM.js"></script>
+        <script src="/js/icon.js"></script>
+        <script src="/js/request.js"></script>
 		<script>
 
 const $ = {
-        request: new Request()
+        request: new Request(),
+        icon: document.querySelector(".icon"),
+        group: document.querySelector(".group"),
+        iconData: ITAhM.iconData
     };
 
-var 
-	icon = document.querySelector(".icon"),
-	group = document.querySelector(".group"),
-    iconData = ITAhM.iconData;
+if (top.account.level === 0) {
+    document.body.classList.add("root");
+}
 
 document.getElementById("add").onclick = e => {
-    top.showDialog.call(window, "/dialog/icon.html");
+    top.showDialog("/dialog/icon.html");
 };
 
 $.request.execute({
@@ -235,11 +221,11 @@ $.request.execute({
         const iconData = JSON.parse(this.responseText);
 
         for (let type in iconData) {
-            window.iconData[type] = iconData[type];
+            $.iconData[type] = iconData[type];
         }
 
     case 204:
-        document.getElementById("list").appendChild(initIcon(window.iconData));
+        document.getElementById("list").appendChild(initIcon($.iconData));
 
         document.body.classList.remove("loading");
 

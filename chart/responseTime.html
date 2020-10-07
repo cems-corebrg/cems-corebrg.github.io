@@ -9,7 +9,7 @@
 		<style>
 		
 @import "/css/itahm.css";
-@import "/css/glyphicon.css";
+@import "/css/fa.css";
 
 body {
 	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
@@ -102,10 +102,10 @@ body:not(.realtime) div.realtime {
 }
 
 .glyph::before {
-    font-family: "Glyphicons Halflings";
+    font-family: "Font Awesome 5 Free";
     background: rgba(0,0,0,0.15);
     top: 0; bottom: 0; left: 0; width: 3em;
-    content: "\e146";
+    content: "\f08d";
 }
 
 .glyph::after {
@@ -134,90 +134,30 @@ body:not(.root) form {
 
         </style>
         
-        <script src="/js/snmp.js"></script>
 		<script>
-function ChartData() {
+function SummaryData() {
     this.initialize(arguments);
 }
 
-ChartData.prototype = {
+SummaryData.prototype = {
     initialize: function(args) {
-        this.data = {};
-        this.index = {};
-        this.summary = {};
-        this.timeStampArray = [];
+        this.data = args[0];
     },
-    unshift: function (dateMillis, data) {
-        const
-            dateKey = String(dateMillis),
-            timeStampArray = Object.keys(data).sort();
-        var
-            date,
-            next,
-            hour,
-            values = [];
-
-        this.data = Object.assign(this.data, data);
-        
-        this.timeStampArray = timeStampArray.concat(this.timeStampArray);
-
-        timeStampArray.forEach((key, i) => {
-            const millis = Number(key);
-
-            if (i ==0) {
-                this.index[dateKey] = key;
-
-                date = new Date(millis);
-                hour = date.setMinutes(0, 0, 0);
-                next = date.setHours(date.getHours() +1);
-            }
-            
-            while (true) {
-                if (millis < next) {
-                    values.push(Number(data[key]));
-
-                    break;
-                }
-                else {
-                    if (values.length > 0) {
-                        this.summary[String(hour)] = {
-                            max: Math.max.apply(undefined, values),
-                            min: Math.min.apply(undefined, values),
-                            avg: values.reduce((a, b) => a + b) / values.length
-                        }
-                    }
-
-                    hour = next;
-                    next = date.setHours(date.getHours() +1);
-
-                    values = [];
-                }
-            }
-        });
-
-        if (values.length > 0) {
-            this.summary[String(hour)] = {
-                max: Math.max.apply(undefined, values),
-                min: Math.min.apply(undefined, values),
-                avg: values.reduce((a, b) => a + b) / values.length
-            }
-        }
-    },
-    parseSummary: function (start, end) {
+    parse: function (from, to) {
         var resultKeyArray = [],
             blockKeyArrary = [],
-            date = new Date(start),
+            date = new Date(from),
             mills = date.setMinutes(0, 0, 0),
             value, high, low, max = [], min = [];
         
         do {
-            value = this.summary[String(mills)];
+            value = this.data[String(mills)];
             
             if (value) {
                 blockKeyArrary.push(mills);
                 
-                max[max.length] = value.max;
-                min[min.length] = value.min;
+                max.push(value.max);
+                min.push(value.min);
             }
             else if (blockKeyArrary.length > 0){
                 resultKeyArray.push(blockKeyArrary);
@@ -226,14 +166,14 @@ ChartData.prototype = {
             }
 
             mills = date.setHours(date.getHours() +1);
-        } while (mills < end);
+        } while (mills < to);
         
         if (blockKeyArrary.length > 0) {
             resultKeyArray.push(blockKeyArrary);
         }
         
-        high = Math.max.apply(undefined, max);
-        low = Math.min.apply(undefined, min);
+        high = max.length > 0? max.reduce((a, b) => a>b? a: b): 0;
+        low = min.length > 0? min.reduce((a, b) => a>b? b: a): 0;
         
         if (high === low) {
             high++;
@@ -246,25 +186,29 @@ ChartData.prototype = {
             keys: resultKeyArray
         }: undefined;
     },
-    getSummary: function (millis) {
-        return this.summary[String(millis)];
-    },
-    parseData: function (start, end) {
-        const resultKeyArray = [];
-        var index = this.timeStampArray.indexOf(this.index[String(start)]);
-        
-        if (index < 0) {
-            return;
-        }
-
-        for (let millis = this.timeStampArray[index++]; millis < end; millis = this.timeStampArray[index++]) {
-            resultKeyArray.push(millis);
-        }
-
-        return resultKeyArray.length > 0? resultKeyArray: undefined;
-    },
-    getData: function (millis) {
+    get: function (millis) {
         return this.data[String(millis)];
+    }
+};
+
+function ChartData() {
+    this.initialize(arguments);
+}
+
+ChartData.prototype = {
+    initialize: function(args) {
+        this.data = args[0];
+    },
+    forEach: function (f, sort) {
+        if (sort) {
+            const keys = Object.keys(this.data).sort((a, b) => Number(a) - Number(b));
+
+            keys.forEach(key => f(Number(key), Number(this.data[key])));
+        } else {
+            for (let key in this.data) {
+                f(Number(key), Number(this.data[key]));
+            }
+        }
     }
 };
 
@@ -286,44 +230,34 @@ function toDateTimeString(millis) {
  * public
  */
 function getFile() {
-	const rowArray = [];
+	const rows = [];
     
-    if (window.detail) {
-        rowArray.push("Index,Date,Response time");
+    if ($.data) {
+        var i = 1;
 
-        const keys = window.chartData.parseData(window.position, window.limit);
-        
-        if (keys) {
-            for (let i=0, _i=keys.length, millis; i<_i; i++) {
-                millis = keys[i];
-                
-                rowArray.push([i, toDateTimeString(Number(millis)), toString(Number(window.chartData.getData(millis)))].join(","));
-            }
-        }
+        rows.push("Index,Date,Response time");
+
+        $.data.forEach((timestamp, value) => {
+            rows.push([i++, toDateTimeString(timestamp), toString(value)].join(","));
+        }, true);
     }
-    else if (window.chartData) {
-        rowArray.push("Index,Date,Max,Avg,Min");
+    else if ($.summary) {
+        var i = 1;
+        
+        rows.push("Index,Date,Max,Avg,Min");
 
-        const summaryData = window.chartData.parseSummary(window.position, window.limit);
+        const summary = $.summary.parse($.from, $.to);
 
-        if (summaryData) {
-            const blocks = summaryData.keys;
+        if (summary) {
+            summary.keys.forEach(keys => keys.forEach(timestamp => {
+                const value = $.summary.get(timestamp);
 
-            for (let j=0, _j=blocks.length, keys; j<_j; j++) {
-                keys = blocks[j];
-
-                for (let i=0, _i=keys.length, millis, data; i<_i; i++) {
-                    millis = keys[i];
-
-                    data = window.chartData.getSummary(millis);
-
-                    rowArray.push([i, Number(toDateTimeString(millis)), toString(data.max), toString(data.avg.toFixed(2)), toString(data.min)].join(","));
-                }
-            }
+                rows.push([i++, toDateTimeString(timestamp), toString(value.max), toString(value.avg), toString(value.min)].join(","));
+            }));
         }
     }
 	
-	ITAhM.util.download(new Blob([rowArray.join("\n")] ,{
+	ITAhM.util.download(new Blob([rows.join("\n")] ,{
 		type: "text/csv;charset=utf-8;"
 	}), "chart_responsetime.csv");
 }
@@ -336,7 +270,7 @@ function realtime(realtime) {
     } else {
         document.body.classList.remove("realtime");
 
-        window.setRealtime = false;
+        delete $.realtime;
 
         document.getElementById("realtime").contentWindow.location.replace("about:blank");
     }
@@ -345,43 +279,50 @@ function realtime(realtime) {
 function postRealtimeRequest(realtimeData) {
     $.request.execute({
         command: "get",
-        target: "node",
-        id: Number(window.sessionStorage.getItem("node_id")),
-        resource: true
+        target: "resource",
+        id: $.id,
+        index: $.index,
+        oid: ITAhM.snmp.oid.responseTime
     }, function () {
         switch (this.status) {
         case 200:
-            const resourceData = JSON.parse(this.responseText).resource;
-
-            try {
-                realtimeData.data.put(Number(resourceData["0"]["1.3.6.1.4.1.49447.1"]));
-
-                document.getElementById("realtime").contentWindow.draw(realtimeData);
-            } catch (e) {}
-
             break;
         default:
-            showMessage(this);
+            try {
+                console.log(JSON.parse(this.responseText).error);
+            } catch (e) {}
         }
 
-        if (window.setRealtime) {
-            window.setTimeout(postRealtimeRequest.bind(window, realtimeData), INTERVAL);
+        const value = JSON.parse(this.responseText);
+        
+        for (let timestamp in value) {
+            realtimeData.data.put(Number(value[timestamp]));
+
+            break;
         }
+
+        try {
+            document.getElementById("realtime").contentWindow.draw(realtimeData);
+
+            if ($.realtime) {
+                window.setTimeout(postRealtimeRequest.bind(window, realtimeData), INTERVAL);
+            }
+        } catch (e) {}
     });
 }
 
 function toString(value) {
-    return value.toFixed(0) +"ms"
+    return value.toFixed(2) +"ms";
 }
 
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -414,16 +355,25 @@ function showMessage(xhr) {
         </div>
 		<script src="/js/ITAhM.js"></script>	
         <script src="/js/object.js"></script>
+        <script src="/js/snmp.js"></script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
 		<script>
 
 const
+    INTERVAL = 5000,
+    search = new URLSearchParams(window.location.search),
     $ = {
-        request: new Request()
-    },
-    INTERVAL = 5000;
+        request: new Request(),
+        id: Number(search.get("id")),
+        index: search.get("index"),
+        from: Number(search.get("from")),
+        to: Number(search.get("to"))
+    };
     
-var setRealtime = false;
+if (!$.id || !$.index || !$.from || !$.to) {
+    throw top.location.replace("/warning.html");
+}
 
 if (top.account.level == 0) {
     document.body.classList.add("root");
@@ -431,7 +381,7 @@ if (top.account.level == 0) {
 
 document.getElementById("realtime").onload = function (e) {
     if (this.contentWindow.location.protocol === "http:") {
-        window.setRealtime = true;
+        $.realtime = true;
 
         postRealtimeRequest({
             data: new this.contentWindow.RealtimeData(),
@@ -447,144 +397,142 @@ document.querySelector(".glyph").onclick = function (e) {
 
     $.request.execute({
         command: "set",
-        target: "critical",
-        id: Number(window.sessionStorage.getItem("node_id")),
-        index: window.sessionStorage.getItem("index"),
+        target: "limit",
+        id: $.id,
+        index: $.index,
         oid: ITAhM.snmp.oid.responseTime,
         limit: Number(document.getElementById("limit").value || "0")
     }, function () {
         switch (this.status) {
         case 200:
-            alert("Information.\n\n임계를 설정했습니다.");
-
             break;
         default:
-            showMessage(this);
+            return showMessage(this);
         }
+
+        alert("Information.\n\n임계를 설정했습니다.");
     });
 };
 
-(chartFrame => {
-    chartFrame.onload = e => {
-        const date = new Date(window.position);
+(frame => {
+    const chart =  frame.contentWindow;
 
-        chartFrame.contentWindow.initialize(
-            window.chartData,
-            window.position,
-            window.limit,
-            window.max,
-            "#0084ff",
-            toString,
-            window.detail = (date.setDate(date.getDate() +1) == window.limit));
+    frame.onload = e => {
+        chart.initialize({
+            summary: $.summary,
+            from: $.from,
+            to: $.to,
+            max: $.max,
+            toString: toString
+        });
     };
 
     /**
      * public
      */
-    window.draw = (position, limit) => {
-        window.position = position;
-        window.limit = limit;	
+    window.draw = function (from, to) {
+        $.from = from;
+        $.to = to;
         
-        chartFrame.contentWindow.location.reload();
-    };
+        chart.location.reload();
+    }
 
-    function postRequest(dateArray, onProgress) {
-        const date = dateArray.pop();
+    window.detail = function () {
+        const date = new Date($.from);
 
-        if (date) {
+        if (date.setDate(date.getDate() +1) == $.to) {
+            document.body.classList.add("loading");
+
             $.request.execute({
                 command: "get",
                 target: "resource",
-                id: Number(window.sessionStorage.getItem("node_id")),
-                index: Number(window.sessionStorage.getItem("index")),
-                oid: "1.3.6.1.4.1.49447.1",
-                date: date
-            }, function () {
+                id: $.id,
+                index: $.index,
+                oid: ITAhM.snmp.oid.responseTime,
+                date: $.from,
+            }, function (e) {
                 switch (this.status) {
                 case 200:
-                    onProgress(date, JSON.parse(this.responseText));
-
-                    postRequest(dateArray, onProgress);
                     break;
                 default:
-                    console.log(this.responseText && JSON.parse(this.responseText).error);
+                    return showMessage(this);
                 }
-            });
-        }
-    }
 
-    function initialize() {
-        window.position = Number(window.sessionStorage.getItem("position"));
-        window.limit = Number(window.sessionStorage.getItem("limit"));
-        window.chartData = new ChartData();
+                chart.draw($.data = new ChartData(JSON.parse(this.responseText)));
 
-        const
-            date = new Date(Number(window.sessionStorage.getItem("start"))),
-            dateArray = [];
-
-        var initialized = false;
-
-        for (let millis = date.setHours(0, 0, 0, 0), end = Number(window.sessionStorage.getItem("end"));
-            millis < end;
-            millis = date.setDate(date.getDate() +1)) {
-            dateArray.push(millis);
-        }
-        
-        postRequest(dateArray, (date, chartData) => {
-            window.chartData.unshift(date, chartData);
-
-            if (!initialized) {
                 document.body.classList.remove("loading");
+            });
+        } else {
+            delete $.data;
+        }
+    };
 
-                chartFrame.src = "/chart/base.html";
+    window.initResource = function () {
+        switch (this.status) {
+        case 200:
+            break;
+        default:
+            return showMessage(this);
+        }
 
-                initialized = true;
-            }
-        });
+        $.summary = new SummaryData(JSON.parse(this.responseText));
+
+        document.body.classList.remove("loading");
+
+        frame.src = "/chart/base.html";
+    }
+})(document.getElementById("chart"));
+
+function initCritical() {
+    switch (this.status) {
+    case 200:
+        break;
+    default:
+        return showMessage(this);
     }
 
-    function initTimeout() {
-        $.request.execute({
-            command: "get",
-            target: "config"
-        }, function () {
-            switch (this.status) {
-            case 200:
-                const configData = JSON.parse(this.responseText);
-
-                window.max = configData.timeout;
-
-                document.getElementById("max").textContent = max;
-                document.getElementById("limit").setAttribute("max", max);
-
-                initialize();
-                
-                break;
-            default:
-                showMessage(this);
-            }
-        });
-    }
+    document.getElementById("limit").value = JSON.parse(this.responseText).limit;
 
     $.request.execute({
         command: "get",
-        target: "critical",
-        id: Number(window.sessionStorage.getItem("node_id")),
-        index: window.sessionStorage.getItem("index"),
-        oid: ITAhM.snmp.oid.responseTime
-    }, function () {
-        switch (this.status) {
-        case 200:
-            document.getElementById("limit").value = JSON.parse(this.responseText).limit;
-            
-            initTimeout();
+        target: "resource",
+        id: $.id,
+        index: $.index,
+        oid: ITAhM.snmp.oid.responseTime,
+        from: $.from,
+        to: $.to
+    }, initResource);
+}
 
-            break;
-        default:
-            showMessage(this);
-        }
-    });
-})(document.getElementById("chart"));
+function initTimeout() {
+    switch (this.status) {
+    case 200:
+        break;
+    default:
+        return showMessage(this);
+    }
+
+    const configData = JSON.parse(this.responseText);
+
+    $.max = configData.timeout;
+
+    document.getElementById("max").textContent = $.max;
+    document.getElementById("limit").setAttribute("max", $.max);
+
+    $.request.execute({
+        command: "get",
+        target: "limit",
+        id: $.id,
+        index: $.index,
+        oid: ITAhM.snmp.oid.responseTime
+    }, initCritical);
+}
+
+$.request.execute({
+    command: "get",
+    target: "config"
+}, initTimeout);
+
 		</script>
 	
 	</body>

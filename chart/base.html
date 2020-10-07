@@ -20,13 +20,13 @@ body {
 }
 
 #graph >path {
-	stroke-width: 4px;
-	fill-opacity: 0.5;
+	stroke-width: 2px;
+	fill-opacity: 0.3;
 	animation: grow_area 1s;
 }
 
 #graph >path.avg {
-	stroke-width: 4px;
+	stroke-width: 3px;
 	fill: none;
 	stroke: #fff;
 	animation: grow_avg 1s;
@@ -65,29 +65,49 @@ body {
     top: -1em;
 }
 
-.balloon.date::after {
+.balloon::after {
     content: "";
     position: absolute;
     border: 0.5em solid transparent;
+}
+
+.balloon.date::after {
     border-top-color: #f4a259;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 100%;
+    left: 50%; top: 100%;
+    transform: translateX(-50%)
 }
 
 .balloon.value {
     background-color: #777/*#F4A259*/;
     border: 1px solid #ddd;
 	font-size: 12px;
-    border-radius: 6px;
 }
 
-#value_min {
-	transform: translateY(1em);
+.balloon.value::after {
+    transform: translateY(-50%);
+    top: 50%;
 }
 
-#value_avg {
-	transform: translateX(-100%);
+.balloon.avg::after {
+    border-left-color: #777777;
+    left: 100%;
+}
+
+.balloon.value:not(.avg)::after {
+    border-right-color: #777777;
+    right: 100%;
+}
+
+.balloon.max {
+	transform: translateY(0.5em) translateX(0.5em);
+}
+
+.balloon.min {
+	transform: translateY(0.5em) translateX(0.5em);
+}
+
+.balloon.avg {
+	transform: translateY(0.5em) translateX(-100%) translateX(-0.5em);
 }
 
 #hover_date {
@@ -340,7 +360,7 @@ function createValueText(x, y, value) {
 /**
  * public
  */
-function initialize(chartData, start, end, max, color, onValueToString, detail) {
+function initialize(args) {
     const
         chart = document.getElementById("chart"),
         rect = (rect => {
@@ -403,9 +423,11 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
         
         path.draw();
     })();
+    
+    $.from = args.from;
 
-    const summaryData = chartData.parseSummary(start, end);
-
+    const summaryData = args.summary.parse($.from, args.to);
+    
     if (!summaryData) {
         document.body.classList.remove("loading");
         document.body.classList.add("empty");
@@ -413,10 +435,11 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
         return;
     }
 
-    const
-        tpp = (end - start) / rect.width,
-        graph = document.getElementById("graph"),
-        yRatio = rect.height / (summaryData.high - summaryData.low);
+    const graph = document.getElementById("graph");
+
+    $.low = summaryData.low;
+    $.tpp = (args.to - $.from) / rect.width;
+    $.yRatio = rect.height / (summaryData.high - $.low);
 
     var blockWidth, blockHeight;
     
@@ -433,7 +456,7 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
     // X축
 	(axis => {
         for (let x = 0, date, pY, pM, pD; Math.floor(x) <= rect.width; x += blockWidth) {
-            date = new Date(start + Math.round(x * tpp));
+            date = new Date($.from + Math.round(x * $.tpp));
             
             axis.appendChild(createDateText(x, 0, date, pY, pM, pD));
             
@@ -448,16 +471,16 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
     // Y축
 	((valueAxis, rateAxis) => {
         var
-            diff = (summaryData.high - summaryData.low) * blockHeight / rect.height,
+            diff = (summaryData.high - $.low) * blockHeight / rect.height,
 		    value;
 	
         for (let y = 0, grow = 0; y <= rect.height; y += blockHeight, grow += diff) {
             value = summaryData.high - grow;
             
-            valueAxis.appendChild(createValueText(0, y, onValueToString(value === 0? 0: value)));
+            valueAxis.appendChild(createValueText(0, y, args.toString(value === 0? 0: value)));
             
-            if (max) {
-                rateAxis.appendChild(createValueText(0, y, (value *100 / max).toFixed(2) + "%"));
+            if (args.max) {
+                rateAxis.appendChild(createValueText(0, y, (value *100 / args.max).toFixed(2) + "%"));
             }
         }
         
@@ -472,7 +495,7 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
             strokeAvg = new ITAhM.Path(graph),
             blocks = summaryData.keys;
         
-        area.color = color;
+        area.color = args.color || "#0084ff";
         
         strokeAvg.set("class", "avg");
         
@@ -483,12 +506,12 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
         
             millis = dateArray[0];
             
-            x = (millis - start) / tpp;
-            y = chartData.getSummary(millis);
+            x = (millis - $.from) / $.tpp;
+            y = args.summary.get(millis);
         
-            yAvg = (y.avg - summaryData.low) * yRatio;
-            yMax = (y.max - summaryData.low) * yRatio;
-            yMin = (y.min - summaryData.low) * yRatio;
+            yAvg = (y.avg - $.low) * $.yRatio;
+            yMax = (y.max - $.low) * $.yRatio;
+            yMin = (y.min - $.low) * $.yRatio;
             
             area.initialize(x, yMax, yMin);
                     
@@ -497,14 +520,14 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
             for (let j=1,_j=dateArray.length; j<_j; j++) {
                 millis = dateArray[j];
                 
-                x = (millis - start) / tpp;
-                y = chartData.getSummary(millis);
+                x = (millis - $.from) / $.tpp;
+                y = args.summary.get(millis);
                 
                 strokeAvg.lineTo(x, yAvg);
                 
-                yMax = (y.max - summaryData.low) * yRatio;
-                yMin = (y.min - summaryData.low) * yRatio;
-                yAvg = (y.avg - summaryData.low) * yRatio;
+                yMax = (y.max - $.low) * $.yRatio;
+                yMin = (y.min - $.low) * $.yRatio;
+                yAvg = (y.avg - $.low) * $.yRatio;
                 
                 strokeAvg.lineTo(x, yAvg);
                 
@@ -513,7 +536,7 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
             
             date = new Date(millis);
         
-            x = (date.setHours(date.getHours() +1) - start) / tpp;
+            x = (date.setHours(date.getHours() +1) - $.from) / $.tpp;
             
             strokeAvg.lineTo(x, yAvg);
             
@@ -523,55 +546,46 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
         }
     })();
 
-    // raw 그래프
-    if (detail) {
-        const keys = chartData.parseData(start, end);
-        
-        if (keys) {
-            drawDetail(keys, chartData, summaryData.low, start, tpp, yRatio);
-        }
-    }
-
     document.body.classList.remove("loading");
 
     chart.addEventListener("mousemove", function (e) {
         var x = e.clientX - MARGIN;
         
         if (x < 0 || rect.width < x) {
-            return;
+            return clear();
         }
         
-        var date = new Date(start + x * tpp),
+        var date = new Date($.from + x * $.tpp),
             millis = date.setMinutes(0, 0, 0),
-            value = chartData.getSummary(millis);
+            value = args.summary.get(millis);
         
         if (!value) {
-            return;
+            return clear();
         }
         
         hoverV.setAttribute("x1", x);
         hoverV.setAttribute("x2", x);
         
-        var y = rect.height - (value.max - summaryData.low) * yRatio;
+        var y = rect.height - (value.max - $.low) * $.yRatio;
         
         hoverHMax.setAttribute("y1", y);
         hoverHMax.setAttribute("y2", y);
         valueMax.style.top = y + "px";
-        valueMax.textContent = onValueToString(value.max);
+        valueMax.textContent = args.toString(value.max);
         
-        y = rect.height - (value.avg - summaryData.low) * yRatio;
+        y = rect.height - (value.avg - $.low) * $.yRatio;
         
         hoverHAvg.setAttribute("y1", y);
         hoverHAvg.setAttribute("y2", y);
         valueAvg.style.top = y + "px";
-        valueAvg.textContent = onValueToString(value.avg);
+        valueAvg.textContent = args.toString(value.avg);
         
-        y = rect.height - (value.min - summaryData.low) * yRatio;
+        y = rect.height - (value.min - $.low) * $.yRatio;
         
         hoverHMin.setAttribute("y1", y);
         hoverHMin.setAttribute("y2", y);
         valueMin.style.top = y + "px";
-        valueMin.textContent = onValueToString(value.min);
+        valueMin.textContent = args.toString(value.min);
         
         var d = date.getDate(),
             h = date.getHours();
@@ -590,65 +604,39 @@ function initialize(chartData, start, end, max, color, onValueToString, detail) 
     });
 
     chart.addEventListener("mouseleave", function (e) {
+        clear();
+    });
+
+    function clear() {
         fragment.appendChild(hover);
         fragment.appendChild(hoverDate);
         fragment.appendChild(valueMax);
         fragment.appendChild(valueMin);
         fragment.appendChild(valueAvg);
-    });
+    }
 }
 
-function drawDetail(keys, chartData, min, start, tpp, yRatio) {
-    const df = document.createDocumentFragment();
-    var pt;
-
-    keys.forEach((millis, i) => {
-        value = chartData.getData(millis, keys[i +1]);
-        
-        if (isNaN(value)) {
-            return;
-        }
-        
+/**
+ * public
+ */
+function draw(chartData, sort = false) {
+    const
+        df = document.createDocumentFragment(),
         pt = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        
+    pt.setAttributeNS(null, "r", 3);
 
-        pt.setAttributeNS(null, "r", 3);
-        pt.setAttributeNS(null, "cx", Math.round((Number(millis) - start) / tpp));
-        pt.setAttributeNS(null, "cy", Math.round((value - min) * yRatio));
+    var point;
+    chartData.forEach((timestamp, value) => {
+        point = pt.cloneNode(true);
 
-        df.appendChild(pt);
-    });
+        point.setAttributeNS(null, "cx", Math.round((timestamp - $.from) / $.tpp));
+        point.setAttributeNS(null, "cy", Math.round((value - $.low) * $.yRatio));
+
+        df.appendChild(point);
+    }, sort);
 
     document.getElementById("graph").appendChild(df);
-}
-
-function _drawDetail(keys, chartData, min, start, tpp, yRatio) {
-    const path = new ITAhM.Path(document.getElementById("graph"));
-    var
-        millis = keys[0],
-        value = chartData.getData(millis, keys[1]),
-        x, y;
-    
-    if (value) {
-        path.set("class", "line");
-        path.beginPath();
-        
-        path.moveTo(Math.round((Number(millis) - start) / tpp) , y = Math.round((value - min) * yRatio));
-        
-        for (var i=1, _i=keys.length, y; i<_i; i++) {
-            millis = keys[i];
-            
-            value = chartData.getData(millis, keys[i +1]);
-            
-            if (!value) {
-                continue;
-            }
-            
-            path.moveTo(Math.round((Number(millis) - start) / tpp), y);
-            path.v(y = Math.round((value - min) * yRatio));
-        }
-        
-        path.draw();
-    }
 }
 
 		</script>
@@ -672,9 +660,9 @@ function _drawDetail(keys, chartData, min, start, tpp, yRatio) {
 		</svg>
 		
 		<span id="hover_date" class="balloon date"></span>
-		<span id="value_max" class="balloon value"></span>
-		<span id="value_min" class="balloon value"></span>
-		<span id="value_avg" class="balloon value"></span>
+		<span id="value_max" class="balloon value max"></span>
+		<span id="value_min" class="balloon value min"></span>
+		<span id="value_avg" class="balloon value avg"></span>
 		
         <div class="bg_loading"></div>
         <div class="no_data"></div>
@@ -683,14 +671,12 @@ function _drawDetail(keys, chartData, min, start, tpp, yRatio) {
 		<script src="/js/object.js"></script>
 		<script>
 		
-var 
-    xlinkNS = "http://www.w3.org/1999/xlink",
-	MONTH_NAME = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+const 
 	MIN_AXIS_VSPACE = 50,
 	MIN_AXIS_HSPACE = 100,
 	DATE_AXIS_HEIGHT = 6,
-	MARGIN = 20,
-	MARGIN_BOTTOM = 20;
+    MARGIN = 20,
+    $ = {};
 
 // resize
 (function (delay) {

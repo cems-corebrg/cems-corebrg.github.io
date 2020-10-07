@@ -6,60 +6,25 @@
 		<title>List @ ITAhM</title>
 		
 		<style>
-@import "css/itahm.css";
-@import "css/fa.css";
+@import "/css/itahm.css";
+@import "/css/fa.css";
 
 body {
 	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	margin: 0; padding: 0;
+	margin: 0; padding: 1em;
+    display: flex; flex-direction: column;
 }
 
-article {
-	display: flex;
-	flex-direction: column;
-	margin: auto;
-	height: 100%;
-}
-
-aside {
-	margin: 1em 0;
+header {
+    flex: none;
+	padding: 1em;
 	display: flex;
 	justify-content: space-between;
 }
 
-#list {
-	flex: 1;
-	background-color: #fff;
-	overflow-y: auto;
-}
-
-header {
-	background-color: #000;
-	color: #fff;
-	font-weight: bold; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-	border-bottom: 4px solid #92a7af;
-	border-radius: 3px 3px 0 0;
-	padding: 0.5em 0;
-	text-shadow: 1px 1px 1px #00f;
-}
-
-#header img {
-	width: 24px; height: 24px;
-}
-
-#header >li {
-	position: relative;
-	display: flex; align-items: center; justify-content: center;
-}
-
-#header >li:nth-child(1) {
-	position: relative;
-}
-
-button >img {
-	vertical-align: middle;
-	margin: 0.5em;
-	height: 1em; width: 1em;
+main {
+    flex: 1;
+    overflow-y: auto;
 }
 
 .sort::after {
@@ -77,18 +42,39 @@ button >img {
 	content: "\f0dd";
 }
 
-#header >li:not(:last-child) {
-	border-right-color: #ddd;
-}
-
-aside input,
-aside select {
+header input,
+header select {
 	padding: .5em;
 }
 
-form input[type="text"] {
-	flex: 1;
-	min-width: 0;
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+tbody tr {
+    border-bottom: 1px solid #ffffff;
+}
+
+th {
+    background-color: #34495e;
+    color: #efefef;
+    position: sticky; top: 0;
+}
+
+th:not(:last-of-type) {
+    border-right: 1px solid rgba(52, 73, 94, 0.8);
+}
+
+th,
+td {
+    padding: 1em;
+    box-sizing: border-box;
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+thead th:first-child {
+    overflow: visible;
 }
 
 nav {
@@ -100,98 +86,13 @@ nav> div {
 	margin-right: 5px;
 }
 
-nav >img {
-	cursor: pointer;
-}
-
-ul {
-	margin: 0; padding: 0;
-	list-style: none;
-	display: flex;
-}
-
-li {
-	border: 1px solid transparent;
-	padding: 0.5em;
-	width: 120px;
-	box-sizing: border-box;
-	flex: 1 1 auto;
-}
-
-#list li {
-	color: #373d3f;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-li:nth-child(1) {
-	flex: none;
-	width: 4em;
-}
-
 label {
 	color: #fff;
 }
 
-#list> ul {
-	border-bottom: 1px solid #c1c3d1;
-	padding: 0.5em;
-}
 
-#list> ul >li:first-child {
-	background: center no-repeat;
-	background-size: 24px;
-}
-
-
-#list> ul[data-normal] >li:first-child {
-	background-image: url(img/normal.png);
-}
-
-#list> ul[data-critical] >li:first-child {
-	background-image: url(img/siren.png);
-}
-
-#list> ul[data-shutdown] >li:first-child {
-	background-image: url(img/warning.png);
-}
-
-#list> ul[data-disabled] >li:first-child {
-	background-image: url(img/disabled.png);
-}
-
-#list> ul[data-disabled] {
-	color: #999;
-}
-
-#list> ul:nth-child(odd) {
+#list> tr:nth-child(odd) {
 	background-color: #ebebeb;
-}
-
-#list> ul> li:nth-child(3) {
-	background-size: 24px 24px;
-	background-repeat: no-repeat;
-	background-position: left center;
-}
-
-#list> ul> li:nth-child(3)::before {
-	content: attr(data-type);
-	display: inline-block;
-	margin-left: 30px;
-}
-
-#list p {
-	min-height: 1em;
-	margin: 0;
-}
-
-footer {
-	float: none;
-	color: #fcba30;
-	font-weight: bold;
-	text-align: right;
-	padding: 1em;
 }
 
 #save {
@@ -203,45 +104,14 @@ footer {
 }
 
 #count {
-	font-size: 30px; font-weight: bold; color: #fff;
+	font-size: 30px; font-weight: bold;
 	display: inline-block;
 	margin: 0 30px;
-}
-
-.selector {
-	overflow: visible;
-}
-
-.selector div {
-	position: absolute; top: 100%; left: 0; width: 100%;
-	border: 1px inset gray;
-	box-sizing: border-box;
-	z-index: 1;
-	background-color: #fff;
-}
-
-.selector:not(:focus) div {
-	display: none;
-}
-
-.selector p {
-	padding: 3px; margin: 0;
-	text-align: center;
-}
-
-.selector p:not(:last-child) {
-	border-bottom: 1px solid #ccc;
-}
-
-.selector img {
-	pointer-events: none;
 }
 
 .glyph {
     font: 2em "Font Awesome 5 Free";
     cursor: pointer;
-    color: #ffffff;
-    
 }
 
 .glyph:hover {
@@ -249,25 +119,12 @@ footer {
     transition: color 0.5s linear;
 }
 
-aside form input {
+header form input {
     font-family: "Font Awesome 5 Free";
 }
 
-@keyframes grow {
-	from {
-		transform: scale(1);
-	}
-	to {
-		transform: scale(1.5);
-	}
-}
-
-#list >ul.hidden,
-body.keyword #list> ul:not(.keyword),
-body.normal #list> ul:not([data-normal]),
-body.critical #list> ul:not([data-critical]),
-body.shutdown #list> ul:not([data-shutdown]),
-body.disabled #list> ul:not([data-disabled]) {
+#list >tr.hidden,
+body.keyword #list> tr:not(.keyword) {
 	display: none;
 }
 
@@ -295,54 +152,40 @@ function IP2Int(s) {
 		</script>
 		
 		<script>
+
 function initList() {
 	const df = document.createDocumentFragment();
-	var paths, links, row;
+	var link;
 
-    for (let id in window.linkData) {
-        link = window.linkData[id];
+    for (let id in $.linkData) {
+        link = $.linkData[id];
 
-        row = createRow(id, link.nodeFrom, link.indexFrom, link.indexFromName, link.nodeTo, link.indexTo, link.indexToName, link.extra);
-
-        if (row) {
-            df.appendChild(row);
-        }
+        df.appendChild(createRow(id, link.nodeFrom, link.nodeTo, [link.indexFromName, link.indexToName], link.extra));
     }
 
-	window.list.appendChild(df);
+	$.list.appendChild(df);
 	
 	document.body.classList.remove("loading");
 
 	document.getElementById("count").textContent = count();
 }
 
-function createRow(id, nodeFrom, indexFrom, indexFromName, nodeTo, indexTo, indexToName, extra) {
-	const row = document.createElement("ul");
+function createRow(id, nodeFrom, nodeTo, ifName, extra) {
+	const row = document.createElement("tr");
+
+    [$.nodeData[nodeFrom], $.nodeData[nodeTo]].forEach((node, i) => {
+        row.appendChild(document.createElement("td")).textContent = node.ip || "";
+        row.appendChild(document.createElement("td")).textContent = node.name || "";
+        row.appendChild(document.createElement("td")).textContent = ifName[i] || "";
+    });
     
-    row.appendChild(document.createElement("li")); // N.1
-
-    (node => {
-        row.appendChild(document.createElement("li")).textContent = node.ip || ""; // N.2
-        row.appendChild(document.createElement("li")).textContent = node.name || ""; // N.3
-        row.appendChild(document.createElement("li")).textContent = indexFromName || "" // N.4
-    })(window.nodeData[nodeFrom]);
-
-    (node => {
-        row.appendChild(document.createElement("li")).textContent = node.ip || ""; // N.5
-        row.appendChild(document.createElement("li")).textContent = node.name || ""; // N.6    
-        row.appendChild(document.createElement("li")).textContent = indexToName || "" // N.7
-    })(window.nodeData[nodeTo]);
-
-	if (window.customData) {
-        window.customData.forEach(custom => {
-            row.appendChild(document.createElement("li")).textContent = link.extra && link.extra[custom] || "";
+	if ($.customData) {
+        $.customData.forEach(custom => {
+            row.appendChild(document.createElement("td")).textContent = extra && extra[custom] || "";
         });
 	};
 	
-	row.id = id;
-	
-	row.onclick = function () {
-	};
+	row.dataset.id = id;
 	
 	return row;
 }
@@ -351,13 +194,13 @@ function onSave() {
     const data = [];
     var record = [];
 
-    [].forEach.call(window.header.children, function (col) {
+    [].forEach.call($.header.children, function (col) {
         record.push(col.textContent);
     });
 
     data[0] = record.join(",");
 
-    [].forEach.call(window.list.children, function (row) {
+    [].forEach.call($.list.children, function (row) {
         record = [];
 
         [].forEach.call(row.children, function (col) {
@@ -375,7 +218,7 @@ function onSave() {
 function count() {
 	var count = 0;
 
-	[].forEach.call(window.list.children, function (row) {
+	[].forEach.call($.list.children, function (row) {
 		if (row.offsetHeight > 0) {
 			count++;
 		}
@@ -384,7 +227,7 @@ function count() {
 	return count;
 }
 
-function sortIP(e) {
+function onSort(e) {
 	const
 		ascending = this.classList.toggle("ascending"),
 		df = document.createDocumentFragment();
@@ -394,7 +237,7 @@ function sortIP(e) {
 
 	for (let e=this; e=e.previousElementSibling; order++);
 
-	[].slice.call(window.list.children).sort(
+	[].slice.call($.list.children).sort(
 		function (a, b) {
 			const
 				ipA = a.children[order].textContent,
@@ -416,9 +259,65 @@ function sortIP(e) {
 			df.appendChild(e);
 		});
 
-	window.list.appendChild(df);
+	$.list.appendChild(df);
 }
 
+function onSearch (e) {
+    e.preventDefault();
+    
+    document.body.classList.add("loading", "keyword");
+
+    const keyword = $.form.elements["keyword"].value;
+
+    if (!keyword) {
+        return $.form.reset();
+
+        return;
+    }
+
+    const df = document.createDocumentFragment();
+    
+    for (let row, cols; row = $.list.firstElementChild;) {
+        cols = row.children;
+
+        df.appendChild(row);
+
+        for (var i=0, length=cols.length; i<length; i++) {
+            row.classList.remove("keyword");
+
+            if (cols[i].textContent.indexOf(keyword) !== -1) {
+                row.classList.add("keyword");
+                
+                break;
+            }
+        }
+    }
+    
+    $.list.appendChild(df);
+
+    document.body.classList.remove("loading");
+
+    document.getElementById("count").textContent = count();
+}
+
+function onReset(e) {
+    const df = document.createDocumentFragment();
+
+    document.body.classList.add("loading");
+    
+    for (let row; row = $.list.firstElementChild;) {
+        df.appendChild(row).classList.remove("keyword");
+    }
+
+    document.body.classList.remove("keyword");
+
+    $.list.appendChild(df);
+
+    document.body.classList.remove("loading");
+
+    document.getElementById("count").textContent = count();
+}
+    
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
@@ -438,125 +337,67 @@ function showMessage(xhr) {
 	</head>
 	
 	<body class="loading">
-		<article>
-			<aside>
-				<nav>
-                    <i id="count"></i>
-                    <span class="glyph" id="export" title="CSV 내보내기">&#xf019;</span>
-				</nav>
-				<form>
-					<input type="text" name="keyword" placeholder="Keyword">
-					<input type="submit" value="&#xf002; 찾기">
-					<input type="reset" value="&#xf2f9; 초기화">
-				</form>
-			</aside>
-			
-			<header>
-				<ul id="header">
-					<li class="selector" tabindex="0"></li>
-					<li id="ip1" class="sort">IP</li>
-					<li>Name</li>
-					<li>Interface</li>
-					<li id="ip2" class="sort">IP</li>
-					<li>Name</li>
-					<li>Interface</li>
-				</ul>
-			</header>
-			
-			<div id="list"></div>
-		</article>
+        <header>
+            <nav>
+                <i id="count"></i>
+                <span class="glyph" id="export" title="CSV 내보내기">&#xf019;</span>
+            </nav>
+            <form>
+                <input type="text" name="keyword" placeholder="Keyword">
+                <input type="submit" value="&#xf002; 찾기">
+                <input type="reset" value="&#xf2f9; 초기화">
+            </form>
+        </header>     
+        <main>
+			<table>
+                <colgroup>
+                    <col width="200">
+                    <col>
+                    <col width="200">
+                    <col width="200">
+                    <col>
+                    <col width="200">
+                </colgroup>
+                <thead>
+                    <tr id="header">
+                        <th id="ip1" class="sort">IP</th>
+                        <th>Name</th>
+                        <th>Interface</th>
+                        <th id="ip2" class="sort">IP</th>
+                        <th>Name</th>
+                        <th>Interface</th>
+                    </tr>
+			    </thead>
+                <tbody id="list"></tbody>
+            </table>
+        </main>
 		
 		<div class="bg_loading"></div>
 		
-		<script src="js/ITAhM.js"></script>
-		<script src="js/object.js"></script>
-		<script src="js/request.js"></script>
+		<script src="/js/ITAhM.js"></script>
+		<script src="/js/object.js"></script>
+		<script src="/js/request.js"></script>
 		<script>
 
 const $ = {
-        request: new Request()
+        request: new Request(),
+        list: document.getElementById("list"),
+        header: document.getElementById("header"),
+        form: document.querySelector("form")
     };
 
-var 
-	header = document.getElementById("header"),
-	list = document.getElementById("list"),
-	customData;
-
 document.getElementById("export").onclick = onSave;
-document.getElementById("ip1").onclick = sortIP;
-document.getElementById("ip2").onclick = sortIP;
+document.getElementById("ip1").onclick = onSort;
+document.getElementById("ip2").onclick = onSort;
 
-(function (form) {
-	// 키워드로 필터링
-	form.onsubmit = function (e) {
-		e.preventDefault();
-		
-		document.body.classList.add("loading", "keyword");
 
-		const keyword = form.elements["keyword"].value;
-
-		if (!keyword) {
-			resetKeyWord();
-
-			return;
-		}
-
-		const df = document.createDocumentFragment();
-		
-		for (let row, cols; row = window.list.firstElementChild;) {
-			cols = row.children;
-
-			df.appendChild(row);
-
-			for (var i=0, length=cols.length; i<length; i++) {
-				row.classList.remove("keyword");
-
-				if (cols[i].textContent.indexOf(keyword) !== -1) {
-					row.classList.add("keyword");
-					
-					break;
-				}
-			}
-		}
-		
-		window.list.appendChild(df);
-
-		document.body.classList.remove("loading");
-
-		document.getElementById("count").textContent = count();
-	};
-
-	form.onreset =  function (e) {
-		e.preventDefault();
-	
-		form.elements["keyword"].value = "";
-
-		resetKeyWord();
-	};
-
-	function resetKeyWord() {
-		const df = document.createDocumentFragment();
-
-		document.body.classList.add("loading");
-		
-		for (let row; row = window.list.firstElementChild;) {
-			df.appendChild(row).classList.remove("keyword");
-		}
-
-		document.body.classList.remove("keyword");
-
-		window.list.appendChild(df);
-
-		document.body.classList.remove("loading");
-
-		document.getElementById("count").textContent = count();
-	}
-}) (document.querySelector("form"));
+$.form.onsubmit = onSearch;
+$.form.onreset =  onReset;
 
 function initNode() {
     switch(this.status) {
     case 200:
-        window.nodeData = JSON.parse(this.responseText);
+        $.nodeData = JSON.parse(this.responseText);
             
         initList();
         
@@ -569,7 +410,7 @@ function initNode() {
 function initLink() {
     switch(this.status) {
     case 200:
-        window.linkData = JSON.parse(this.responseText);
+        $.linkData = JSON.parse(this.responseText);
         
         $.request.execute({
             command: "get",
@@ -590,13 +431,13 @@ function initSetting() {
             customs = JSON.parse(this.responseText).customLink;
         
         if (customs) {
-            window.customData = customs.split(",");
+            $.customData = customs.split(",");
         
-            window.customData.forEach(function (custom) {
-                df.appendChild(document.createElement("li")).textContent = custom;
+            $.customData.forEach(function (custom) {
+                df.appendChild(document.createElement("th")).textContent = custom;
             });
             
-            window.header.appendChild(df);
+            $.header.appendChild(df);
         }
     case 204:
         $.request.execute({

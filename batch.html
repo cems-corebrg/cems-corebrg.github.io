@@ -1,0 +1,420 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>CeMS Batch</title>
+		
+		<style>
+
+@import "/css/style.css";
+@import "/css/fa.css";
+
+body {
+    font : 10pt "맑은 고딕", Arial, Tahoma;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    padding: 1em; margin: 0;
+    display: flex; flex-direction: column;
+}
+
+article,
+main {
+    flex: 1;
+}
+
+header {
+    display: flex;
+}
+
+nav {
+    padding: 1em;
+    flex: none;
+}
+
+article {
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+
+section {
+    flex: 1;
+    display: flex;
+    position:relative;
+    overflow-y: auto;
+}
+
+table {
+    flex: 1;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+thead tr {
+    height: 3em;
+}
+
+thead th {
+    background-color: #34495e;
+    color: #efefef;
+    position: sticky; top: 0;
+}
+
+td {
+    padding: 0.5em;
+}
+
+tbody tr {
+    background-color: #ffffff;
+}
+
+tbody tr:nth-child(odd) {
+	background-color: #ebebeb;
+}
+
+iframe {
+    border: none;
+    width: 100%; height: 100%;
+}
+
+footer {
+    display: flex;
+}
+
+progress {
+    flex: 1;
+    margin: 0 1em;
+    height: 100%;
+}
+
+[type=submit] {
+    font-family: "Font Awesome 5 Free";
+    padding: 0.5em;
+}
+
+a:link,
+a:visited {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+#file {
+    flex: 1;
+    border: 5px solid #0084ff;
+    padding: 1em;
+}
+
+#file.drop {
+    border-color: #34495e;
+    border-style: dotted;
+}
+
+.fa {
+    font-family: "Font Awesome 5 Free";
+}
+
+body.authorized main,
+body:not(.authorized) article {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function signIn(account) {
+    $.request = new Request();
+
+    window.account = account;
+
+    document.getElementById("cems").src = "about:blank";
+
+    if (account.level === 0) {
+        document.body.classList.add("authorized");
+    } else {
+        alert(ALERT_NO_PERMISSION["kr"]);
+
+        $.request.execute({
+            command: "signout"
+        }, function () {
+            window.location.reload();
+        });
+    }
+}
+
+function parseFile(file) {
+    document.body.classList.add("loading");
+
+    const
+        reader = new FileReader(),
+        header = document.getElementById("header"),
+        dfSuccess = document.createDocumentFragment(),
+        dfError = document.createDocumentFragment(),
+        ip = document.querySelector("[name=ip]"),
+        name = document.querySelector("[name=name]"),
+        protocol = document.querySelector("[name=protocol]"),
+        type = document.querySelector("[name=type]"),
+        keys = [];
+
+    [ip, name, protocol, type].forEach(e => {
+        if (e.checked) {
+            keys.push(e.name);
+
+            header.appendChild(document.createElement("th")).textContent = e.name.toUpperCase();
+        }
+    });
+
+    reader.onerror = e => alert(ERROR_FILE_READ["kr"]);
+
+    reader.onload = e => {
+        const rows = reader.result.split(/\r?\n/);
+
+        rows.forEach((row, i) => {
+            const
+                cols = row.split(","),
+                tr = document.createElement("tr");
+
+            if (cols.length === keys.length) {
+                const
+                    checkbox = document.createElement("input"),
+                    node = {};
+
+                checkbox.dataset.id = i;
+                checkbox.type = "checkbox";
+
+                tr.appendChild(checkbox);
+
+                cols.forEach((col, i) => {
+                    tr.appendChild(document.createElement("td")).textContent = col;
+
+                    node[keys[i]] = col;
+                });
+
+                $.nodes[String(i)] = node;
+
+                dfSuccess.appendChild(tr);
+            } else {
+                tr.appendChild(document.createElement("td")).textContent = i;
+                tr.appendChild(document.createElement("td")).textContent = row;
+
+                dfError.appendChild(tr);
+            }
+        });
+
+        document.getElementById("success").appendChild(dfSuccess);
+        document.getElementById("error").appendChild(dfError);
+    };
+
+    reader.onloadend = e => document.body.classList.remove("loading");
+
+    reader.readAsText(file);
+}
+
+function addNode(array) {
+    const checked = array.pop();
+
+    if (checked) {
+        const node = $.nodes[checked.dataset.id];
+
+        $.request.execute({
+            target: "node",
+            command: "add",
+            node: node
+        }, function (e) {
+            switch (this.status) {
+            case 200:
+                node.id = JSON.parse(this.responseText).id;
+
+                $.progress.value = Number($.progress.value) +1;
+
+                addNode(array);
+
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    } else {
+        $.progress.value = 0;
+
+        setMonitor(Object.keys($.nodes));
+    }
+}
+
+function setMonitor(array) {
+    const id = array.pop();
+
+    if (id) {
+        const node = $.nodes[id];
+
+        $.progress.value = Number($.progress.value) +1;
+
+        if (node.ip && node.protocol) {
+            $.request.execute({
+                target: "monitor",
+                command: "set",
+                id: node.id,
+                ip: node.ip,
+                protocol: node.protocol
+            }, function (e) {
+                switch (this.status) {
+                case 200:
+                    setMonitor(array);
+
+                    break;
+                default:
+                    showMessage(this);
+                }
+            });
+        } else {
+            setMonitor(array);
+        }
+    } else {
+        $.progress.value = $.progress.max;
+
+        document.body.classList.remove("loading");
+    }
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESS_EXPIRE["kr"]);
+
+        break;
+    default:
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+        </script>
+    </head>
+    <body>
+        <article>
+            <header>
+                <nav>
+                    <label>
+                        <input type="checkbox" name="ip" checked>
+                        IP
+                    </label>
+                    <label>
+                        <input type="checkbox" name="name" checked>
+                        Name
+                    </label>
+                    <label>
+                        <input type="checkbox" name="protocol">
+                        Protocol
+                    </label>
+                    <label>
+                        <input type="checkbox" name="type" checked>
+                        Type
+                    </label>
+                </nav>
+                <div id="file">
+                    <span class="fa">&#xf6dd;</span>
+                    Drop File
+                </div>
+            </header>
+            <section>
+                <table>
+                    <colgroup>
+                        <col width="50">
+                    </colgroup>
+                    <thead>
+                        <tr id="header">
+                            <th>
+                                <input type="checkbox" id="select">
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="success"></tbody>
+                </table>
+                <table>
+                    <colgroup>
+                        <col width="50">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>ROW</th>
+                            <th>DATA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="error"></tbody>
+                </table>
+            </section>
+            <footer>
+                <input type="submit" value="&#xf04b; Batch">
+                <progress value="0"></progress>
+            </footer>
+        </article>
+        <main>
+            <iframe name="cems" id="cems" src="/connect.html"></iframe>
+        </main>
+        <div class="bg_loading w"></div>
+
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const $ = {
+        nodes: {},
+        progress: document.body.querySelector("progress")
+    };
+
+{
+    const file = document.getElementById("file");
+
+    file.addEventListener("dragover", e => {
+        e.preventDefault();
+    });
+
+    file.addEventListener("dragenter", e => {
+        e.preventDefault();
+
+        file.classList.add("drop");
+    });
+
+    file.addEventListener("dragleave", e => {
+        e.preventDefault();
+
+        file.classList.remove("drop");
+    });
+
+    file.addEventListener("drop", e => {
+        e.preventDefault();
+        
+        file.classList.remove("drop");
+
+        parseFile(e.dataTransfer.files[0]);
+    });
+}
+
+document.getElementById("select").onclick = e => {
+    const checked = e.currentTarget.checked;
+        
+    [].forEach.call(document.getElementById("success").querySelectorAll("[type=checkbox]"), checkbox => {
+        checkbox.checked = checked;
+    });
+};
+
+document.querySelector("[type=submit]").onclick = e => {
+    const checked = document.getElementById("success").querySelectorAll(":checked");
+
+    if (checked.length === 0) {
+        return;
+    }
+
+    document.body.classList.add("loading");
+
+    $.progress.max = checked.length;
+
+    addNode([].slice.call(checked));
+};
+
+        </script>
+        
+    </body>
+</html>

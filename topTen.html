@@ -18,22 +18,37 @@ body {
 main {
     user-select: none;
     flex: 1;
-    display: flex; flex-wrap: wrap; align-content: space-around;
+    display: flex; flex-wrap: wrap;/* align-content: space-around;*/
+    overflow-y: auto;
 }
 
 section {
-    flex: 1 1 300px;
+    flex: 1 1 260px;
+    margin: 0.5em 0;
 }
 
-section::before {
-	content: attr(title);
-	display: block;
-	padding: .5em 2em; margin: 0.5em 0;
+section header {
+    position: relative;
+	padding: .5em; 
+    text-align: center;
 	border-radius: 0.5em 0.5em 0 0;
 	font-weight: bold;
 	color: #fff;
 	background-color: #000;
 	text-shadow: 0 1px 1px #777;
+    pointer-events: none;
+}
+
+section header::after {
+    font-family: "Font Awesome 5 Free";
+    content: "\f00d";
+	position: absolute; top: 0.5em; right: 0.5em;
+    color: #fff;
+    pointer-events: all;
+}
+
+section header:hover::after {
+    transform: scale(1.2);
 }
 
 ul {
@@ -59,7 +74,7 @@ li {
 	flex: 1;
 	box-sizing: border-box;
 	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    display: flex; align-items: center;
+    /*display: flex; align-items: center;*/
     transition: 0.5s linear;
     line-height: 1.5em;
     padding: 0.5em;
@@ -103,9 +118,7 @@ nav span {
     cursor: pointer;
 }
 
-
-section:empty,
-section:empty::before,
+section.empty,
 body:not(.popup) #restore,
 body.name li:nth-child(2),
 body:not(.name) li:nth-child(1) {
@@ -166,17 +179,21 @@ function toBPSString(bandwidth) {
 }
 
 function setTop(section, topArray) {
-	for (let item; item = section.firstChild;) {
-		section.removeChild(item);
+    const footer = section.querySelector("footer");
+
+	for (let item; item = footer.firstChild;) {
+		footer.removeChild(item);
 	}
 
     if (topArray) {
         topArray.forEach(value => {
             if (Number(value.value) || !section.dataset.zero) {
-                section.appendChild(createTopItem(value, window[section.dataset.func], section.dataset.chart));
+                footer.appendChild(createTopItem(value, window[section.dataset.func], section.dataset.chart));
             }
         });
     }
+
+    section.classList[footer.children.length > 0? "remove": "add"]("empty");
 }
 
 function createTopItem(value, toString, chart) {
@@ -184,6 +201,10 @@ function createTopItem(value, toString, chart) {
 		base = $.nodeData[value.id],
 		item = document.createElement("ul"),
 		gauge;
+
+    if (!base) {
+        throw window.location.reload();
+    }
 
 	item.appendChild(document.createElement("li")).textContent = base.name || base.ip || id;
 	item.appendChild(document.createElement("li")).textContent = base.ip;
@@ -200,7 +221,7 @@ function createTopItem(value, toString, chart) {
 	item.onclick = function () {
         const popup = window.open();
 
-        popup.sessionStorage.setItem("node_id", value.id);
+        popup.sessionStorage.setItem("id", value.id);
 
         popup.location.replace("/chart.html");
 	};
@@ -210,7 +231,7 @@ function createTopItem(value, toString, chart) {
         
         const popup = window.open();
 
-        popup.sessionStorage.setItem("node_id", value.id);
+        popup.sessionStorage.setItem("id", value.id);
         popup.sessionStorage.setItem("chart", chart);
         popup.sessionStorage.setItem("index", value.index);
         
@@ -228,18 +249,20 @@ function reload() {
     }, function () {
 		switch (this.status) {
 		case 200:
-			const topData = JSON.parse(this.responseText);
-
-            [].forEach.call(document.body.querySelectorAll("section"), section => {
-                setTop(section, topData[section.id.toUpperCase()]);
-            });
-        
-            setTimeout(() => requestAnimationFrame(reload), INTERVAL);
-
 			break;
 		default:
-			showMessage(this);
-		}
+			return showMessage(this);
+        }
+        
+        const topData = JSON.parse(this.responseText);
+
+        [].forEach.call(document.body.querySelectorAll("section"), section => {
+            setTop(section, topData[section.id.toUpperCase()]);
+        });
+    
+        setTimeout(() => requestAnimationFrame(reload), INTERVAL);
+
+        document.body.classList.remove("loading");
 	});	
 }
 
@@ -247,11 +270,11 @@ function reload() {
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert("Error!\n\n"+ "오류코드: "+ xhr.status);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -277,89 +300,155 @@ function showMessage(xhr) {
             </div>
         </nav>
         <main>
-            <section id="responseTime" data-func="toMillsString" data-chart="/chart/responseTime.html" title="응답시간"></section>
-            <section id="hrProcessorLoad" data-func="toPercentageString" data-chart="/chart/processor.html" title="프로세서 로드"></section>
-            <section id="hrStorageMemory" data-func="toBytesString" data-chart="/chart/memory.html" title="메모리 사용량"></section>
-            <section id="hrStorageMemory_rate" data-func="toBytesString" data-chart="/chart/memory.html" title="메모리 사용율(%)""></section>
-            <section id="hrStorageUsed" data-func="toBytesString" data-chart="/chart/storage.html" title="저장공간 사용량"></section>
-            <section id="hrStorageUsed_rate" data-func="toBytesString" data-chart="/chart/storage.html" title="저장공간 사용율(%)"></section>
-            <section id="ifInOCtets" data-func="toBPSString" data-chart="/chart/throughput.html" title="수신 사용량"></section>
-            <section id="ifInOCtets_rate" data-func="toBPSString" data-chart="/chart/throughput.html" title="수신 사용율(%)"></section>
-            <section id="ifOutOCtets" data-func="toBPSString" data-chart="/chart/throughput.html" title="송신 사용량"></section>
-            <section id="ifOutOCtets_rate" data-func="toBPSString" data-chart="/chart/throughput.html" title="송신 사용율(%)"></section>
-            <section id="ifInErrors" data-func="toErrorString" data-chart="/chart/error.html" data-zero="true" title="수신 오류"></section>
-            <section id="ifoutErrors" data-func="toErrorString" data-chart="/chart/error.html" data-zero="true" title="송신 오류"></section>
+            <section id="responseTime" data-func="toMillsString" data-chart="/chart/responseTime.html">
+                <header>응답시간</header>
+                <footer></footer>
+            </section>
+            <section id="hrProcessorLoad" data-func="toPercentageString" data-chart="/chart/processor.html">
+                <header>프로세서 로드</header>
+                <footer></footer>
+            </section>
+            <section id="hrStorageMemory" data-func="toBytesString" data-chart="/chart/storage.html">
+                <header>메모리 사용량</header>
+                <footer></footer>
+            </section>
+            <section id="hrStorageMemory_rate" data-func="toBytesString" data-chart="/chart/storage.html">
+                <header>메모리 사용율(%)</header>
+                <footer></footer>
+            </section>
+            <section id="hrStorageUsed" data-func="toBytesString" data-chart="/chart/storage.html">
+                <header>저장공간 사용량</header>
+                <footer></footer>
+            </section>
+            <section id="hrStorageUsed_rate" data-func="toBytesString" data-chart="/chart/storage.html">
+                <header>저장공간 사용율(%)</header>
+                <footer></footer>
+            </section>
+            <section id="ifInOCtets" data-func="toBPSString" data-chart="/chart/throughput.html">
+                <header>수신 사용량</header>
+                <footer></footer>
+            </section>
+            <section id="ifInOCtets_rate" data-func="toBPSString" data-chart="/chart/throughput.html">
+                <header>수신 사용율(%)</header>
+                <footer></footer>
+            </section>
+            <section id="ifOutOCtets" data-func="toBPSString" data-chart="/chart/throughput.html">
+                <header>송신 사용량</header>
+                <footer></footer>
+            </section>
+            <section id="ifOutOCtets_rate" data-func="toBPSString" data-chart="/chart/throughput.html">
+                <header>송신 사용율(%)</header>
+                <footer></footer>
+            </section>
+            <section id="ifInErrors" data-func="toErrorString" data-chart="/chart/error.html" data-zero="true">
+                <header>수신 오류</header>
+                <footer></footer>
+            </section>
+            <section id="ifoutErrors" data-func="toErrorString" data-chart="/chart/error.html" data-zero="true">
+                <header>송신 오류</header>
+                <footer></footer>
+            </section>
         </main>
         <div class="bg_loading"></div>
         
-        <script>
-if (opener) {
-    window.account = opener.account;
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+		<script>
 
-    if (opener.onRestore) {
-        document.body.classList.add("popup");
-        
-        document.getElementById("restore").onclick = e => {
-            if (opener && !opener.closed) {
-                opener.onRestore("topTen");
+const
+    INTERVAL = 10000,
+    $ = {
+    request: new Request()
+};
 
-                close();
-            } else {
-                alert("Error!\n\n창 복원 오류.");
-            }
-        };
+if (window === top) {
+    if (!$.request.try(function (e) {
+        if (this.status === 200) {
+            window.account = JSON.parse(this.responseText);
+        } else {
+            throw window.location.replace("/warning.html");    
+        }
+    })) {
+        throw window.location.replace("/warning.html");
     }
-} else if (top !== window && top.account) {
-    window.account = top.account;
+} else if (top.account) {
+    window.account = JSON.parse(JSON.stringify(top.account));
 
     document.body.classList.add("frame");
 } else {
     throw window.location.replace("/warning.html");
 }
-        </script>
-        <script src="/js/request.js"></script>
-		<script>
-
-const INTERVAL = 10000;
-const $ = {
-    request: new Request()
-};
 
 document.getElementById("display").onclick = e => document.body.classList.toggle("name");
+
+[].forEach.call(document.body.querySelectorAll("section"), section => {
+    section.draggable = true;
+
+    section.querySelector("header").onclick = e => section.parentNode.removeChild(section);
+
+    section.addEventListener("dragstart", function (e) {
+        e.stopPropagation();
+        
+        $.draggable = this;
+    });
+    
+    section.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        
+        if ($.draggable === this) {
+            return;
+        }
+        
+        switch ($.draggable) {
+        case this.previousElementSibling:
+            this.parentNode.insertBefore(this, $.draggable);
+            
+            break;
+        default:
+            this.parentNode.insertBefore($.draggable, this);
+        }
+    });
+});
+
+function setDraggable() {
+    [].forEach.call(document.body.querySelectorAll("section"), section => {
+		
+		
+		
+	});
+}
 
 function initNode() {
     switch (this.status) {
     case 200:
-        $.nodeData = JSON.parse(this.responseText);
-        
-        document.body.classList.remove("loading");
-
-        reload();
-
         break;
     default:
-        showMessage(this);
+        return showMessage(this);
     }
+
+    $.nodeData = JSON.parse(this.responseText);
+
+    reload();
 }
 
 function initSetting () {
     switch (this.status) {
     case 200:
-        const settingData = JSON.parse(this.responseText);
-
-        if ("display" in settingData && settingData.display === "address") {
-            document.body.classList.remove("name");
-        }
-
-        $.request.execute({
-            command: "get",
-            target: "node"
-        }, initNode);
-
         break;
     default:
-        showMessage(this);
+        return showMessage(this);
     }
+
+    const settingData = JSON.parse(this.responseText);
+
+    if ("display" in settingData && settingData.display === "address") {
+        document.body.classList.remove("name");
+    }
+
+    $.request.execute({
+        command: "get",
+        target: "node"
+    }, initNode);
 }
 
 $.request.execute({

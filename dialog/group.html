@@ -8,7 +8,6 @@
 		
 		<style>
 @import "/css/style.css";
-@import "/css/glyphicon.css";
 @import "/css/fa.css";
 
 body {
@@ -20,7 +19,7 @@ body {
 }
 
 main {
-	width: 360px;
+	width: 320px;
 	padding: 20px;
 	background-color: #fff;
     position: relative;
@@ -99,7 +98,7 @@ td >select {
 }
 
 .address {
-    font-family: "Glyphicons Halflings";
+    font-family: "Font Awesome 5 Free";
 }
 
 .address * {
@@ -108,8 +107,9 @@ td >select {
 
 .address::before {
     display: inline-block;
-    content: "\e013";
+    content: "\f00c";
     color: transparent;
+    font-weight: bold;
 }
 
 .address.valid::before {
@@ -126,19 +126,10 @@ footer {
 }
 
 footer> input {
-    font-family: "Glyphicons Halflings";
+    font-family: "Font Awesome 5 Free";
 	flex: 1;
-	border-radius: 1.2em;
-	background-color: #0084ff;
-	color: #fff;
-	border: .2em solid transparent;
 	padding: .5em;
-}
-
-footer> input:hover {
-	background-color: #fff;
-	color: #0084ff;
-	border-color: #0084ff;
+    font-weight: bold;
 }
 
 #close {
@@ -157,7 +148,8 @@ footer> input:hover {
     position: absolute;
 }
 
-body:not(.edit) input[type=reset] {
+body:not(.edit) input[type=reset],
+iframe {
 	display: none;
 }
 
@@ -215,7 +207,7 @@ function showMessage(xhr) {
                         <tr>
                             <th class="address">
                                 주소
-                                <input type="button" name="validate" value="&#xe062;" title="주소 위치 검증">
+                                <input type="button" name="validate" value="&#xf3c5;" title="주소 위치 검증">
                             </td>
                             <td>
                                 <input name="address" type="text">
@@ -236,22 +228,25 @@ function showMessage(xhr) {
                     </tbody>
                 </table>
                 <footer>
-                    <input type="reset" value="&#xe020; 삭제">
-                    <input type="submit" value="&#xe013; 확인" disabled>
+                    <input type="reset" value="&#xf1f8; 삭제" disabled>
+                    <input type="submit" value="&#xf0c7; 저장" disabled>
                 </footer>
                 <div class="bg_loading"></div>
             </form>
 		</main>
-
+        <iframe></iframe>
         <script src="/js/ITAhM.js"></script>
         <script src="/js/icon.js"></script>
         <script src="/js/request.js"></script>
-        <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=2d5f1506a806e98b9b51ecb765853bd7&libraries=services"></script>
 		<script>
 
-const $ = {
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
         request: new Request(),
+        id: Number(search.get("id")) || undefined,
         base: {},
+        iconData: ITAhM.iconData,
         form: document.querySelector("form")
     };
 
@@ -260,20 +255,16 @@ if (top.account.level === 0) {
 	document.querySelector("input[type=reset]").disabled = false;
 }
 
-function close() {
-	top.closeDialog(true);
-}
-
 document.addEventListener("keydown", function (e) {
 	switch (e.keyCode) {
 	case 27:
-		close();
+    parent.closeDialog();
 		
 		break;
 	}
 });
 
-document.getElementById("close").onclick = close;
+document.getElementById("close").onclick = e => parent.closeDialog();
 
 document.getElementById("branch").onclick = function (e) {
     if (this.checked) {
@@ -301,7 +292,7 @@ $.form.onreset = function (e) {
     }, function () {
         switch (this.status) {
             case 200:
-                reloadOpener();
+                parent.closeDialog(true);
 
                 break;
             default:
@@ -341,13 +332,14 @@ $.form.onsubmit = function (e) {
         request.id = $.id;
     }
     else {
-        request.command = "add";
+        request.command = "add",
+        $.base.group = "group";
     }
 
     $.request.execute(request, function () {
         switch (this.status) {
         case 200:
-            reloadOpener();
+            parent.closeDialog(true);
 
             break;
         default:
@@ -365,31 +357,29 @@ $.form.elements["validate"].onclick = function (e) {
 
     document.body.classList.add("loading");
 
-    try {
-        const geocoder = new kakao.maps.services.Geocoder();
+    const map = document.body.querySelector("iframe");
 
-        geocoder.addressSearch(address, (result, status) => {
-            if (status === kakao.maps.services.Status.OK) {
+    map.onload = e => {
+        map.contentWindow.getAddress(address, latLng => {
+            if (latLng) {
+                $.branch.lat = latLng.lat;
+                $.branch.lng = latLng.lng;
+
                 document.body.querySelector(".address").classList.add("valid");
-
-                $.branch.lat = result[0].y;
-                $.branch.lng = result[0].x;
             } else {
-                document.body.querySelector(".address").classList.remove("valid");
-
                 delete $.branch.lat;
                 delete $.branch.lng;
 
                 alert("Notice.\n\n위치 검증 오류.");
+
+                document.body.querySelector(".address").classList.remove("valid");
             }
 
             document.body.classList.remove("loading");
         });
-    } catch (e) {
-        alert("Error!\n\n해당 기능을 사용할 수 없음.");
+    };
 
-        document.body.classList.remove("loading");
-    }    
+    map.src = "/util/map.html";
 };
 
 function initDialog() {
@@ -436,51 +426,37 @@ function initDialog() {
     }
 }
 
-// public
-window.initialize = function (id) {
-    const opener = this;
+$.request.execute({
+    command: "get",
+    target: "icon"
+}, function () {
+    switch (this.status) {
+    case 200:
+        const
+            iconData = JSON.parse(this.responseText),
+            df = document.createDocumentFragment();
 
-    window.reloadOpener = function () {
-        opener.location.reload();
-        
-        close();
-    };
-    
-    $.id = id;
-
-    $.request.execute({
-        command: "get",
-        target: "icon"
-    }, function () {
-        switch (this.status) {
-        case 200:
-            const
-                iconData = ITAhM.iconData,
-                customData = JSON.parse(this.responseText),
-                df = document.createDocumentFragment();
-
-            for (let type in customData) {
-                iconData[type] = customData[type];
-            }
-
-            for (let type in iconData) {
-                if (iconData[type].group === "group") {
-                    df.appendChild(document.createElement("option")).text = type;
-                }
-            }
-
-            $.form.elements["type"].appendChild(df);
-            $.form.elements["type"].selectedIndex = -1;
-
-            initDialog();
-
-            break;
-
-        default:
-            showMessage(this);
+        for (let type in iconData) {
+            $.iconData[type] = iconData[type];
         }
-    });
-};
+
+        for (let type in $.iconData) {
+            if ($.iconData[type].group === "group") {
+                df.appendChild(document.createElement("option")).text = type;
+            }
+        }
+
+        $.form.elements["type"].appendChild(df);
+        $.form.elements["type"].selectedIndex = -1;
+
+        initDialog();
+
+        break;
+
+    default:
+        showMessage(this);
+    }
+});
 
 	</script>
 	

@@ -27,7 +27,7 @@
         linkHelper = layerMap.link.querySelector("polyline"),
         positionMap = {},
         deviceMap = {},
-        testMap = {};
+        pathMap = {};
 
     let
         scale = 1,
@@ -173,7 +173,7 @@
                     matrix.e = x;
                     matrix.f = y;
 
-                    drawPath(device.dataset.id);
+                    movePath(device.dataset.id);
                 });            
             }
         }
@@ -266,7 +266,7 @@
                             pos.x = matrix.e += x;
                             pos.y = matrix.f += y;
 
-                            drawPath(id);
+                            movePath(id);
                         }));
 
                     transform.translate.setTranslate(0, 0);
@@ -286,7 +286,7 @@
                     matrix1.e = 0;
                     matrix1.f = 0;
 
-                    drawPath(id);
+                    movePath(id);
 
                     if (e.target !== this) {
                         const device = e.target.parentNode;
@@ -370,7 +370,7 @@
                 x: Math.round(args.pos.x /10) *10,
                 y: Math.round(args.pos.y /10) *10
             },
-            size = args.size || ICON_SIZE;
+            size = ICON_SIZE * (args.scale || 1);
         
         positionMap[args.id] = args.pos;
 
@@ -389,6 +389,8 @@
 
         if (args.group) {
             device.classList.add("group");
+            
+            /*svgIcon.ondblclick = e => {console.log("!!!"); onEnter(Number(args.id));};*/
         }
         
         svgName.textContent = args.name;
@@ -479,10 +481,10 @@
         }
 
         if (args.from) {
-            let array = testMap[args.from];
+            let array = pathMap[args.from];
 
             if (!array) {
-                array = testMap[args.from] = [];
+                array = pathMap[args.from] = [];
             }
 
             array.push(pathData);
@@ -491,10 +493,10 @@
         }
 
         if (args.to) {
-            let array = testMap[args.to];
+            let array = pathMap[args.to];
 
             if (!array) {
-                array = testMap[args.to] = [];
+                array = pathMap[args.to] = [];
             }
 
             array.push(pathData);
@@ -505,12 +507,8 @@
         layerMap.path.appendChild(path);
     }
 
-    function drawPath (id) {
-        const pathArray = testMap[id];
-
-        if (pathArray) {
-            pathArray.forEach(pathData => drawEachPath(pathData));
-        }
+    function movePath (id) {
+        (pathMap[id] || []).forEach(pathData => drawEachPath(pathData));
     }
 
     function drawEachPath (pathData) {

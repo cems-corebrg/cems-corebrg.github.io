@@ -1,10 +1,469 @@
+
 <!DOCTYPE html>
 <html>
 	<head>
 		<meta charset="UTF-8">
 		<title>CeMS</title>
-		<script>
-window.location.replace("/nms.html");
-		</script>
-	</head>
+		
+		<style>
+
+@import "/css/fa.css";
+
+body {
+    font : 10pt "맑은 고딕", Arial, Tahoma;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+    user-select: none;
+}
+
+header {
+    background-color: #1e1f26;
+    flex: none;
+    display: flex; justify-content: space-between;
+    padding: 1em;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+header b {
+    color: #7f7f7f;
+}
+
+header span {
+    cursor: pointer;
+}
+
+nav,
+#restore {
+    font: 20px "Font Awesome 5 Free";
+}
+
+nav >span {
+    display: inline-block;
+    
+}
+
+nav >span:hover {
+    transform: translateY(-2px);
+}
+
+nav >span:active {
+    color: #0084ff;
+    transform: translateY(0);
+}
+
+article {
+    flex: 1;
+    display: flex;
+}
+
+aside {
+    flex: none; width: 400px;
+}
+
+main {
+    flex: 1;
+    position: relative;
+}
+
+#restore {
+    position: absolute;
+    top: 5px; right: 5px;
+    border-radius: 50%;
+    display: flex; width: 32px; height: 32px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 132, 255, 0.5);
+    border-color: #0084ff;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+#restore:hover {
+    background-color: #0084ff;
+}
+
+iframe {
+    border: none;
+    width: 100%; height: 100%;
+}
+
+#dialog {
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	padding: 0; margin: 0;
+}
+
+footer {
+    position: absolute; top: 0; right: 0; left: 0;
+    padding: 1em;
+    text-align: center;
+    font-weight: bold;
+    color: #fff;
+    pointer-events: none;
+}
+
+#event {
+    cursor: pointer;
+    pointer-events: all;
+}
+
+#event::before,
+#event::after {
+    display: inline-flex; align-items: center; justify-content: center;
+    background-color: #ffa500;
+    border: 1px solid #c46c00;
+    height: 3em;
+    box-sizing: border-box;
+}
+
+#event::before {
+    content: attr(data-count);
+    width: 3em; 
+	border-radius: 50%;
+}
+
+#event::after {
+    content: attr(data-message);
+    padding: 0 1em 0 1em;
+	margin-left: 1em;
+	border-radius: 1.5em 0 0 1.5em;
+}
+
+a:link,
+a:visited {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+body:not(.authorized) header {
+    pointer-events: none;
+    color: #7f7f7f;
+}
+
+body:not(.dashboard) #restore,
+body:not(.authorized) aside,
+body:not(.event) #event,
+body:not(.dialog) #dialog {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function signIn(account) {
+    const signout = document.getElementById("signout");
+
+    $.request = new Request();
+
+    window.account = account;
+
+    document.title = $.request.agent;
+
+    signout.textContent = account.username;
+    signout.title = `${account.username}  Sign out`;
+    signout.onclick = onSignOut;
+
+    $.request.execute({
+        command: "get",
+        target: "setting"
+    }, function () {
+        switch (this.status) {
+        case 200:
+            const
+                settingData = JSON.parse(this.responseText),
+                bc = new BroadcastChannel("bc_event");
+            let home = "about:blank";
+
+            if (!("mute" in settingData) || settingData.mute === "false") {
+                $.sound = new Audio("/siren.mp3");
+            }
+
+            $.request.listen(e => {
+                onEvent(e);
+
+                bc.postMessage(e);
+            });
+
+            if ("home" in settingData) {
+                switch (settingData.home) {
+                case "1":
+                    home = "/topology.html";
+
+                    break;
+                case "2":
+                    home = "/branch.html";
+
+                    break;
+                case "3":
+                    home = "/dc.html";
+
+                    break;
+                case "4":
+                    home = "/TopTen.html";
+
+                    break;
+                }
+            }
+
+            document.getElementById("cems").src = home;
+            document.getElementById("status").src = "/status.html";
+
+            document.body.classList.add("authorized");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function onEvent(event) {
+    if (event == null) {
+        alert("Error!\n\n"+
+            "리스너 응답 없음.");
+
+        window.location.reload();
+    }
+
+    if (event.level < 0) {
+        alert("Notice.\n\n"+
+            "관리자가 서비스를 종료하였습니다.");
+
+        return signOut();
+    }
+
+    $.event.dataset.count = (count => {
+        if (isNaN(count)) {
+            return "9+";
+        } else {
+            return ++count > 9? "9+": count;
+        }
+    }) (Number($.event.dataset.count));
+
+    $.event.dataset.message = `${event.name || event.ip || ""} ${event.message}`;
+
+    document.body.classList.add("event");
+
+    switch(event.origin) {
+    case "critical":
+    case "status":
+    case "snmp":
+    case "updown":
+        break;
+
+    case "register":
+    case "search":
+    case "system":
+    case "warning":
+        break;
+    }
+
+    if (event.level == 2 && $.sound) {
+        try {
+            $.sound.play();
+        } catch (e) {
+            console.log(e);
+        };
+    }
+}
+
+function showDialog(src) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function () {
+		document.body.classList.add("dialog");
+	};
+
+    dialog.src = src;
+}
+
+function closeDialog(reset) {
+    document.body.classList.remove("dialog");
+    
+    if (reset) {
+        resetDialog();
+    }
+}
+
+function resetDialog() {
+    document.getElementById("cems").contentWindow.location.reload();
+}
+
+function signOut() {
+    document.body.classList.add("loading");
+
+    $.request.execute({
+        command: "signout"
+    }, function () {
+        window.location.reload();
+    });
+}
+
+function onSignOut() {
+    if (confirm(CONFIRM_SIGNOUT["kr"])) {
+        signOut();
+    }
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    default:
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <b>
+                    &#xf7a5;
+                </b>
+                <span title="토폴로지">
+                    <a href="/topology.html" target="cems">
+                        &#xf0e8;
+                    </a>
+                </span>
+                <span title="지도">
+                    <a href="/branch.html" target="cems">
+                        &#xf3c5;
+                    </a>
+                </span>
+                <span title="데이터센터">
+                    <a href="/dc.html" target="cems">
+                        &#xf64f;
+                    </a>
+                </span>
+                <span title="Top Ten">
+                    <a href="/topTen.html" target="cems">
+                        &#xf160;
+                    </a>
+                </span>
+                <b>
+                    &#xf7a5;
+                </b>
+                <span title="이벤트">
+                    <a href="/event.html" target="cems">
+                        &#xf783;
+                    </a>
+                </span>
+                <span title="노드 목록">
+                    <a href="/node.html" target="cems">
+                        &#xf233;
+                    </a>
+                </span>
+                <span title="그룹 목록">
+                    <a href="/group.html" target="cems">
+                        &#xf5fd;
+                    </a>
+                </span>
+                <span title="회선 목록">
+                    <a href="/link.html" target="cems">
+                        &#xf83e;
+                    </a>
+                </span>
+                <span title="임계 관리">
+                    <a href="/critical.html" target="cems">
+                        &#xf08d;
+                    </a>
+                </span>
+                <span title="아이콘">
+                    <a href="/icon.html" target="cems">
+                        &#xf61f;
+                    </a>
+                </span>
+                <span title="설정">
+                    <a href="/setting.html" target="cems">
+                        &#xf013;
+                    </a>
+                </span>
+                <b>
+                    &#xf7a5;
+                </b>
+                <span title="새로고침">
+                    <a href="/">
+                        &#xf2f9;
+                    </a>
+                </span>
+            </nav>
+            <div title="Signout">
+                <span id="signout"></span>
+            </div>
+        </header>
+        <article>
+            <aside>
+                <iframe name="status" id="status"></iframe>
+            </aside>
+            <main>
+                <span id="restore" title="새 창">
+                    &#xf2d2;
+                </span>
+                <iframe name="cems" id="cems" src="/connect.html"></iframe>
+            </main>
+        </article>
+        <footer>
+            <span id="event" data-count="0" data-message="No message."></span>
+        </footer>
+        <iframe id="dialog"></iframe>
+
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const $ = {
+        event: document.getElementById("event"),
+        popups: []
+    };
+
+((open) => {
+    window.open = (url, name) => {
+        if (name) {
+            open(url, name);
+        } else {
+            $.popups.push(open(url,
+                "_blank",
+                `left=${window.innerWidth /4},top=${window.innerHeight /4},width=${window.innerWidth /2},height=${window.innerHeight /2}`));
+        }
+    };
+})(window.open);
+
+window.onunload = e => $.popups.forEach(wnd => wnd.close());
+
+$.event.onclick = e => {
+    document.body.classList.remove("event");
+
+    $.event.dataset.count = 0;
+};
+
+document.getElementById("cems").onload = function (e) {
+    switch (this.contentWindow.location.pathname) {
+    case "/topology.html":
+    case "/branch.html":
+    case "/dc.html":
+    case "/topTen.html":
+        document.body.classList.add("dashboard");
+
+        break;
+    default:
+        document.body.classList.remove("dashboard");
+    }
+}
+
+document.getElementById("restore").onclick = function (e) {
+    const frame = document.getElementById("cems").contentWindow.location;
+
+    window.open(frame.href);
+    
+    frame.replace("about:blank");
+}
+
+        </script>
+        
+    </body>
 </html>

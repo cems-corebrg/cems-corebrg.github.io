@@ -24,11 +24,6 @@ iframe {
     border: none;
 }
 
-#dialog {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	padding: 0; margin: 0;
-}
-
 nav {
     position: absolute; top: 5px; right: 5px;
 }
@@ -36,7 +31,7 @@ nav {
 nav >span {
     font: 20px "Font Awesome 5 Free";
     border-radius: 50%;
-    display: flex; width: 32px; height: 32px;
+    display: inline-flex; width: 32px; height: 32px;
     align-items: center;
     justify-content: center;
     background-color: rgba(0, 132, 255, 0.5);
@@ -49,45 +44,16 @@ nav >span:hover {
     background-color: #0084ff;
 }
 
-aside {
-    position: absolute; top: 0; right: 0; left: 0;
-    padding: 1em;
-    text-align: center;
-    font-weight: bold;
-    color: #fff;
-    pointer-events: none;
+#dialog {
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	padding: 0; margin: 0;
 }
 
-#event {
-    cursor: pointer;
-    pointer-events: all;
-}
-
-#event::before,
-#event::after {
-    display: inline-flex; align-items: center; justify-content: center;
-    background-color: #ffa500;
-    border: 1px solid #c46c00;
-    height: 3em;
-    box-sizing: border-box;
-}
-
-#event::before {
-    content: attr(data-count);
-    width: 3em; 
-	border-radius: 50%;
-}
-
-#event::after {
-    content: attr(data-message);
-    padding: 0 1em 0 1em;
-	margin-left: 1em;
-	border-radius: 1.5em 0 0 1.5em;
-}
-
-body:not(.dialog) #dialog,
-body:not(.event) #event,
-body:not(.popup) nav {
+body:not(.edit) #close,
+body.edit #edit,
+body.frame nav,
+body:not(.root) nav,
+body:not(.dialog) #dialog {
     display: none;
 }
 
@@ -160,60 +126,38 @@ function getModelData() {
     return modelData;
 }
 
-function onEvent(event) {
-    $.event.dataset.count = (count => {
-        if (isNaN(count)) {
-            return "9+";
-        } else {
-            return ++count > 9? "9+": count;
-        }
-    }) (Number($.event.dataset.count));
-
-    $.event.dataset.message = `${event.name || event.ip || ""} ${event.message}`;
-
-    document.body.classList.add("event");
-}
-
         </script>
 
         <body>
             <main>
-                <iframe id="view"></iframe>
+                <iframe id="frame"></iframe>
             </main>
             <nav>
-                <span id="restore" title="창 복원">
-                    &#xf2d0;
+                <span id="close" title="편집 종료">
+                    &#xf00d;
+                </span>
+                <span id="edit" title="편집 모드">
+                    &#xf013;
                 </span>
             </nav>
-            <aside>
-                <span id="event" data-count="0" data-message="No message."></span>
-            </aside>
             <iframe id="dialog"></iframe>
 
             <script>
-if (opener) {
-    window.account = opener.account;
 
-    if (opener.onRestore) {
-        document.body.classList.add("popup");
-        
-        document.getElementById("restore").onclick = e => {
-            if (opener && !opener.closed) {
-                opener.onRestore("dc");
-
-                close();
-            } else {
-                alert("Error!\n\n창 복원 오류.");
-            }
-        };
-    }
+if (opener && opener.account) {
+    window.account = JSON.parse(JSON.stringify(opener.account));
 } else if (top !== window && top.account) {
-    window.account = top.account;
+    window.account = JSON.parse(JSON.stringify(top.account));
 
     document.body.classList.add("frame");
 } else {
     throw window.location.replace("/warning.html");
 }
+
+if (window.account.level === 0) {
+    document.body.classList.add("root");
+}
+
         </script>
         <script src="/js/request.js"></script>
         <script src="/js/import/three.js"></script>
@@ -221,18 +165,23 @@ if (opener) {
         <script>
 
 const $ = {
-        request: new Request(),
-        event: document.getElementById("event")
+        request: new Request()
     };
 
-$.event.onclick = e => {
-    document.body.classList.remove("event");
+document.getElementById("edit").onclick = e => {
+    document.body.classList.toggle("edit");
 
-    $.event.dataset.count = 0;
+    document.getElementById("frame").contentWindow.location.replace("/dc/edit.html");
 };
-  
+
+document.getElementById("close").onclick = e => {
+    document.body.classList.toggle("edit");
+
+    document.getElementById("frame").contentWindow.location.replace("/dc/view.html");
+};
+
 preLoadTextures(Object.keys(modelData), function () {
-    document.getElementById("view").src = "/dc/view.html";
+    document.getElementById("frame").src = "/dc/view.html";
 });
 
         </script>

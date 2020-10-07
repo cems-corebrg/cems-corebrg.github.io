@@ -9,7 +9,7 @@
 		<style>
 		
 @import "/css/itahm.css";
-@import "/css/glyphicon.css";
+@import "/css/fa.css";
 
 body {
 	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
@@ -133,7 +133,7 @@ form.bandwidth {
 }
 
 .glyph::before {
-    font-family: "Glyphicons Halflings";
+    font-family: "Font Awesome 5 Free";
     background: rgba(0,0,0,0.15);
     top: 0; bottom: 0; left: 0; width: 3em;
 }
@@ -192,15 +192,15 @@ form.bandwidth {
 }
 
 .glyph.set::before {
-    content: "\e146";
+    content: "\f08d";
 }
 
 .glyph.apply::before {
-    content: "\e013";
+    content: "\f00c";
 }
 
 .glyph.cancel::before {
-    content: "\e014";
+    content: "\f2ea";
 }
 
 body:not(.custom) .cancel {
@@ -266,97 +266,27 @@ body:not(.root) form,
 body.root #bandwidth {
     display: none;
 }
-
         </style>
         
-        <script src="/js/ITAhM.js"></script>	
-		<script src="/js/object.js"></script>
-        <script src="/js/snmp.js"></script>
 		<script>
 
-function ChartData() {
+function SummaryData() {
     this.initialize(arguments);
 }
 
-ChartData.prototype = {
+SummaryData.prototype = {
     initialize: function(args) {
-        this.data = {};
-        this.index = {};
-        this.summary = {};
-        this.timeStampArray = [];
+        this.data = args[0];
     },
-    unshift: function (dateMillis, data) {
-        const
-            dateKey = String(dateMillis),
-            timeStampArray = Object.keys(data).sort();
-        var
-            date,
-            next,
-            hour,
-            values = [];
-
-        this.data = Object.assign(this.data, data);
-        
-        this.timeStampArray = timeStampArray.concat(this.timeStampArray);
-
-        timeStampArray.forEach((key, i) => {
-            const millis = Number(key);
-
-            if (i ==0) {
-                this.index[dateKey] = key;
-
-                date = new Date(millis);
-                hour = date.setMinutes(0, 0, 0);
-                next = date.setHours(date.getHours() +1);
-            }
-            while (true) {
-                if (millis < next) {
-                    const key2 = timeStampArray[i +1];
-
-                    if (key2) {
-                        let c = (Number(data[key2]) - Number(data[key])) *8000 / (Number(key2) - millis);
-
-                        if (c >= 0) {
-                            values.push(c);   
-                        }
-                    }
-
-                    break;
-                }
-                else {
-                    if (values.length > 0) {
-                        this.summary[String(hour)] = {
-                            max: Math.max.apply(undefined, values),
-                            min: Math.min.apply(undefined, values),
-                            avg: values.reduce((a, b) => a + b) / values.length
-                        }
-                    }
-
-                    hour = next;
-                    next = date.setHours(date.getHours() +1);
-
-                    values = [];
-                }
-            }
-        });
-        
-        if (values.length > 0) {
-            this.summary[String(hour)] = {
-                max: Math.max.apply(undefined, values),
-                min: Math.min.apply(undefined, values),
-                avg: values.reduce((a, b) => a + b) / values.length
-            }
-        }
-    },
-    parseSummary: function (start, end) {
+    parse: function (from, to) {
         var resultKeyArray = [],
             blockKeyArrary = [],
-            date = new Date(start),
+            date = new Date(from),
             mills = date.setMinutes(0, 0, 0),
             value, high, low, max = [], min = [];
         
         do {
-            value = this.summary[String(mills)];
+            value = this.data[String(mills)];
             
             if (value) {
                 blockKeyArrary.push(mills);
@@ -371,14 +301,14 @@ ChartData.prototype = {
             }
 
             mills = date.setHours(date.getHours() +1);
-        } while (mills < end);
+        } while (mills < to);
         
         if (blockKeyArrary.length > 0) {
             resultKeyArray.push(blockKeyArrary);
         }
         
-        high = Math.max.apply(undefined, max);
-        low = Math.min.apply(undefined, min);
+        high = max.length > 0? max.reduce((a, b) => a>b? a: b): 0;
+        low = min.length > 0? min.reduce((a, b) => a>b? b: a): 0;
         
         if (high === low) {
             high++;
@@ -386,48 +316,65 @@ ChartData.prototype = {
         }
         
         return resultKeyArray.length > 0? {
-            high: high,
-            low: low,
+            high: high *8,
+            low: low *8,
             keys: resultKeyArray
         }: undefined;
     },
-    getSummary: function (millis) {
-        return this.summary[String(millis)];
-    },
-    parseData: function (start, end) {
-        const resultKeyArray = [];
-        var index = this.timeStampArray.indexOf(this.index[String(start)]);
-        
-        if (index < 0) {
-            return;
-        }
+    get: function (millis) {
+        const value = this.data[String(millis)];
 
-        for (let millis = this.timeStampArray[index++]; millis < end; millis = this.timeStampArray[index++]) {
-            resultKeyArray.push(millis);
-        }
-
-        return resultKeyArray.length > 0? resultKeyArray: undefined;
-    },
-    /**
-    * @param millis string
-    * @param nextMillis string
-    */
-    getData: function (millis, nextMillis) {
-        if (!nextMillis) {
-            return;
-        }
-        
-        const
-            octs1 = Number(this.data[millis]),
-            octs2 = Number(this.data[nextMillis]);
-
-        if (octs2 < octs1) {
-            return;
-        }
-        
-        return  (octs2 - octs1) *8000 / (Number(nextMillis) - Number(millis));
+        return value? {
+            max: value.max *8,
+            avg: value.avg *8,
+            min: value.min *8
+        }: undefined;
     }
 };
+
+function ChartData() {
+    this.initialize(arguments);
+}
+
+ChartData.prototype = {
+    initialize: function(args) {
+        this.data = args[0];
+    },
+    forEach: function (f, sort) {
+        delete this.last;
+
+        if (sort) {
+            const keys = Object.keys(this.data).sort((a, b) => Number(a) - Number(b));
+
+            keys.forEach(key => {
+                this.each(key, f);
+            });
+        } else {
+            for (let key in this.data) {
+                this.each(key, f);
+            }
+        }
+    },
+    each: function (key, f) {
+        const value = {
+                timestamp: Number(key),
+                value: Number(this.data[key])
+            };
+        
+        if (this.last) {
+            const
+                diff = value.value - this.last.value,
+                t = value.timestamp - this.last.timestamp;
+//if (diff<0) console.log(diff);
+if (t<0) console.log(t);
+            if (diff >= 0 && t > 0) {
+                f(value.timestamp, diff *8000 / t);
+            }
+        }
+
+        this.last = value;
+    }
+}
 
 function toDateTimeString(millis) {
     var
@@ -446,7 +393,7 @@ function toDateTimeString(millis) {
 /**
  * public
  */
-function getFile() {
+ function getFile() {
     document.getElementById("chart_in").contentWindow.getFile();
     document.getElementById("chart_out").contentWindow.getFile();
 }
@@ -454,50 +401,16 @@ function getFile() {
 function realtime(realtime) {
     document.getElementById("chart_in").contentWindow.realtime(realtime);
     document.getElementById("chart_out").contentWindow.realtime(realtime);
-
-    if (realtime) {
-        window.timer = window.setTimeout(postRealtimeRequest);
-    } else if (window.timer !== undefined) {
-        clearTimeout(window.timer);
-
-        window.timer = undefined;
-    }
 }
 
-function postRealtimeRequest() {
-    $.request.execute({
-        command: "get",
-        target: "node",
-        id: Number(window.sessionStorage.getItem("node_id")),
-        resource: true
-    }, function () {
-        switch (this.status) {
-        case 200:
-            const
-                resourceData = JSON.parse(this.responseText).resource,
-                index = window.sessionStorage.getItem("index");
-
-            document.getElementById("chart_in").contentWindow
-                .putRealtimeValue(Number(resourceData[index]["1.3.6.1.2.1.2.2.1.10"]));
-            document.getElementById("chart_out").contentWindow
-                .putRealtimeValue(Number(resourceData[index]["1.3.6.1.2.1.2.2.1.16"]));
-            break;
-        default:
-            showMessage(this);
-        }
-
-        if (window.timer !== undefined) {
-            window.timer = window.setTimeout(postRealtimeRequest, INTERVAL);
-        }
-    });
+function detail() {
+    document.getElementById("chart_in").contentWindow.detail();
+    document.getElementById("chart_out").contentWindow.detail();
 }
 
-function draw (position, limit) {
-    window.position = position;
-    window.limit = limit;
-
-    document.getElementById("chart_in").contentWindow.draw();
-    document.getElementById("chart_out").contentWindow.draw();
+function draw (from, to) {
+    document.getElementById("chart_in").contentWindow.draw(from, to);
+    document.getElementById("chart_out").contentWindow.draw(from, to);
 }
 
 function toString(value) {
@@ -522,11 +435,11 @@ function toString(value) {
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -537,8 +450,8 @@ function showMessage(xhr) {
 		</script>
 	</head>
 	
-	<body>
-		<header>
+	<body class="loading">
+        <header>
 			<h2>Interface throughput: <i>"</i> <span id="if_name"></span> <i>"</i></h2>
 			<div class="legend">
                 <form class="critical" title="임계 설정 해제시 0 입력">
@@ -585,60 +498,31 @@ function showMessage(xhr) {
         </main>
         <div class="bg_loading"></div>
 
+		<script src="/js/ITAhM.js"></script>
+        <script src="/js/object.js"></script>
+        <script src="/js/snmp.js"></script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
 		<script>
 
 const
+    INTERVAL = 5000,
+    search = new URLSearchParams(window.location.search),
     $ = {
-        request: new Request()
-    },
-    INTERVAL = 5000;
-
-var timer;
+        request: new Request(),
+        id: Number(search.get("id")),
+        index: search.get("index"),
+        from: Number(search.get("from")),
+        to: Number(search.get("to"))
+    };
+    
+if (!$.id || !$.index || !$.from || !$.to) {
+    throw top.location.replace("/warning.html");
+}
 
 if (top.account.level == 0) {
     document.body.classList.add("root");
 }
-
-window.position = Number(window.sessionStorage.getItem("position"));
-window.limit = Number(window.sessionStorage.getItem("limit"));
-
-document.querySelector("form.critical").onsubmit = 
-document.querySelector(".set").onclick = function (e) {
-    e.preventDefault();
-
-    const
-        request = {
-            command: "set",
-            target: "critical",
-            id: Number(window.sessionStorage.getItem("node_id")),
-            index: window.sessionStorage.getItem("index"),
-            limit: Number(document.getElementById("limit").value || "0")
-        },
-        oid = [ITAhM.snmp.oid.ifInOctets, ITAhM.snmp.oid.ifOutOctets];
-
-    function onResponse () {
-        switch (this.status) {
-            case 200:
-                request.oid = oid.pop();
-
-                if (request.oid) {
-                    $.request.execute(request, onResponse);
-                } else {
-                    alert("Information.\n\n임계를 설정했습니다.");
-                }
-                
-                break;
-
-            default:
-                showMessage(this);
-        }
-    }
-
-    request.oid = oid.pop();
-
-    $.request.execute(request, onResponse);
-};
 
 document.getElementById("switch").onclick = function (e) {
     document.querySelector(".address").classList[this.checked? "add": "remove"]("show");
@@ -658,20 +542,20 @@ document.querySelector(".apply").onclick = function (e) {
 
     $.request.execute({
         command: "set",
-        target: "resource",
-        id: Number(window.sessionStorage.getItem("node_id")),
-        index: window.sessionStorage.getItem("index"),
+        target: "bandwidth",
+        id: $.id,
+        index: $.index,
         oid: ITAhM.snmp.oid.bandwidth,
         value: String(bandwidth)
     }, function () {
         switch (this.status) {
         case 200:
-            window.location.reload();
-
             break;
         default:
-            showMessage(this);
+            return showMessage(this);
         }
+
+        window.location.reload();
     });
 };
 
@@ -684,130 +568,161 @@ document.querySelector(".cancel").onclick = function (e) {
 
     $.request.execute({
         command: "set",
-        target: "resource",
-        id: Number(window.sessionStorage.getItem("node_id")),
-        index: window.sessionStorage.getItem("index"),
+        target: "bandwidth",
+        id: $.id,
+        index: $.index,
         oid: ITAhM.snmp.oid.bandwidth
     }, function () {
         switch (this.status) {
         case 200:
-            window.location.reload();
-
             break;
         default:
-            showMessage(this);
+            return showMessage(this);
         }
+
+        window.location.reload();
     });
 }
 
-function initCritical() {
-    $.request.execute({
-        command: "get",
-        target: "critical",
-        id: Number(window.sessionStorage.getItem("node_id")),
-        index: window.sessionStorage.getItem("index"),
-        oid: ITAhM.snmp.oid.ifInOctets
-    }, function () {
+document.querySelector("form.critical").onsubmit = 
+document.querySelector(".glyph").onclick = function (e) {
+    e.preventDefault();
+
+    const
+        request = {
+            command: "set",
+            target: "limit",
+            id: $.id,
+            index: $.index,
+            limit: Number(document.getElementById("limit").value) || 0
+        },
+        oid = [ITAhM.snmp.oid.inBPS, ITAhM.snmp.oid.outBPS];
+
+    function onResponse () {
         switch (this.status) {
-            case 200:
-                document.getElementById("limit").value = JSON.parse(this.responseText).limit;
-                
-                document.getElementById("chart_in").src="/chart/throughputIn.html";
-                document.getElementById("chart_out").src="/chart/throughputOut.html";
-
-                break;
-            default:
-                showMessage(this);
+        case 200:
+            break;
+        default:
+            return showMessage(this);
         }
-    });
-}
 
-$.request.execute({
-    command: "get",
-    target: "node",
-    id: Number(window.sessionStorage.getItem("node_id")),
-    resource: true
-}, function () {
+        request.oid = oid.pop();
+
+        if (request.oid) {
+            $.request.execute(request, onResponse);
+        } else {
+            alert(INFO_SET_CRITICAL["kr"]);
+        }
+    }
+
+    request.oid = oid.pop();
+
+    $.request.execute(request, onResponse);
+};
+
+function initialize() {
     switch (this.status) {
     case 200:
-        const
-            nodeData = JSON.parse(this.responseText),
-            index = window.sessionStorage.getItem("index");
+        break;
+    default:
+        return showMessage(this);
+    }
+    
+    document.getElementById("limit").value = JSON.parse(this.responseText).limit;
         
-        if (!("resource" in nodeData) ||
-            !(index in nodeData.resource) ||
-            !((bandwidth, ifHighSpeed, ifSpeed, name, alias) => {
-                if (!bandwidth && !ifHighSpeed && !ifSpeed) {
-                    return false;
-                }
+    document.getElementById("chart_in").src=`/chart/throughputIn.html?id=${$.id}&index=${$.index}&from=${$.from}&to=${$.to}&max=${$.max}`;
+    document.getElementById("chart_out").src=`/chart/throughputOut.html?id=${$.id}&index=${$.index}&from=${$.from}&to=${$.to}&max=${$.max}`;
 
-                window.max = Number(bandwidth || (ifHighSpeed && ifHighSpeed *1000000) || ifSpeed);
+    document.body.classList.remove("loading");
+}
 
-                document.getElementById("if_name").textContent = name || alias || "";
-                document.getElementById("bandwidth").textContent = toString(window.max);
+function initNode() {
+    switch (this.status) {
+    case 200:
+        break;
+    default:
+        return showMessage(this);
+    }
 
-                let
-                    n=window.max,
-                    pow=0;
+    const nodeData = JSON.parse(this.responseText);
+    
+    if (("resource" in nodeData) &&
+        ($.index in nodeData.resource) &&
+        ((bandwidth, ifHighSpeed, ifSpeed, name, alias) => {
+            if (!bandwidth && !ifHighSpeed && !ifSpeed) {
+                return false;
+            }
 
-                for (; n > 999; pow++) {
+            $.max = Number(bandwidth && bandwidth.value || ifHighSpeed && ifHighSpeed.value *1000000 || ifSpeed && ifSpeed.value);
+
+            document.getElementById("if_name").textContent = name && name.value|| alias && alias.value || "";
+            document.getElementById("bandwidth").textContent = toString($.max);
+
+            (n => {
+                for (var pow = 0; n > 999; pow++) {
                     n /= 1000;
                 }
 
                 document.querySelector("input[name=bandwidth]").value = Math.round(n);
                 document.querySelector("select[name=units]").value = Math.pow(1000, pow);
+            })($.max);
 
-                if (bandwidth) {
-                    document.body.classList.add("custom");
-                }
+            if (bandwidth) {
+                document.body.classList.add("custom");
+            }
 
-                const table = document.createDocumentFragment();
+            const table = document.createDocumentFragment();
 
-                for (let address in nodeData.resource) {
-                    (indexData => {
-                        const mac = indexData[ITAhM.snmp.oid.ipNetToMediaPhysAddress];
+            for (let address in nodeData.resource) {
+                (indexData => {
+                    const mac = indexData[ITAhM.snmp.oid.ipNetToMediaPhysAddress];
 
-                        if (mac && Number(indexData[ITAhM.snmp.oid.ipNetToMediaType]) === 3) {
-                            const i = address.indexOf(".");
+                    if (mac && Number(indexData[ITAhM.snmp.oid.ipNetToMediaType]) === 3) {
+                        const i = address.indexOf(".");
 
-                            if (i > -1 && address.substring(0, i) === index) {
-                                const
-                                    tr = document.createElement("tr");
+                        if (i > -1 && address.substring(0, i) === $.index) {
+                            const
+                                tr = document.createElement("tr");
 
-                                table.appendChild(tr);
+                            table.appendChild(tr);
 
-                                tr.appendChild(document.createElement("td")).textContent = address.substring(i +1);
-                                tr.appendChild(document.createElement("td")).textContent = mac;
-                            }
+                            tr.appendChild(document.createElement("td")).textContent = address.substring(i +1);
+                            tr.appendChild(document.createElement("td")).textContent = mac;
                         }
-                    })(nodeData.resource[address]);
-                }
+                    }
+                })(nodeData.resource[address]);
+            }
 
-                if (table.hasChildNodes()) {
-                    document.querySelector("table").appendChild(table);
-                }
-
-                initCritical();
-
-                return true;
-            })(nodeData.resource[index][ITAhM.snmp.oid.bandwidth],
-            nodeData.resource[index][ITAhM.snmp.oid.ifHighSpeed],
-            nodeData.resource[index][ITAhM.snmp.oid.ifSpeed],
-            nodeData.resource[index][ITAhM.snmp.oid.ifName],
-            nodeData.resource[index][ITAhM.snmp.oid.ifAlias])) {
+            if (table.hasChildNodes()) {
+                document.querySelector("table").appendChild(table);
+            }
             
-            alert ("Error!\n\n노드가 차트를 제공하지 않습니다.");
+            return true;
+        })(nodeData.resource[$.index][ITAhM.snmp.oid.bandwidth],
+            nodeData.resource[$.index][ITAhM.snmp.oid.ifHighSpeed],
+            nodeData.resource[$.index][ITAhM.snmp.oid.ifSpeed],
+            nodeData.resource[$.index][ITAhM.snmp.oid.ifName],
+            nodeData.resource[$.index][ITAhM.snmp.oid.ifAlias])) {
+        $.request.execute({
+            command: "get",
+            target: "limit",
+            id: $.id,
+            index: $.index,
+            oid: ITAhM.snmp.oid.inBPS
+        }, initialize);
+    } else {
+        alert (ERROR_CHART_NOSUP["kr"]);
 
-            parent.location.href = window.sessionStorage.getItem("previous");
-
-            return;
-        }
-        
-        break;
-    default:
-        showMessage(this);
+        top.close();
     }
-});
+}
+
+$.request.execute({
+    command: "get",
+    target: "node",
+    id: $.id,
+    resource: true
+}, initNode);
 		</script>
 	
 	</body>

@@ -98,6 +98,8 @@ Tree branches
     padding: 0.5em;
     cursor: pointer;
     pointer-events: all;
+    border: 1px solid transparent;
+    user-select: none;
 }
 
 #tree li.selected >span {
@@ -140,6 +142,13 @@ Tree branches
     border: none;
 }
 
+body.type2 #tree>li>span {
+    display: block;
+    background-color: rgba(128, 0, 0,0.2);
+    color: initial;
+    border-color: #ffffff;
+}
+
         </style>
     </head>
     <body>
@@ -177,14 +186,11 @@ const onItemDrag = function (e) {
     window.parent.onItemDrag(this, e.dataTransfer);
 };
 
-function initialize(df) {
-    tree.container.appendChild(df);
-}
-
 function add(text, parent) {
     const
         item = document.createElement("li"),
-        span = document.createElement("span");
+        span = document.createElement("span"),
+        id = tree.lastID++;
 
     span.textContent = text;
     item.appendChild(span);
@@ -204,7 +210,7 @@ function add(text, parent) {
                 checkbox = document.createElement("input");
 
             checkbox.type = "checkbox";
-            checkbox.id = "tree_" + tree.lastID++;
+            checkbox.id = `tree_${id}`;
 
             label.htmlFor = checkbox.id;
 
@@ -219,10 +225,12 @@ function add(text, parent) {
     span.ondrop = onItemDrag.bind(item);
     span.ondragover = onItemDragOver;
 
+    item.id = `item_${id}`;
+
     return parent.appendChild(item);
 }
 
-function expand(item, b) {
+const expandTrue = function (item) {
     const parent = item.parentNode.parentNode;
 
     if (parent) {
@@ -232,13 +240,33 @@ function expand(item, b) {
             checkbox.checked = true;
         }
 
-        expand(parent, true);
+        expandTrue(parent, true);
+    }
+};
+
+const expandFalse = function (item) {
+    [].forEach.call(item.querySelectorAll("input[type=checkbox]"), checkbox => checkbox.checked = false);
+};
+
+function expand(item, b = true) {
+    if (b) {
+        expandTrue(item);
+    } else {
+        expandFalse(item);
     }
 
-    const checkbox = item.querySelector("input[type=checkbox");
+    const checkbox = item.querySelector("input[type=checkbox]");
 
     if (checkbox) {
         checkbox.checked = b;
+    }
+}
+
+function toggle(item) {
+    const checkbox = item.querySelector("input[type=checkbox]");
+
+    if (checkbox) {
+        expand(item, !checkbox.checked);
     }
 }
 
@@ -260,7 +288,7 @@ function remove(item = tree.selected) {
     }
 }
 
-document.querySelector("main").addEventListener("click", function (e) {
+document.body.querySelector("main").addEventListener("click", function (e) {
     if (e.currentTarget === e.target && tree.selected) {
         tree.selected.classList.remove("selected");
         

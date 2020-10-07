@@ -5,30 +5,23 @@
 		<title>Event @ ITAhM</title>
 		
 		<style>
-@import "css/style.css";
+
+@import "/css/style.css";
 @import "/css/fa.css";
 
 body {
-    margin: 0; padding: 0;
+    font: 10pt "맑은 고딕", Arial, Tahoma;
+    margin: 0; padding: 1em;
 	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-}
-
-main {
-    max-width: 1024px; height: 100%;
-    margin: 0 auto;
-    display: flex;
-	flex-direction: column;
-}
-
-h1, h2 {
-	color: #fff;
+    display: flex; flex-direction: column;
 }
 
 header {
     position: relative;
 	flex: none;
-	color: #fff;
 	padding: 1em;
+    user-select: none;
+    z-index: 9;
 }
 
 header::after {
@@ -39,8 +32,17 @@ header::after {
     transform: translate(-50%, -50%);
 }
 
+header >* {
+    cursor: pointer;
+}
+
 body:not(.search) nav {
     display: none;
+}
+
+main {
+    flex: 1;
+    overflow-y: auto;
 }
 
 body.search #report {
@@ -50,120 +52,69 @@ body.search #report {
 input[type=date],
 input[type=text],
 input[type=submit] {
-	font-family: arial, tahoma, "맑은 고딕";
+	font-family: "맑은 고딕", arial, tahoma;
 	padding: 0.5em;
 }
 
-.container {
-	flex: 1;
-    overflow-y: auto;
-	display: flex;
-	flex-direction: column;
+table {
+    border-collapse: collapse;
+    width: 100%;
+    z-index: -1;
 }
 
-ul {
-	list-style: none;
-	padding: 0; margin: 0;
+main th {
+    background-color: #34495e;
+    color: #efefef;
+    position: sticky; top: 0;
 }
 
-.header {
-    flex: none;
-	padding: 0.5em 0;
-	border-bottom: 1px solid #aaa;
-	background-color: #0084ff;
-	color: #fff;
-	font-weight: bold;
-	border-bottom: 4px solid #92a7af;
-	border-radius: 3px 3px 0 0;
-	text-shadow: 1px 1px 1px #00f;
+main th,
+main td {
+    padding: 1em;
 }
 
-.header li {
-	text-align: center;
+#list tr {
+    border-bottom: 1px solid #ffffff;
 }
 
-.item li:not(:last-child) {
-	border-right: 1px solid transparent;
+#list tr:hover {
+    outline: 3px dotted #0084ff;
+    cursor: pointer;
 }
 
-.header li:not(:last-child) {
-	border-right-color: #fff;
-}
-
-#list {
-	flex: 1;
-	background-color: #fafafa;
-	overflow-y: auto;
-}
-
-.item {
-	display: flex;
-	align-items: center;
-	border: 1px solid transparent;
-}
-
-.item> li {
-	padding: 0.5em;
-	box-sizing: border-box;
-	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-.item> li:nth-child(1) {
-	flex: none;
-	width: 5em;
-}
-
-.item> li:nth-child(2) {
-	width: 100px;
-	text-align: center;
-}
-
-.item> li:nth-child(3) {
-	width: 100px;
-	text-align: center;
-}
-
-.item> li:nth-child(4) {
-	width: 160px;
-	text-align: center;
-}
-
-.item> li:nth-child(5) {
-	width: 200px;
-	text-align: center;
-}
-
-.item> li:nth-child(6) {
-	flex: 1;
-}
-
-#list> .item:nth-child(odd) {
+#list tr:nth-child(odd) {
 	background-color: #ebebeb;
 }
 
-#list .item li:nth-child(1) img {
-	display: block;
-	margin: auto;
-	width: 24px; height: 24px;
+#list tr >td:first-child {
+    text-align: center;
+    color: #efefef;
+    background-color: #2ecb70;
 }
 
-#list .item:not(:last-child) {
-	border-bottom: 1px solid #c1c3d1;
+#list tr >td:first-child::before {
+    content: "정상";
 }
 
-.glyph {
-    font: 2em "Font Awesome 5 Free";
-    cursor: pointer;
+#list tr.shutdown >td:first-child {
+    background-color: #e64d3f;
+}
+
+#list tr.shutdown >td:first-child::before {
+    content: "장애";
+}
+
+#list tr.critical >td:first-child {
+    background-color: #f39b13;
+}
+
+#list tr.critical >td:first-child::before {
+    content: "주의";
 }
 
 nav {
     background-color: #fefefe;
     padding: 1em;
-}
-
-nav table {
-    border-collapse: collapse;
-    width: 100%;
 }
 
 nav th {
@@ -182,12 +133,77 @@ details {
     display: inline-block;
 }
 
+details[open] summary::before {
+    content: "";
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    background-color: transparent;
+}
+
 summary {
     outline: none;
 }
 
 summary::-webkit-details-marker {
   display: none;
+}
+
+.sort::after {
+    font-family: "Font Awesome 5 Free";
+    content: "\f0dd";
+	cursor: pointer;
+    position: absolute; right: 3px;
+}
+
+.sort.reverse::after {
+    content: "\f0de";
+}
+
+footer {
+    display: flex;
+    margin-top: 1em;
+    color: #ffffff;
+    font-weight: bold;
+    text-align: center;
+}
+
+footer div {
+    flex: 1;
+    padding: 1em;
+    text-shadow: 0 0 3px #000;
+}
+
+footer div:nth-child(1) {
+    background-color: rgb(0, 137, 123);;
+}
+
+footer div:nth-child(2) {
+    background-color: rgb(246, 191, 38);
+}
+
+footer div:nth-child(3) {
+    background-color: rgb(142, 36, 170)
+}
+
+footer div:nth-child(4) {
+    background-color: #777777;
+}
+
+.button {
+    font: 2em "Font Awesome 5 Free";
+    display: inline-block;
+    cursor: pointer;
+}
+
+.button:hover {
+    transform: translateY(-2px);
+}
+
+.button:active {
+    transform: none;
+}
+
+.button[open]:hover {
+    transform: none;
 }
 
 .popup {
@@ -210,11 +226,14 @@ summary::-webkit-details-marker {
     border-bottom-color: #fff;
 }
 
+.bg_loading {
+    z-index: 9;
+}
 		</style>
 		<script>
         
-function getDateString(mills) {
-    var date = new Date(mills),
+function getDateString(millis) {
+    var date = new Date(millis),
         yyyy = date.getFullYear(),
         mm = date.getMonth() +1,
         dd = date.getDate();
@@ -222,8 +241,8 @@ function getDateString(mills) {
     return yyyy +"년 "+ (mm > 9? "": "0") + mm +"월"+ (dd > 9? "": "0") + dd +"일";
 }
 
-function toDateString(mills) {
-    var date = new Date(mills),
+function toDateString(millis) {
+    var date = new Date(millis),
         yyyy = date.getFullYear(),
         mm = date.getMonth() +1,
         dd = date.getDate();
@@ -231,8 +250,8 @@ function toDateString(mills) {
     return `${yyyy}-${(mm > 9? "": "0") + mm}-${(dd > 9? "": "0") + dd}`;
 }
 
-function toTimeString(mills) {
-    var date = new Date(mills),
+function toTimeString(millis) {
+    var date = new Date(millis),
         hh = date.getHours(),
         mm = date.getMinutes(),
         ss = date.getSeconds();
@@ -240,43 +259,48 @@ function toTimeString(mills) {
     return (hh > 9? "": "0") + hh +":"+ (mm > 9? "": "0") + mm +":"+ (ss > 9? "": "0") + ss;
 }
 
+function onSelect(e) {
+    if (this.dataset.id) {
+        const popup = window.open();
+
+        popup.sessionStorage.setItem("id", this.dataset.id);
+        
+        popup.location.replace("/chart.html");
+    }
+}
+
 function createItem(event) {
-	var ul = document.createElement("ul"),
-		icon = ul.appendChild(document.createElement("li")).appendChild(document.createElement("img"));
+    const
+        tr = document.createElement("tr"),
+		status = tr.appendChild(document.createElement("td"));
     
-    ul.appendChild(document.createElement("li")).textContent = toDateString(event.timestamp);
-    ul.appendChild(document.createElement("li")).textContent = toTimeString(event.timestamp);
-    ul.appendChild(document.createElement("li")).textContent = event.ip || "";
-	ul.appendChild(document.createElement("li")).textContent = event.name || "";
-	
-	switch(event.origin) {
-	case "exception":
-		return;
-		
-	case "critical":
-	case "snmp":
-	case "register":
-		
-		break;
-	case "status":
-	case "updown":
-		
-		break;
-	case "warning":
-		
-		break;	
-	case "system":
-		break;
-		default:
-	}
+    tr.appendChild(document.createElement("td")).textContent = toDateString(event.timestamp);
+    tr.appendChild(document.createElement("td")).textContent = toTimeString(event.timestamp);
+    tr.appendChild(document.createElement("td")).textContent = event.ip || "";
+	tr.appendChild(document.createElement("td")).textContent = event.name || "";
+	tr.appendChild(document.createElement("td")).textContent = event.message;
+    
+    if (event.level > 0) {
+        if (event.level > 1) {
+            tr.classList.add("shutdown");
 
-	ul.appendChild(document.createElement("li")).textContent = event.message;
+            $.count.shutdown++;
+        } else {
+            tr.classList.add("critical");
 
-	ul.classList.add("item");
-	
-	icon.src = event.level === 1? "/img/siren.png": event.level === 2? "/img/warning.png": "/img/normal.png";
-	
-	return ul;
+            $.count.critical++;
+        }
+    } else {
+        $.count.normal++;
+    }
+
+    if (event.id) {
+        tr.dataset.id = event.id;
+    }
+
+    tr.onclick = onSelect;
+
+	return tr;
 }
 
 function showMessage(xhr) {
@@ -297,219 +321,147 @@ function showMessage(xhr) {
         </script>
 	</head>
 	
-	<body class="loading">	
-        <main>
-            <header>
-                <details title="날짜 선택">
-                    <summary class="glyph">&#xf073;</summary>
-                    <form id="calendar" class="popup">
-                        <input type="date" name="date">   
-                    </form>
-                </details>
-                <span class="glyph" id="export" title="CSV 저장">&#xf019;</span>
-                <span class="glyph" id="report" title="조건 검색">&#xf002;</span>
-            </header>
-            <nav>
-                <form id="search">
-                    <table>
-                        <tbody>
-                            <tr>
-                                <th>조회기간</th>
-                                <td>
-                                    <input type="date" name="start">
-                                    ~
-                                    <input type="date" name="end">
-                                    <input type="submit" value="검색">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>이름 | IP</th>
-                                <td>
-                                    <input type="text" name="keyword">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>상태</th>
-                                <td>
-                                    <input type="checkbox" name="shutdown" checked>장애
-                                    <input type="checkbox" name="critical" checked>임계
-                                    <input type="checkbox" name="normal" checked>정상
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </form>
-            </nav>
-            <div class="container">
-                <div class="header">
-                    <ul class="item">
-                        <li>상태
-                        <li>날짜
-                        <li>시간
-                        <li>IP
-                        <li>이름
-                        <li>이벤트 메세지 (<span id="count"></span>)
-                    </ul>
+	<body class="loading">
+        <header>
+            <details class="button" title="날짜 선택">
+                <summary>&#xf073;</summary>
+                <div class="popup">
+                    <input type="date" id="date">   
                 </div>
-                <div id="list"></div>
-            </div>
+            </details>
+            <span id="export" class="button" title="CSV 저장">&#xf019;</span>
+            <span id="report" class="button" title="조건 검색">&#xf002;</span>
+        </header>
+        <nav>
+            <form>
+                <table>
+                    <tbody>
+                        <tr>
+                            <th>조회기간</th>
+                            <td>
+                                <input type="date" name="start">
+                                ~
+                                <input type="date" name="end">
+                                <input type="submit" value="검색">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>이름 | IP</th>
+                            <td>
+                                <input type="text" name="keyword">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>상태</th>
+                            <td>
+                                <input type="checkbox" name="shutdown" checked>장애
+                                <input type="checkbox" name="critical" checked>임계
+                                <input type="checkbox" name="normal" checked>정상
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </nav>
+        <main>
+            <table>
+                <colgroup>
+                    <col width="100">
+                    <col width="100">
+                    <col width="100">
+                    <col width="160">
+                    <col width="200">
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>상태</th>
+                        <th class="sort">날짜</th>
+                        <th>시간</th>
+                        <th>주소</th>
+                        <th>이름</th>
+                        <th>메세지 (<i id="count"></i>)</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>
         </main>
-  		
+        <footer>
+            <div>정상</div>
+            <div>주의</div>
+            <div>장애</div>
+        </footer>
 		<div class="bg_loading"></div>
         
-        <script src="js/ITAhM.js"></script>
-        <script src="js/request.js"></script>
+        <script src="/js/ITAhM.js"></script>
+        <script src="/js/request.js"></script>
 		<script>
 
-const $ = {
-        list: document.getElementById("list")
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        list: document.getElementById("list"),
+        count: {
+            normal: 0,
+            critical: 0,
+            shutdown: 0
+        },
+        date: document.getElementById("date"),
+        form: document.querySelector("form")
     };
 
-(function (form) {
-	const today = new Date();
-	
-	top.clearLog();
+$.date.onchange = function (e) {
+    const search = new URLSearchParams();
 
-	postRequest(today.setHours(0, 0, 0, 0));
+    search.set("date", this.valueAsDate.setHours(0, 0, 0, 0));
 
-	// KST
-	today.setHours(9, 0, 0, 0);
+    window.location.search = search;
+};
 
-	form.elements["date"].valueAsDate = today;
+$.form.onsubmit = function (e) {
+    e.preventDefault();
 
-	form.elements["date"].onchange = function (e) {
-		postRequest(this.valueAsDate.setHours(0, 0, 0, 0));
-	};
+    const
+        search = new URLSearchParams(),
+        start = this.elements["start"].valueAsDate.setHours(0, 0, 0, 0),
+        end = this.elements["end"].valueAsDate.setHours(0, 0, 0, 0);
 
-	function postRequest(mills) {
-		document.body.classList.add("loading");	
+    search.set("search", true);    
+    search.set("start", Math.min(start, end));
+    search.set("end", Math.max(start, end));
+    
+    if (this.elements["keyword"].value) {
+        search.set("keyword", this.elements["keyword"].value);
+    }
 
-		for(let log; log = window.list.firstChild;) {
-			window.list.removeChild(log);
-		}
-		
-		new Request().execute({
-			command: "get",
-            target: "event",
-			date: mills
-		}, function () {
-			switch (this.status) {
-			case 200:
-                document.body.querySelector("header").dataset.date = 
-                $.date = getDateString(mills);
-                $.eventData = JSON.parse(this.responseText);
-                $.indexArray = Object.keys($.eventData).sort(function (a, b) {
-                    return parseInt(a) - parseInt(b);
-                });
+    if (this.elements["shutdown"].checked) {
+        search.set("shutdown", true);
+    }
 
-				const
-                    df = document.createDocumentFragment(),
-                    count = $.indexArray.length;
-                
-				
-				for (let i=0, item; i<count; i++) {
-					if (item = createItem($.eventData[$.indexArray[i]])) {
-						df.appendChild(item);
-					}
-				}
-				
-				$.list.appendChild(df);
-				
-				list.scrollTop = list.scrollHeight;	
-				
-				document.getElementById("count").textContent = count;
+    if (this.elements["critical"].checked) {
+        search.set("critical", true);
+    }
 
-				document.body.classList.remove("loading");
-		
-				break;
-			default:
-				showMessage(this);
-			}
-		});
-	}
-}) (document.getElementById("calendar"));
+    if (this.elements["normal"].checked) {
+        search.set("normal", true);
+    }
 
-(function (form) {
-	const
-        today = new Date(),
-		list = document.getElementById("list");
+    window.location.search = search;
+};
 
-        today.setHours(9, 0, 0, 0);
+document.body.querySelector(".sort").onclick = function (e) {
+    const df = document.createDocumentFragment();
 
-    form.elements["start"].valueAsDate = today;
-    form.elements["end"].valueAsDate = today;
+    document.body.classList.add("loading");
 
-    form.onsubmit = function (e) {
-        e.preventDefault();
-        
-        document.body.classList.add("loading");	
+    [].slice.call($.list.children).reverse().forEach(row => df.appendChild(row));
 
-		for(let log; log = $.list.firstChild;) {
-			$.list.removeChild(log);
-		}
+    $.list.appendChild(df);
 
-        const
-            start = form.elements["start"].valueAsDate.setHours(0, 0, 0, 0),
-            end = form.elements["end"].valueAsDate.setHours(0, 0, 0, 0),
-            search = {
-                start: Math.min(start, end),
-                end: Math.max(start, end)
-            };
-        
-        if (form.elements["keyword"].value) {
-            search.keyword = form.elements["keyword"].value;
-        }
+    this.classList.toggle("reverse");
 
-        if (form.elements["shutdown"].checked) {
-            search.shutdown = true;
-        }
-
-        if (form.elements["critical"].checked) {
-            search.critical = true;
-        }
-
-        if (form.elements["normal"].checked) {
-            search.normal = true;
-        }
-
-        new Request().execute({
-			command: "get",
-            target: "event",
-            search: search
-		}, function () {
-			switch (this.status) {
-			case 200:
-                document.body.querySelector("header").dataset.date = "조건 검색";
-                $.eventData = JSON.parse(this.responseText);
-                $.indexArray = Object.keys($.eventData).sort(function (a, b) {
-                    return parseInt(a) - parseInt(b);
-                });
-
-				const
-                    df = document.createDocumentFragment(),
-                    count = $.indexArray.length;
-				
-				for (let i=0, item; i<count; i++) {
-					if (item = createItem($.eventData[$.indexArray[i]])) {
-						df.appendChild(item);
-					}
-				}
-				
-				$.list.appendChild(df);
-				
-				list.scrollTop = list.scrollHeight;	
-				
-				document.getElementById("count").textContent = count;
-
-				document.body.classList.remove("loading");
-		
-				break;
-			default:
-				showMessage(this);
-			}
-		});
-    };
-}) (document.getElementById("search"));
+    document.body.classList.remove("loading");
+};
 
 document.getElementById("report").onclick = function (e) {
     document.body.classList.toggle("search");
@@ -518,7 +470,7 @@ document.getElementById("report").onclick = function (e) {
 document.getElementById("export").onclick = function (e) {
     const rows = [];
 	
-	rows[0] = "Index,Date,Time,Status,IP, Name,Message";
+	rows[0] = "Index,Date,Time,Status,IP,Name,Message";
 
     for (let i=0, count=$.indexArray.length, event; i<count; i++) {
         event = $.eventData[$.indexArray[i]];
@@ -531,7 +483,7 @@ document.getElementById("export").onclick = function (e) {
             event.eventID,
             toDateString(event.timestamp),
             toTimeString(event.timestamp),
-            event.level == 1? "임계": event.level == 2? "장애": "정상",
+            event.level == 1? "주의": event.level == 2? "장애": "정상",
             event.ip || "",
             event.name || "",
             event.message
@@ -540,8 +492,158 @@ document.getElementById("export").onclick = function (e) {
 
     ITAhM.util.download(new Blob(["\ufeff", rows.join("\n")] ,{
 		type: "text/csv;charset=utf-8;"
-	}), $.date +".csv");
+	}), $.fileName);
 };
+
+(search.get("search")?
+function () {
+    const
+        start = Number(search.get("start")),
+        end = Number(search.get("end"));
+    let date;
+
+    date = new Date(start);
+    date.setHours(9, 0, 0, 0);
+
+    $.form.elements["start"].valueAsDate = date;
+
+    date = new Date(end);
+    date.setHours(9, 0, 0, 0);
+
+    $.form.elements["end"].valueAsDate = date;
+
+    if (search.get("keyword")) {
+        $.form.elements["keyword"].value = search.get("keyword");
+    }
+
+    if (!search.get("shutdown")) {
+        $.form.elements["shutdown"].checked = false;
+    }
+
+    if (!search.get("critical")) {
+        $.form.elements["critical"].checked = false;
+    }
+
+    if (!search.get("normal")) {
+        $.form.elements["normal"].checked = false;
+    }
+
+    new Request().execute({
+        command: "get",
+        target: "event",
+        search: {
+            start: start,
+            end: end,
+            keyword: search.get("keyword") || undefined,
+            shutdown: search.get("shutdown") || undefined,
+            critical: search.get("critical") || undefined,
+            normal: search.get("normal") || undefined
+        }
+    }, function () {
+        switch (this.status) {
+        case 200:
+            $.fileName = "Search.csv";
+
+            document.body.querySelector("header").dataset.date = "Search";
+            $.eventData = JSON.parse(this.responseText);
+            $.indexArray = Object.keys($.eventData).sort(function (a, b) {
+                return parseInt(b) - parseInt(a);
+            });
+
+            const
+                df = document.createDocumentFragment(),
+                count = $.indexArray.length;
+            
+            for (let i=0, item; i<count; i++) {
+                if (item = createItem($.eventData[$.indexArray[i]])) {
+                    df.appendChild(item);
+                }
+            }
+            
+            $.list.appendChild(df);
+            
+            document.querySelector("footer div:nth-child(1)").textContent = $.count.normal;
+            document.querySelector("footer div:nth-child(2)").textContent = $.count.critical;
+            document.querySelector("footer div:nth-child(3)").textContent = $.count.shutdown;
+            
+            document.getElementById("count").textContent = count;
+
+            document.body.classList.remove("loading");
+    
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}:
+function () {
+    let
+        millis = Number(search.get("date")),
+        date;
+
+    if (millis) {
+        date = new Date(millis);
+    } else {
+        date = new Date();
+
+        millis = date.setHours(0, 0, 0, 0);
+    }
+
+    date.setHours(9, 0, 0, 0);
+
+    $.date.valueAsDate = date;
+
+    $.form.elements["start"].valueAsDate = date;
+    $.form.elements["end"].valueAsDate = date;
+
+    new Request().execute({
+        command: "get",
+        target: "event",
+        date: millis
+    }, function () {
+        switch (this.status) {
+        case 200:
+            const date = getDateString(millis);
+
+            $.fileName = `${date}.csv`;
+
+            document.body.querySelector("header").dataset.date = date;
+
+            $.eventData = JSON.parse(this.responseText);
+            $.indexArray = Object.keys($.eventData).sort(function (a, b) {
+                return parseInt(b) - parseInt(a);
+            });
+
+            const
+                df = document.createDocumentFragment(),
+                count = $.indexArray.length;
+            
+            
+            for (let i=0, item; i<count; i++) {
+                if (item = createItem($.eventData[$.indexArray[i]])) {
+                    df.appendChild(item);
+                }
+            }
+            
+            $.list.appendChild(df);
+            
+            document.querySelector("footer div:nth-child(1)").textContent = $.count.normal;
+            document.querySelector("footer div:nth-child(2)").textContent = $.count.critical;
+            document.querySelector("footer div:nth-child(3)").textContent = $.count.shutdown;
+
+            document.getElementById("count").textContent = count;
+
+            document.body.classList.remove("loading");
+    
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+})();
+
+
+
 
 		</script>
 	

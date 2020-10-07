@@ -54,51 +54,36 @@ body:not(.loading) .bg_loading {
 /**
  * public
  */
-function getFile() {
-    const rowArray = [];
+ function getFile() {
+	const rows = [];
     
-    if (window.detail) {
-        rowArray.push("Index,Date,Interface error(cps)");
+    if ($.data) {
+        var i = 1;
 
-        const keys = window.chartData.parseData(parent.position, parent.limit);
-        
-        if (keys) {
-            for (let i=0, _i=keys.length, millis, bps; i<_i; i++) {
-                millis = keys[i];
-                
-                bps = window.chartData.getData(millis, keys[i +1]);
+        rows.push("Index,Date,Errors(CPS)");
 
-                if (bps !== undefined) {
-                    rowArray.push([i, parent.toDateTimeString(Number(millis)), Math.round(bps)].join(","));
-                }
-            }
-        }
+        $.data.forEach((timestamp, value) => {
+            rows.push([i++, parent.toDateTimeString(timestamp), parent.toString(value)].join(","));
+        }, true);
     }
-    else if (window.chartData) {
-        rowArray.push("Index,Date,Max,Avg,Min");
+    else if ($.summary) {
+        var i = 1;
+        rows.push("Index,Date,Max,Avg,Min");
 
-        const summaryData = window.chartData.parseSummary(parent.position, parent.limit);
+        const summary = $.summary.parse($.from, $.to);
 
-        if (summaryData) {
-            const blocks = summaryData.keys;
+        if (summary) {
+            summary.keys.forEach(keys => keys.forEach(timestamp => {
+                const value = $.summary.get(timestamp);
 
-            for (let j=0, _j=blocks.length, keys; j<_j; j++) {
-                keys = blocks[j];
-
-                for (let i=0, _i=keys.length, millis, data; i<_i; i++) {
-                    millis = keys[i];
-
-                    data = window.chartData.getSummary(millis);
-
-                    rowArray.push([i, parent.toDateTimeString(Number(millis)), Math.round(data.max), Math.round(data.avg), Math.round(data.min)].join(","));
-                }
-            }
+                rows.push([i++, parent.toDateTimeString(timestamp), parent.toString(value.max), parent.toString(value.avg), parent.toString(value.min)].join(","));
+            }));
         }
     }
 	
-	ITAhM.util.download(new Blob([rowArray.join("\n")] ,{
+	ITAhM.util.download(new Blob([rows.join("\n")] ,{
 		type: "text/csv;charset=utf-8;"
-	}), "chart_throughput_in.csv");
+	}), "chart_error_in.csv");
 }
 
 function realtime(realtime) {
@@ -109,25 +94,45 @@ function realtime(realtime) {
     } else {
         document.body.classList.remove("realtime");
 
+        delete $.realtime;
+
         document.getElementById("realtime").contentWindow.location.replace("about:blank");
     }
 }
 
-function putRealtimeValue(value) {
-    const timestamp = new Date();
+function postRealtimeRequest(realtimeData) {
+    $.request.execute({
+        command: "get",
+        target: "resource",
+        id: $.id,
+        index: $.index,
+        oid: ITAhM.snmp.oid.inErrs,
+    }, function () {
+        switch (this.status) {
+        case 200:
+            break;
+        default:
+            try {
+                console.log(JSON.parse(this.responseText).error);
+            } catch (e) {}
+        }
 
-    if (window.lastRealtimeValue) {
+        const value = JSON.parse(this.responseText);
+        
+        for (let timestamp in value) {
+            realtimeData.data.put(Number(value[timestamp]));
+
+            break;
+        }
+
         try {
-            window.realtimeObj.data.put((value - window.lastRealtimeValue.value) *8000 / (timestamp - window.lastRealtimeValue.timestamp));
+            document.getElementById("realtime").contentWindow.draw(realtimeData);
 
-            document.getElementById("realtime").contentWindow.draw(realtimeObj);
+            if ($.realtime) {
+                window.setTimeout(postRealtimeRequest.bind(window, realtimeData), INTERVAL);
+            }
         } catch (e) {}
-    }
-
-    window.lastRealtimeValue = {
-        timestamp: timestamp,
-        value: value
-    };
+    });
 }
 
 function showMessage(xhr) {
@@ -157,100 +162,117 @@ function showMessage(xhr) {
         
 		<script src="/js/ITAhM.js"></script>	
         <script src="/js/object.js"></script>
+        <script src="/js/snmp.js"></script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
 		<script>
 
-const $ = {
-        request: new Request()
-    };
+const
+    INTERVAL = 5000,
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: Number(search.get("id")),
+        index: search.get("index"),
+        from: Number(search.get("from")),
+        to: Number(search.get("to"))
+    }
 
-var realtimeObj = {
-        toString: parent.toString,
-        file: "chart_errir_in_realtime.csv"
-    },
-    chartData = new parent.ChartData(),
-    lastRealtimeValue;
+if (!$.id || !$.index || !$.from || !$.to) {
+    throw top.location.replace("/warning.html");
+}
 
 document.getElementById("realtime").onload = function (e) {
     if (this.contentWindow.location.protocol === "http:") {
-        window.realtimeObj.data = new this.contentWindow.RealtimeData();
+        $.realtime = true;
+        
+        postRealtimeRequest({
+            data: new this.contentWindow.RealtimeData(),
+            toString: parent.toString,
+            file: "chart_error_in_realtime.csv"
+        });
     }
 };
 
-(chartFrame => {
-    chartFrame.onload = function (e) {
-        const date = new Date(parent.position);
+(frame => {
+    const chart =  frame.contentWindow;
 
-        this.contentWindow.initialize(
-            window.chartData,
-            parent.position,
-            parent.limit,
-            parent.max,
-            "#00897b",
-            parent.toString,
-            window.detail = (date.setDate(date.getDate() +1) == parent.limit));
+    frame.onload = function (e) {
+        chart.initialize({
+            summary: $.summary,
+            from: $.from,
+            to: $.to,
+            max: $.max,
+            color: "#00897b",
+            toString: parent.toString
+        });
+    };
+
+    window.detail = function () {
+        const date = new Date($.from);
+
+        if (date.setDate(date.getDate() +1) == $.to) {
+            document.body.classList.add("loading");
+
+            $.request.execute({
+                command: "get",
+                target: "resource",
+                id: $.id,
+                index: $.index,
+                oid: ITAhM.snmp.oid.ifInErrors,
+                date: $.from,
+            }, function (e) {
+                switch (this.status) {
+                case 200:
+                    break;
+                default:
+                    return showMessage(this);
+                }
+
+                chart.draw($.data = new parent.ChartData(JSON.parse(this.responseText)), true);
+
+                document.body.classList.remove("loading");
+            });
+        } else {
+            delete $.data;
+        }
     };
 
     /**
      * public
      */
-    window.draw = () => {
-        chartFrame.contentWindow.location.reload();
+    window.draw = (from, to) => {
+        $.from = from;
+        $.to = to;
+        
+        chart.location.reload();
     };
 
-    function postRequest(dateArray, onProgress) {
-        const date = dateArray.pop();
-
-        if (date) {
-            $.request.execute({
-                command: "get",
-                target: "resource",
-                id: Number(window.sessionStorage.getItem("node_id")),
-                index: Number(window.sessionStorage.getItem("index")),
-                oid: "1.3.6.1.2.1.2.2.1.14",
-                date: date
-            }, function () {
-                switch (this.status) {
-                case 200:
-                    onProgress(date, JSON.parse(this.responseText));
-
-                    postRequest(dateArray, onProgress);
-                    break;
-                default:
-                    showMessage(this);
-                }
-            });
+    window.initResource = function () {
+        switch (this.status) {
+        case 200:
+            break;
+        default:
+            return showMessage(this);
         }
+
+        $.summary = new parent.SummaryData(JSON.parse(this.responseText));
+
+        document.body.classList.remove("loading");
+
+        frame.src = "/chart/base.html";
     }
-
-    function initialize() {
-        const
-            date = new Date(Number(window.sessionStorage.getItem("start"))),
-            dateArray = [];
-
-        var initialized = false;
-
-        for (let millis = date.setHours(0, 0, 0, 0), end = Number(window.sessionStorage.getItem("end"));
-            millis < end;
-            millis = date.setDate(date.getDate() +1)) {
-            dateArray.push(millis);
-        }
-        
-        postRequest(dateArray, (date, chartData) => {
-            window.chartData.unshift(date, chartData);
-
-            if (!initialized) {
-                document.body.classList.remove("loading");
-
-                chartFrame.src = "/chart/base.html";
-
-                initialized = true;
-            }
-        });
-    }
-
-    initialize();
 })(document.getElementById("chart"));
+
+$.request.execute({
+    command: "get",
+    target: "resource",
+    id: $.id,
+    index: $.index,
+    oid: ITAhM.snmp.oid.ifInErrors,
+    from: $.from,
+    to: $.to
+}, initResource);
 
 		</script>
 	

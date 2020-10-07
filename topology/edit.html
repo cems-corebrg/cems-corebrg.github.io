@@ -33,6 +33,7 @@ svg {
     margin: 0; padding: 0;
     display: flex;
     align-items: flex-start;
+    user-select: none;
 }
 
 .control span {
@@ -177,7 +178,7 @@ body:not(.root) .root {
 		<script>
 
 function onSelect(id, group) {
-    parent.showDialog(`/topology/dialog/${group? "group": "node"}.html?id=${id}`);
+    parent.showDialog(`/dialog/${group? "group": "node"}.html?id=${id}`);
 }
 
 function onEnter(id) {
@@ -192,14 +193,26 @@ function onLink(from, to) {
     parent.showDialog(`/topology/dialog/path.html?from=${Math.min (from, to)}&to=${Math.max (from, to)}`);
 }
 
+function findPosFromStage(id) {
+    for (let pos; pos = $.positionData[id]; id = String(pos.parent)) {
+        if (id in $.deviceMap) {
+            return id;
+        }
+
+        if (!("parent" in pos)) {
+            return;
+        }
+    }
+}
+
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -276,7 +289,7 @@ function showMessage(xhr) {
 ● Ctrl + Click: 선택 반전
 ● Shift + Drag: 영역 선택 추가
 ● Crl + Drag: 영역 선택 반전
-● Shift + Click + Click: 링크
+● Alt + Click: 링크
 ● Click 유지: 그룹 이동 
 ● Right Click: 편집
 
@@ -291,6 +304,7 @@ function showMessage(xhr) {
         <script src="/js/ITAhM.js"></script>
         <script src="/js/icon.js"></script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
         <script src="/topology/edit.js"></script>
 		<script>
 
@@ -299,9 +313,10 @@ const
     $ = {
         request: new Request(),
         iconData: ITAhM.iconData,
-        map: {},
+        deviceMap: {},
         positionData: parent.getPositionData(),
-        upper: Number(search.get("group")) || undefined
+        upper: Number(search.get("group")) || undefined,
+        pathData: {}
     };
 
 if (parent !== top) {
@@ -342,10 +357,10 @@ document.getElementById("refresh").onclick = function () {
 
 document.getElementById("search").onclick = e => parent.showDialog("/topology/dialog/search.html");
 document.getElementById("add_node").onclick = e => {
-    parent.showDialog("/topology/dialog/node.html");
+    parent.showDialog("/dialog/node.html");
 }
 document.getElementById("add_group").onclick = e => {
-    parent.showDialog("/topology/dialog/group.html");
+    parent.showDialog("/dialog/group.html");
 }
 
 function initialize() {
@@ -353,10 +368,11 @@ function initialize() {
 
     if ($.upper) {
         const
-            upper = $.positionData[String($.upper)].parent,
-            search = new URLSearchParams();
+            upper = $.positionData[String($.upper)].parent;
 
         if (upper) {
+            const search = new URLSearchParams();
+            
             search.set("group", upper);            
 
             document.getElementById("up").dataset.id = upper;
@@ -391,10 +407,10 @@ function initialize() {
         node = $.nodeData[id];
         icon = $.iconData[node.type || "unknown"] || $.iconData["unknown"];
 
-        $.map[id] = createDevice({
+        $.deviceMap[id] = createDevice({
             id: id,
-            size: 40,
-            icon: icon.src,
+            scale: icon.group === "group"? 1.5: undefined,
+            icon: "protocol" in node? icon.src: icon.disabled,
             name: node.name || node.ip,
             ip: node.ip || node.name,
             pos: pos,
@@ -427,25 +443,13 @@ function initialize() {
         link = linkMap[nodeFrom];
 
         for (let nodeTo in nodeToMap) {
-            if (!(nodeFrom in $.map) && !(nodeTo in $.map)) {
-                continue;
-            }
-
             args = {
-                from: nodeFrom,
-                to: nodeTo,
+                from: findPosFromStage(nodeFrom),
+                to: findPosFromStage(nodeTo),
                 path: nodeToMap[nodeTo || nodeFrom],
                 links: link && link[nodeTo || nodeFrom]
             };
-
-            if (!(nodeFrom in $.map)) {
-                args.from = parent.findParentFromStage($.positionData[nodeFrom].parent);
-            } 
-
-            if (!(nodeTo in $.map)) {
-                args.to = parent.findParentFromStage($.positionData[nodeTo].parent);
-            }
-
+            
             createPath(args);
         }
     }
@@ -471,18 +475,30 @@ function initNode(e) {
 
 function initPath(e) {
     switch(this.status) {
-        case 200:
-            $.pathData = JSON.parse(this.responseText);
-            
-            $.request.execute({
-                command: "get",
-                target: "link"
-            }, initLink);
-            
-            break;
+        case 200: break;
         default:
-            showMessage(this);
+            return showMessage(this);
     }
+
+    const pathData = JSON.parse(this.responseText);
+    var path, from;
+
+    for (let id in pathData) {
+        path = pathData[id];
+
+        from = String(path.from);
+
+        if (!(from in $.pathData)) {
+            $.pathData[from] = {};
+        }
+        
+        $.pathData[from][String(path.to)] = path;
+    }
+
+    $.request.execute({
+        command: "get",
+        target: "link"
+    }, initLink);
 }
 
 function initLink(e) {

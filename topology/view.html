@@ -26,6 +26,7 @@ nav {
     display: flex;
     font: 20px "Font Awesome 5 Free";
     color: #ffffff;
+    user-select: none;
 }
 
 nav >span {
@@ -56,18 +57,19 @@ svg {
 }
 
 .node circle {
-	stroke-width: 5px;
 	stroke: none;
 	fill: none;
 }
 
 .node.critical circle {
-	stroke: #fa0;
+	stroke: rgba(255, 170, 0, 0.3);
+    fill: rgba(255, 170, 0, 0.6);
 	animation: status 2s infinite;
 }
 
 .node.shutdown circle {
-	stroke: #f00;
+	stroke: rgba(255, 0, 0, 0.3);
+    fill: rgba(255, 0, 0, 0.6);
 	animation: status 2s infinite;
 }
 
@@ -114,7 +116,6 @@ text {
 body:not(.label) .node tspan,
 body.name .node tspan:last-child,
 body:not(.name) .node tspan:first-child,
-body.frame nav,
 body:not(.exit) #exit {
 	display: none;
 }
@@ -153,10 +154,6 @@ function onEvent(event) {
         return;
     }
 
-    if (parent === top) {
-        parent.onEvent(event);
-    }
-    
     if (event.id) {
         if ($.timer) {
             clearTimeout($.timer);
@@ -164,8 +161,7 @@ function onEvent(event) {
         
         $.timer = setTimeout(() => requestAnimationFrame(t => {
             const
-                id = String(event.id),
-                pos = $.positionData[id],
+                pos = $.positionData[String(event.id)],
                 search = new URLSearchParams();
 
             if (pos.parent) {
@@ -208,29 +204,24 @@ function createNodeTitle(node) {
                     title.push("응답속도 : "+ rtt +"ms");
                 }
 
-            })(oidData["1.3.6.1.4.1.49447.1"]);
+            })(oidData[ITAhM.snmp.oid.responseTime]);
             //물리 메모리
             (function(type, used, size, units) {
-                if (type && type == "1.3.6.1.2.1.25.2.1.2" && used && size && units) {
+                if (type && type == ITAhM.snmp.oid.hrStorageRam && used && size && units) {
                     title.push("물리 메모리 : "+ Math.round(100* Number(used) / Number(size)) +" %");
                 }
 
-            })(oidData["1.3.6.1.2.1.25.2.3.1.2"]
-                , oidData["1.3.6.1.2.1.25.2.3.1.6"]
-                , oidData["1.3.6.1.2.1.25.2.3.1.5"]
-                , oidData["1.3.6.1.2.1.25.2.3.1.4"]);
+            })(oidData[ITAhM.snmp.oid.hrStorageType]
+                , oidData[ITAhM.snmp.oid.hrStorageUsed]
+                , oidData[ITAhM.snmp.oid.hrStorageSize]
+                , oidData[ITAhM.snmp.oid.hrStorageAllocationUnits]);
             
             //CPU
             (function(load) {
                 if (load) {
                     cpu.push(Number(load));
                 }
-            })(oidData["1.3.6.1.2.1.25.3.3.1.2"]
-                || oidData["1.3.6.1.4.1.9.2.1.5.6"]
-                || oidData["1.3.6.1.4.1.9.9.109.1.1.1.1.3"]
-                || oidData["1.3.6.1.4.1.9.9.109.1.1.1.1.6"]
-                || oidData["1.3.6.1.4.1.6296.9.1.1.1.8"]
-                || oidData["1.3.6.1.4.1.37288.1.1.3.1.1"]);
+            })(oidData[ITAhM.snmp.oid.hrProcessorLoad]);
         }
 
         if (cpu.length > 0) {
@@ -267,14 +258,26 @@ function showSummary(id, device) {
 	});
 }
 
+function findPosFromStage(id, stage = $.deviceMap) {
+    for (let pos; pos = $.positionData[id]; id = String(pos.parent)) {
+        if (id in stage) {
+            return id;
+        }
+
+        if (!("parent" in pos)) {
+            return;
+        }
+    }
+}
+
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -300,9 +303,12 @@ function showMessage(xhr) {
             <div class="bg_loading"></div>
 
             <script src="/js/ITAhM.js"></script>
+            <script src="/js/snmp.js"></script>
             <script src="/js/icon.js"></script>
-            <script src="/topology/view.js"></script>
+            <!--script src="/topology/view.js"></script-->
+            <script src="/manual/view.js"></script>
             <script src="/js/request.js"></script>
+            <script src="/js/constants.js"></script>
             <script>
 const
     search = new URLSearchParams(window.location.search),
@@ -310,18 +316,15 @@ const
         request: new Request(),
         iconData: ITAhM.iconData,
         positionData: parent.getPositionData(),
+        pathData: {},
         upper: Number(search.get("group")) || undefined,
         focus: Number(search.get("focus")) || undefined,
         display: new Display(),
-        nodeList: [],
         shutdownList: [],
         criticalList: [],
-        title: createTitle()
+        title: createTitle(),
+        deviceMap: {}
     };
-
-if (parent !== top) {
-    document.body.classList.add("frame");
-}
 
 document.getElementById("display").onclick = e => $.display.update();
 
@@ -405,8 +408,6 @@ function initialize() {
         }
 
         if (pos.parent === $.upper) {
-            $.nodeList.push(id);
-
             args = {
                 node: node,
                 icon: $.iconData[node.type || "unknown"] || $.iconData["unknown"],
@@ -438,9 +439,9 @@ function initialize() {
                 }
             }
 
-            addDevice(args);
+            $.deviceMap[id] = addDevice(args);
         }
-        else if (group = parent.findParentFromStage(pos.parent)) {
+        else if (pos.parent && (group = findPosFromStage(pos.parent, $.positionData))) {
             // 하위
             if ("protocol" in node) {
                 if ("status" in node && !node.status) {
@@ -480,50 +481,36 @@ function initialize() {
         peerMap = $.pathData[nodeFrom];
 
         for (let nodeTo in peerMap) {
-            if ($.nodeList.indexOf(nodeFrom) === -1 && $.nodeList.indexOf(nodeTo) === -1) {
-                continue;
-            }
-
             args = {
                 nodeFrom: nodeFrom,
                 nodeTo: nodeTo,
-                posFrom: $.positionData[nodeFrom],
-                posTo: $.positionData[nodeTo],
                 option: peerMap[nodeTo],
                 labelFrom: [],
                 labelTo: []
             };
             
+            id = findPosFromStage(nodeFrom);
+
+            if (id) {
+                args.posFrom = $.positionData[id];
+            }
+            
+            id = findPosFromStage(nodeTo);
+
+            if (id) {
+                args.posTo = $.positionData[id];
+            }
+
+            if (!args.posFrom && !args.posTo) {
+                continue;
+            }
+
             if (!args.option.color) {
                 args.option.color = $.settingData.linkColor || "#ffffff";
             }
 
             if (!args.option.size) {
                 args.option.size = $.settingData.linkSize || 1;
-            }
-
-            if ($.nodeList.indexOf(nodeFrom) === -1) {
-                id = parent.findParentFromStage(args.posFrom.parent);
-
-                if (id !== undefined) {
-                    args.posFrom = $.positionData[id];
-                } else {
-                    args.posFrom = undefined;
-
-                    delete args.option.type;
-                }
-            }
-
-            if ($.nodeList.indexOf(nodeTo) === -1) {
-                id = parent.findParentFromStage(args.posTo.parent);
-
-                if (id !== undefined) {
-                    args.posTo = $.positionData[id];
-                } else {
-                    args.posTo = undefined;
-
-                   delete args.option.type;
-                }
             }
 
             link = linkMap[nodeFrom];
@@ -564,7 +551,7 @@ function initialize() {
         focusDevice($.focus);
     }
 
-    $.request.listen(onEvent);
+    new BroadcastChannel("bc_event").onmessage = e => onEvent(e.data);
 }
 
 function initNode(e) {
@@ -585,18 +572,30 @@ function initNode(e) {
 
 function initPath(e) {
     switch(this.status) {
-        case 200:
-            $.pathData = JSON.parse(this.responseText);
-            
-            $.request.execute({
-                command: "get",
-                target: "link"
-            }, initLink);
-            
-            break;
+        case 200: break;
         default:
-            showMessage(this);
+            return showMessage(this);
     }
+
+    const pathData = JSON.parse(this.responseText);
+    var path, from;
+
+    for (let id in pathData) {
+        path = pathData[id];
+
+        from = String(path.from);
+
+        if (!(from in $.pathData)) {
+            $.pathData[from] = {};
+        }
+        
+        $.pathData[from][String(path.to)] = path;
+    }
+            
+    $.request.execute({
+        command: "get",
+        target: "link"
+    }, initLink);
 }
 
 function initLink(e) {

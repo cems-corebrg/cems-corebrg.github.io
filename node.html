@@ -74,6 +74,11 @@ tbody tr {
     border-bottom: 1px solid #ffffff;
 }
 
+tbody tr:not([data-disabled]):hover {
+    outline: 3px dotted #0084ff;
+    cursor: pointer;
+}
+
 th {
     background-color: #34495e;
     color: #efefef;
@@ -158,6 +163,16 @@ summary::-webkit-details-marker {
   display: none;
 }
 
+#dialog {
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	padding: 0; margin: 0;
+}
+
+iframe {
+    width: 100%; height: 100%;
+    border: none;
+}
+
 #selector {
     position: absolute; top: 100%; left: 50%;
     transform: translateX(-50%);
@@ -222,6 +237,7 @@ header form input {
 }
 
 tr.hidden,
+body:not(.dialog) #dialog,
 body.keyword #list tr:not(.keyword),
 #list.normal tr:not([data-normal]),
 #list.critical tr:not([data-critical]),
@@ -267,42 +283,34 @@ function onShowStatus() {
     window.location.href = "/resource.html";
 }
 
-function initialize() {
-    const df = document.createDocumentFragment();
-        
-    if ("custom" in window.settingData) {
-		var customs = window.settingData.custom;
-		
-		if (customs) {
-			let df = document.createDocumentFragment();
-			
-			$.customArray = customs.split(",");
-			
-			$.customArray.forEach(function (custom) {
-				df.appendChild(document.createElement("th")).textContent = custom;
-			});
-			
-			$.header.insertBefore(df, $.header.lastElementChild);
-		}
-	}
+function showDialog(src) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function () {
+		document.body.classList.add("dialog");
+	};
+
+    dialog.src = src;
+}
+
+function closeDialog(reset) {
+    document.body.classList.remove("dialog");
     
-    var row;
-
-    for (let id in $.nodeData) {
-        row = createRow(id, $.nodeData[id]);
-
-        if (row) {
-		    df.appendChild(row);
-        }
+    if (reset) {
+        resetDialog();
     }
-	
-	list.appendChild(df);
-	
-	document.body.classList.remove("loading");
+}
 
-	document.getElementById("count").textContent = count();
+function resetDialog() {
+    reload();
+}
 
-    initLabel();
+function showChart(id) {
+    const popup = window.open();
+
+    popup.sessionStorage.setItem("id", id);
+        
+    popup.location.replace("/chart.html");
 }
 
 /**
@@ -312,15 +320,12 @@ function initialize() {
 function createRow(id, node) {
 	var
 		row = document.createElement("tr"),
-		type, labels, label;
-        
-    if ("type" in node) {
-        if ($.iconData[node.type].group === "group") {
-            return;
-        }
-    } else {
-		node.type = "unknown";
-	}
+        type, labels, label,
+        icon = $.iconData[node.type || "unknown"] || $.iconData["unknown"];
+    
+    if (icon.group === "group") {
+        //return;
+    }
 	
     row.appendChild(document.createElement("td")); // N.1
 	row.appendChild(document.createElement("td")).textContent = node.ip || ""; // N.2
@@ -328,7 +333,7 @@ function createRow(id, node) {
     type = row.appendChild(document.createElement("td")); // N.3
     
     type.textContent = node.type;
-	type.style.backgroundImage = `url(${$.iconData[node.type].src})`;
+	type.style.backgroundImage = `url(${icon.src})`;
 	
 	row.appendChild(document.createElement("td")).textContent = (protocol => {
          if (protocol) {
@@ -345,8 +350,10 @@ function createRow(id, node) {
     }) (node.protocol); // N.4
 	
 	if ($.customArray) {
+        const extra = node.extra && JSON.parse(node.extra) || {};
+
 		$.customArray.forEach(function (custom) {
-			row.appendChild(document.createElement("td")).textContent = node.custom && node.custom[custom] || "";
+			row.appendChild(document.createElement("td")).textContent = extra[custom] || "";
 		});
 	};
 	
@@ -380,11 +387,23 @@ function createRow(id, node) {
 		}
 		else {
 			row.dataset.normal = true;
-		}
+        }
+        
+        row.onclick = e => {
+            e.preventDefault();
+
+            showChart(id);
+        };
 	}
 	else {
 		row.dataset.disabled = true;
 	}
+
+    row.oncontextmenu = e => {
+        e.preventDefault();
+
+        showDialog(`/dialog/node.html?id=${id}`);
+    };
     
 	return row;
 }
@@ -405,17 +424,19 @@ function initLabel() {
 	select.insertBefore(df, select.firstChild);
 }
 
-function onSelectStatus (e) {
-    const className = e.target.className;
-    
-    $.list.className = className;
+function selectStatus(status) {
+    $.list.className = status;
     $.list.classList.remove("status");
 
-    document.querySelector("summary").className = className;
+    document.querySelector("summary").className = status;
 
     document.body.querySelector("details").removeAttribute("open");
 
 	document.getElementById("count").textContent = count();
+}
+
+function onSelectStatus (e) {
+    selectStatus(e.target.className);
 }
 
 function onSort (e) {
@@ -473,7 +494,7 @@ function onSearch (e) {
     
     document.body.classList.add("loading", "keyword");
 
-    const keyword = this.elements["keyword"].value;
+    const keyword = this.elements["keyword"].value.toLowerCase();
 
     if (!keyword) {
         return $.form.reset();
@@ -489,7 +510,7 @@ function onSearch (e) {
         for (var i=0, length=cols.length; i<length; i++) {
             row.classList.remove("keyword");
 
-            if (cols[i].textContent.indexOf(keyword) !== -1) {
+            if (cols[i].textContent.toLowerCase().indexOf(keyword) !== -1) {
                 row.classList.add("keyword");
                 
                 break;
@@ -523,6 +544,51 @@ function onReset(e) {
 }
     
 function onSave() {
+    const
+        keys = ["name", "ip", "type"],
+		rows = [];
+	
+	var node, cols;
+
+	for (let id in $.nodeData) {
+        node = $.nodeData[id];
+        
+        cols = [];
+
+        if (node.protocol) {
+            if ("status" in node && !node.status) {
+                cols.push("장애");
+            }
+            else if ("critical" in node && node.critical) {
+                cols.push("주의");
+            }
+            else {
+                cols.push("정상");
+            }
+        }
+        else {
+            cols.push("");
+        }
+    
+        keys.forEach(key => 
+            cols.push(`"${(node[key] || "").replace(/\"/g, "'")}"`)
+        );
+        
+        $.customArray && $.customArray.forEach(key => {
+            const extra = node.extra && JSON.parse(node.extra) || {};
+
+            cols.push(`"${(extra[key] || "").replace(/\"/g, "'")}"`);
+        });
+
+        rows.push(cols.join(","));
+    }
+
+	ITAhM.util.download(new Blob(["\ufeff", rows.join("\n")] ,{
+		type: "text/csv;charset=utf-8;"
+	}), "node.csv");
+}
+
+function _onSave() {
 	var baseMap = {},
 		etc = [],
 		row = [];
@@ -603,11 +669,11 @@ function forEach(a, f) {
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -672,21 +738,25 @@ function showMessage(xhr) {
                 <tbody id="list"></tbody>
             </table>
         </main>
-		
+		<iframe id="dialog"></iframe>
 		<div class="bg_loading"></div>
 		
         <script src="/js/ITAhM.js"></script>
         <script src="/js/icon.js"></script>
 		<script src="/js/object.js"></script>
-		<script src="/js/request.js"></script>
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
 		<script>
 
-const $ = {
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
         request: new Request(),
         iconData: ITAhM.iconData,
         list: document.getElementById("list"),
         header: document.getElementById("header"),
         form: document.querySelector("form"),
+        status: search.get("status"),
         labelMap: {
             "": []
         }
@@ -725,57 +795,91 @@ document.getElementById("sort").onclick = onSort;
 $.form.onsubmit = onSearch;
 $.form.onreset = onReset;
 
-function initSetting(e) {
+function initialize(e) {
     switch(this.status) {
     case 200:
-        window.settingData = JSON.parse(this.responseText);
-        
-        initialize();
-
         break;
-    case -1:
-        console.trace(this.exception);
     default:
-        alert(top.getMessage(this.status));
-
-        console.log(this.responseText && JSON.parse(this.responseText).error);
+        return showMessage(this);
     }
+
+    const settingData = JSON.parse(this.responseText);
+
+    if ("custom" in settingData) {
+		var customs = settingData.custom;
+		
+		if (customs) {
+			let df = document.createDocumentFragment();
+			
+			$.customArray = customs.split(",");
+			
+			$.customArray.forEach(function (custom) {
+				df.appendChild(document.createElement("th")).textContent = custom;
+			});
+			
+			$.header.insertBefore(df, $.header.lastElementChild);
+		}
+    }
+    
+    const df = document.createDocumentFragment();
+    
+    var row;
+
+    for (let id in $.nodeData) {
+        row = createRow(id, $.nodeData[id]);
+
+        if (row) {
+		    df.appendChild(row);
+        }
+    }
+	
+	list.appendChild(df);
+    
+    if ($.status) {
+        selectStatus(`status ${$.status}`);
+    }
+    
+	document.body.classList.remove("loading");
+
+	document.getElementById("count").textContent = count();
+
+    initLabel();
 }
 
 function initIcon(e) {
     switch(this.status) {
-    case 200:
-        const iconData = JSON.parse(this.responseText);
-
-        for (let type in iconData) {
-            $.iconData[type] = iconData[type];
-        }
-        
-        $.request.execute({
-            "command": "get",
-            "target": "setting"
-        }, initSetting);
-        
+    case 200:        
         break;
     default:
-        showMessage(this);
+        return showMessage(this);
     }
+
+    const iconData = JSON.parse(this.responseText);
+
+    for (let type in iconData) {
+        $.iconData[type] = iconData[type];
+    }
+    
+    $.request.execute({
+        "command": "get",
+        "target": "setting"
+    }, initialize);
 }
 
 function initNode(e) {
     switch(this.status) {
     case 200:
-        $.nodeData = JSON.parse(this.responseText);
-        
-        $.request.execute({
-            "command": "get",
-            "target": "icon"
-        }, initIcon);
-
         break;
     default:
-        showMessage(this);
+        return showMessage(this);
     }
+
+    $.nodeData = JSON.parse(this.responseText);
+        
+    $.request.execute({
+        "command": "get",
+        "target": "icon"
+    }, initIcon);
 }
 
 $.request.execute({

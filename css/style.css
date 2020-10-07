@@ -66,6 +66,10 @@ body:not(.loading) .bg_loading {
 	background-size: 32px 32px;
 }
 
+.bg_loading.w {
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
 .btn.normal {
     position: relative;
     cursor: pointer;
