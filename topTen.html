@@ -188,7 +188,10 @@ function setTop(section, topArray) {
     if (topArray) {
         topArray.forEach(value => {
             if (Number(value.value) || !section.dataset.zero) {
-                footer.appendChild(createTopItem(value, window[section.dataset.func], section.dataset.chart));
+                const item = createTopItem(value, window[section.dataset.func], section.dataset.chart);
+
+                if (item)
+                    footer.appendChild(item);
             }
         });
     }
@@ -203,7 +206,7 @@ function createTopItem(value, toString, chart) {
 		gauge;
 
     if (!base) {
-        throw window.location.reload();
+        return null;
     }
 
 	item.appendChild(document.createElement("li")).textContent = base.name || base.ip || id;
