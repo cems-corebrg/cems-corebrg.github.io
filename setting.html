@@ -318,7 +318,16 @@ function showMessage(xhr) {
 					</select>
 					<input type="submit" value="적용" class="root">
 				</form>
-			</p>
+            </p>
+            <p>
+                <form>
+                    인터페이스 모니터 :
+                    <select id="if_mon">
+                        <option value="true">활성
+                        <option value="">비활성
+                    </select>
+                </form>
+            </p>
 			
 			<div class="bg_loading"></div>
 		</div>
@@ -417,9 +426,7 @@ function showMessage(xhr) {
 				<span class="logo">
                     &#xf658;
                 </span>
-
                 이벤트 통지
-                <span title="수신자 추가" class="root add button">&#xf055;</span>
 			</h2>
 			<div class="box">
                 <div class="setting">
@@ -472,7 +479,6 @@ function showMessage(xhr) {
                     <input type="reset" value="중지" class="root">
                     <input type="submit" value="적용" class="root">
                 </div>
-				<ul id="user_list" class="list"></ul>
 			</div>
 			<div class="bg_loading"></div>
         </form>
@@ -584,10 +590,6 @@ function initInformation() {
             key: "smtpServer"
         };
 
-    function onSelectUser(name, user) {
-		top.showDialog(`/dialog/user.html?name=${name}`);
-	}
-
     function sendRequest() {
         form.classList.add("loading");
 
@@ -611,10 +613,6 @@ function initInformation() {
         });
     }
 
-    form.querySelector(".add").onclick = function () {
-		top.showDialog("/dialog/user.html");
-    };
-    
     if (top.account.level === 0)
     form.onreset = function (e) {
         e.preventDefault();
@@ -652,32 +650,8 @@ function initInformation() {
         if (config.smtpEnable) {
             form.classList.add("on");
         }
-    };
 
-    window.initUser = function () {
-        switch (this.status) {
-        case 200:
-            const
-                userData = JSON.parse(this.responseText),
-                df = document.createDocumentFragment();
-
-            for (let name in userData) {
-                df.appendChild(createItem(name, userData[name], onSelectUser));
-            }
-
-            document.getElementById("user_list").appendChild(df);
-
-            form.classList.remove("loading");
-
-            $.request.execute({
-                command: "get",
-                target: "setting"
-            }, initSetting);
-
-            break;
-        default:
-            showMessage(this);
-        }
+        form.classList.remove("loading");
     };
 }) (document.getElementById("event"));
 
@@ -721,6 +695,8 @@ function initInformation() {
             form.elements["port"].value = "";
 
             showMessage(this);
+
+            throw window.location.reload();
         }
 
         form.classList.remove("loading");
@@ -750,6 +726,8 @@ function initInformation() {
                 break;
             default:
                 showMessage(this);
+
+                throw window.location.reload();
             }
 
             form.classList.remove("loading");
@@ -772,15 +750,13 @@ function initInformation() {
 		}, function () {
 			switch(this.status) {
 			case 200:
-				alert("Ping 응답 제한 시간을 설정 하였습니다.");
-				
-				break;
-			case 400:
-				alert("현재 버전에서 지원하지 않는 설정입니다.");
+				alert("Information.\n\nPing 응답 제한 시간을 설정 하였습니다.");
 				
 				break;
 			default:
 				showMessage(this);
+
+                throw window.location.reload();
 			}
 			
 			container.classList.remove("loading");
@@ -801,15 +777,13 @@ function initInformation() {
 		}, function () {
 			switch(this.status) {
 			case 200:
-				alert("Ping 재시도 횟수를 설정 하였습니다.");
-				
-				break;
-			case 400:
-				alert("현재 버전에서 지원하지 않는 설정입니다.");
+				alert("Information.\n\nPing 재시도 횟수를 설정 하였습니다.");
 				
 				break;
 			default:
 				showMessage(this);
+
+                throw window.location.reload();
 			}
 			
 			container.classList.remove("loading");
@@ -830,11 +804,13 @@ function initInformation() {
 		}, function () {
 			switch(this.status) {
 			case 200:
-				alert("Ping 요청 주기를 설정 하였습니다.");
+				alert("Information.\n\nPing 요청 주기를 설정 하였습니다.");
 				
 				break;
 			default:
 				showMessage(this);
+
+                throw window.location.reload();
 			}
 			
 			container.classList.remove("loading");
@@ -855,11 +831,13 @@ function initInformation() {
 		}, function (response) {
 			switch (this.status) {
 			case 200:
-				alert("데이터 보관 기간을 설정하였습니다.");
+				alert("Information.\n\n데이터 보관 기간을 설정하였습니다.");
 
 				break;
 			default:
                 showMessage(this);
+
+                throw window.location.reload();
 			}
 
 			container.classList.remove("loading");
@@ -880,17 +858,52 @@ function initInformation() {
 		}, function () {
 			switch(this.status) {
 			case 200:
-				alert("SNMP 정보 저장 주기를 설정하였습니다.");
+				alert("Information.\n\nSNMP 정보 저장 주기를 설정하였습니다.");
 				
 				break;
 			default:
                 showMessage(this);
+
+                throw window.location.reload();
 			}
 
 			container.classList.remove("loading");
 		});
 	};
     
+    if (top.account.level === 0)
+	document.getElementById("if_mon").onchange = function (e) {
+        if (!confirm("인터페이스 모니터를 변경 합니까?")) {
+            this.value = this.value? "": "true";
+            
+            return;
+        }
+
+		container.classList.add("loading");
+		
+        const enable = this.value? true: false;
+
+		$.request.execute({
+			command: "set",
+            target: "config",
+			key: "ifMon",
+			value: enable
+		}, function () {
+			switch(this.status) {
+			case 200:
+				alert(`Information.\n\n인터페이스 모니터를 ${enable? "활성": "비활성"} 하였습니다.`);
+				
+				break;
+			default:
+                showMessage(this);
+
+                throw window.location.reload();
+			}
+
+			container.classList.remove("loading");
+		});
+    }
+
     window.initConfig = function () {
 		switch (this.status) {
         case 200:
@@ -901,6 +914,7 @@ function initInformation() {
             document.querySelector("select[name=timeout]").value =  config.timeout;
             document.querySelector("select[name=retry]").value = config.retry;
             document.querySelector("select[name=save_interval]").value = config.saveInterval;
+            document.getElementById("if_mon").value = config.ifMon? "true": "";
 
             initSMTP(config);
             
@@ -910,8 +924,8 @@ function initInformation() {
 
             $.request.execute({
                 command: "get",
-                target: "user"
-            }, initUser);
+                target: "setting"
+            }, initSetting);
 
             break;
         default:

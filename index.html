@@ -39,16 +39,12 @@ nav,
     font: 20px "Font Awesome 5 Free";
 }
 
-nav >span {
+nav >span:hover>a {
     display: inline-block;
-    
-}
-
-nav >span:hover {
     transform: translateY(-2px);
 }
 
-nav >span:active {
+nav >span:active>a {
     color: #0084ff;
     transform: translateY(0);
 }
@@ -164,6 +160,8 @@ function signIn(account) {
     signout.title = `${account.username}  Sign out`;
     signout.onclick = onSignOut;
 
+    window.open("/dc.html");
+    
     $.request.execute({
         command: "get",
         target: "setting"
@@ -317,6 +315,42 @@ function showMessage(xhr) {
     } catch (e) {}
 }
 
+function onTest(e) {
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        const rows = reader.result.split(/\r?\n/);
+        const locationData = {};
+        let location;
+
+        rows.forEach((row,i) => {
+            const cols = row.split(",");
+            
+            location = {
+                rack: Number(cols[0]),
+                position: Number(cols[1]),
+                maker: cols[2],
+                model: cols[3],
+                name: cols[5] || "",
+            };
+
+            if (cols[6]) {
+                location.ip = cols[6];
+            }
+
+            locationData[String(i +1)] = location;
+        });
+        
+        $.request.execute({
+            command: "test",
+            location: locationData
+        }, function (e) {
+            console.log(this.status);
+        });
+    };
+
+    reader.readAsText(e.target.files[0], "UTF-8");
+}
         </script>
     </head>
     <body>
@@ -353,6 +387,14 @@ function showMessage(xhr) {
                         &#xf783;
                     </a>
                 </span>
+                <span title="감사">
+                    <a href="/audit.html" target="cems">
+                        &#xf1e5;
+                    </a>
+                </span>
+                <b>
+                    &#xf7a5;
+                </b>
                 <span title="노드 목록">
                     <a href="/node.html" target="cems">
                         &#xf233;
@@ -368,6 +410,14 @@ function showMessage(xhr) {
                         &#xf83e;
                     </a>
                 </span>
+                <span title="사용자 목록">
+                    <a href="/user.html" target="cems">
+                        &#xf0c0;
+                    </a>
+                </span>
+                <b>
+                    &#xf7a5;
+                </b>
                 <span title="임계 관리">
                     <a href="/critical.html" target="cems">
                         &#xf08d;
@@ -391,6 +441,7 @@ function showMessage(xhr) {
                         &#xf2f9;
                     </a>
                 </span>
+                <!--input type="file" onchange="onTest(event)"-->
             </nav>
             <div title="Signout">
                 <span id="signout"></span>

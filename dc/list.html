@@ -251,16 +251,17 @@ function createRow(id, node) {
     
     if (node.location) {
         row.classList.add("location");
-
+/*
         row.onclick = e => 
-            confirm("Confirm.\n\n장치를 Rack에서 분리하겠습니까?") && detachDevice(id);
+            confirm("Confirm.\n\n장치를 Rack에서 분리하겠습니까?") && detachDevice(id);*/
     } else {
         row.draggable = true;
 
         row.addEventListener("dragstart", e => {
             e.dataTransfer.effectAllowed = "copy";
 
-            e.dataTransfer.setData("text", id);
+            e.dataTransfer.setData("id", id);
+            e.dataTransfer.setData("name", node.name || node.ip || "");
         });
     }
 

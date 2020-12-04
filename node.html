@@ -74,8 +74,7 @@ tbody tr {
     border-bottom: 1px solid #ffffff;
 }
 
-tbody tr:not([data-disabled]):hover {
-    outline: 3px dotted #0084ff;
+tbody tr:hover {
     cursor: pointer;
 }
 
@@ -103,6 +102,21 @@ thead th:first-child {
 td:nth-child(3) {
     padding-left: 3em;
     background: no-repeat left/2em;
+}
+
+td:nth-child(6) {
+    font-family: "Font Awesome 5 Free";
+    font-weight: bold;
+    text-align: center;
+}
+
+td:nth-child(6):hover {
+    transform: scale(1.2);
+    color: #0084ff;
+}
+
+tr:not(:hover) td:nth-child(6) {
+    opacity: 0;
 }
 
 tr:nth-child(odd) {
@@ -318,19 +332,15 @@ function showChart(id) {
  * @param {Object} node
  **/
 function createRow(id, node) {
-	var
+	const
 		row = document.createElement("tr"),
-        type, labels, label,
         icon = $.iconData[node.type || "unknown"] || $.iconData["unknown"];
+    let type, labels, label, td;
     
-    if (icon.group === "group") {
-        //return;
-    }
-	
-    row.appendChild(document.createElement("td")); // N.1
-	row.appendChild(document.createElement("td")).textContent = node.ip || ""; // N.2
+    row.appendChild(document.createElement("td")); // N.1 상태
+	row.appendChild(document.createElement("td")).textContent = node.ip || ""; // N.2 IP주소
 
-    type = row.appendChild(document.createElement("td")); // N.3
+    type = row.appendChild(document.createElement("td")); // N.3 타입
     
     type.textContent = node.type;
 	type.style.backgroundImage = `url(${icon.src})`;
@@ -347,8 +357,24 @@ function createRow(id, node) {
          } else {
              return "";
          }
-    }) (node.protocol); // N.4
+    }) (node.protocol); // N.4 모니터
 	
+    row.appendChild(document.createElement("td")).textContent = node.manager || ""; // N.5 관리자
+    
+    td = document.createElement("td"); // N.5 이력 조회
+
+    if (node.manager) {
+        td.textContent = "\uf141";
+
+        td.onclick = e => {
+            e.stopPropagation();
+
+            window.open(`/manager.html?node=${node.id}`, "manager");
+        };
+    }
+
+    row.appendChild(td);
+
 	if ($.customArray) {
         const extra = node.extra && JSON.parse(node.extra) || {};
 
@@ -377,7 +403,13 @@ function createRow(id, node) {
 	else {
 		$.labelMap[""].push(row);
 	}
-	
+    
+    row.onclick = e => {
+        e.preventDefault();
+
+        showDialog(`/dialog/node.html?id=${id}`);
+    };
+
 	if (node.protocol) {
 		if ("status" in node && !node.status) {
 			row.dataset.shutdown = true;
@@ -388,8 +420,8 @@ function createRow(id, node) {
 		else {
 			row.dataset.normal = true;
         }
-        
-        row.onclick = e => {
+
+        row.oncontextmenu = e => {
             e.preventDefault();
 
             showChart(id);
@@ -398,12 +430,6 @@ function createRow(id, node) {
 	else {
 		row.dataset.disabled = true;
 	}
-
-    row.oncontextmenu = e => {
-        e.preventDefault();
-
-        showDialog(`/dialog/node.html?id=${id}`);
-    };
     
 	return row;
 }
@@ -545,10 +571,10 @@ function onReset(e) {
     
 function onSave() {
     const
-        keys = ["name", "ip", "type"],
+        keys = ["name", "ip", "type", "manager"],
 		rows = [];
 	
-	var node, cols;
+	let node, cols;
 
 	for (let id in $.nodeData) {
         node = $.nodeData[id];
@@ -588,65 +614,6 @@ function onSave() {
 	}), "node.csv");
 }
 
-function _onSave() {
-	var baseMap = {},
-		etc = [],
-		row = [];
-	
-	row[0] = "Label,Name,Type,Address";
-	
-	if ($.customArray) {
-		$.customArray.forEach(function (custom) {
-			row[0] += (","+ custom);
-		});
-	}
-	
-	var node, label;
-
-	for (let id in $.nodeData) {
-		node = $.nodeData[id];
-
-		if (node.label) {
-			label = node.label.split(",")[0];
-			
-			if (!(label in baseMap)) {
-				baseMap[label] = [];
-			}
-
-			baseMap[label].push(node);
-		}
-		else {
-			etc.push(node);
-		}
-	}
-	
-	const keys = Object.keys(baseMap).sort(function (a, b) {
-		return a.localeCompare(b);
-	});
-
-	keys.push("");
-
-	baseMap[""] = etc;
-
-	keys.forEach(function (label) {
-		baseMap[label].forEach(function (node) {
-			const columns = [label, node.name, node.type, node.ip];
-
-			if ($.customArray) {
-				$.customArray.forEach(function (custom) {
-					columns.push("custom" in node? node.custom[custom] || "": "");
-				});
-			}
-
-			row.push(columns.join(","));
-		});
-	});
-
-	ITAhM.util.download(new Blob(["\ufeff", row.join("\n")] ,{
-		type: "text/csv;charset=utf-8;"
-	}), "node.csv");
-}
-
 function count() {
 	var count = 0;
 
@@ -657,13 +624,6 @@ function count() {
 	});
 
 	return count;
-}
-
-
-function forEach(a, f) {
-	for (var i=0, _i=a.length; i<_i; i++) {
-		f(a[i]);
-	}
 }
 
 function showMessage(xhr) {
@@ -714,6 +674,8 @@ function showMessage(xhr) {
                     <col width="200">
                     <col width="180">
                     <col width="100">
+                    <col width="180">
+                    <col width="60">
                 </colgroup>
                 <thead>
                     <tr id="header">
@@ -732,6 +694,7 @@ function showMessage(xhr) {
                         <th id="sort" class="sort">주소</th>
                         <th>종류</th>
                         <th>모니터</th>
+                        <th colspan="2">관리자</th>
                         <th>이름</th>
                     </tr>
                 </thead>
@@ -761,6 +724,25 @@ const
             "": []
         }
     };
+
+new BroadcastChannel("bc_manager").onmessage = function (e) {
+    const bc = this;
+
+    $.request.execute({
+        "command": "get",
+        "target": "manager",
+        "node": e.data
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            break;
+        default:
+            throw showMessage(this);
+        }
+
+        bc.postMessage(JSON.parse(this.responseText));
+    });
+};
 
 document.getElementById("label").onchange = function () {
 	const

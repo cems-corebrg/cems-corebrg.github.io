@@ -110,6 +110,30 @@ text {
     text-shadow: #000 0 1px;
 }
 
+#grid {
+    position: absolute; width: 100%; height: 100%;
+}
+
+#grid>div {
+    position: relative;
+}
+
+#grid>div:first-child {
+    width: 100%;
+    top: 30%;
+    border-top: 1px solid red;
+}
+
+#grid>div:last-child {
+    height: 100%;
+    left: 30%;
+    border-left: 1px solid red;
+}
+
+body:not(.grid) #grid {
+    display: none;
+}
+
         </style>
         <script>
 
@@ -133,7 +157,6 @@ function showMessage(xhr) {
         
     <body>
         <nav>
-            <span title="편집 종료" id="close">&#xf00d;</span>
             <span title="Rack 추가" id="add">&#xf067;</span>
             <span title="위치 저장" id="save">&#xf0c7;</span>
             <span title="
@@ -159,10 +182,16 @@ function showMessage(xhr) {
             </defs>
             <g id="container" transform="translate(0, 0) scale(5, 5)"></g>
         </svg>
+        <div id="grid">
+            <div></div>
+            <div></div>
+        </div>
         <aside>
             <div id="tab">&#xf00b;</div>
             <iframe id="list"></iframe>
         </aside>
+
+        <script src="/dc/edit.js"></script>
         <script src="/js/request.js"></script>
         <script>
 const $ = {
@@ -170,7 +199,7 @@ const $ = {
     };
 
 document.getElementById("add").onclick = function () {
-    top.showDialog("/dc/dialog/rack.html");
+    top.showDialog("/dc/dialog/facility.html");
 };
 
 document.getElementById("tab").onclick = function (e) {
@@ -191,167 +220,27 @@ document.getElementById("tab").onclick = function (e) {
     }
 };
 
-{
-    const
-        svg = document.getElementById("svg"),
-        container = document.getElementById("container"),
-        copy = document.querySelector("defs>g"),
-        map = {};
+document.getElementById("save").onclick = function (e) {
+    document.body.classList.add("loading");
 
-    let
-        selected,
-        dragOrigin,
-        selectedOrigin,
-        scale = 5;
+    $.request.execute({
+        command: "set",
+        target: "rack",
+        rack: map
+    }, function () {
+        switch (this.status) {
+        case 200:
+            alert("Information.\n\n저장 성공.");
 
-    function onResize() {
-		const rect = svg.getBoundingClientRect();
-		
-        container.transform.baseVal.getItem(0).setTranslate(rect.width /2, rect.height /2);
-    }
-    
-    function onScale(e) {
-        e.deltaY < 0? scale *= 1.1: scale /= 1.1;
+            document.body.classList.remove("loading");
 
-        container.transform.baseVal.getItem(1).setScale(scale, scale);
-    }
+            break;
 
-    function onCancel(e) {
-        if (selected) {
-            selected.classList.remove("selected");
+        default:
+            showMessage(this);
         }
-
-        selected = undefined;
-    }
-
-    function onSelect(e) {
-        e.stopPropagation();
-
-        if (selected) {
-            selected.classList.remove("selected");
-        }
-
-        selected = this;
-        
-        container.appendChild(this);
-
-        selected.classList.add("selected");
-    }
-
-    function onMenu(e) {
-        e.preventDefault();
-
-        top.showDialog(`/dc/dialog/rack.html?rack=${this.dataset.id}`);
-    }
-
-    function onDragStart(e) {
-        if (selected && e.target.parentNode === selected) {
-            dragOrigin = {
-                x: e.clientX,
-                y: e.clientY
-            };
-        }
-    }
-
-    function onDragMove(e) {
-        if (dragOrigin) {
-            const
-                pos = map[selected.dataset.id],
-                x = Math.round((e.clientX - dragOrigin.x) /scale /1) *1 + pos.x,
-                y = Math.round((e.clientY - dragOrigin.y) /scale /1) *1 + pos.y;
-
-            selected.setAttribute("transform", `translate(${x},${y})`);
-        }
-    }
-
-    function onDragEnd(e) {
-        if (dragOrigin) {
-            const pos = map[selected.dataset.id];
-
-            pos.x += Math.round((e.clientX - dragOrigin.x) /scale /1) *1;
-            pos.y += Math.round((e.clientY - dragOrigin.y) /scale /1) *1;
-
-            dragOrigin = undefined;
-        }
-    }
-
-    svg.addEventListener("click", onCancel)
-    svg.addEventListener("wheel", onScale);
-    svg.addEventListener("mousedown", onDragStart);
-    svg.addEventListener("mousemove", onDragMove);
-    svg.addEventListener("mouseup", onDragEnd);
-    window.addEventListener("resize", onResize);
-
-    document.getElementById("save").onclick = function () {
-        document.body.classList.add("loading");
-
-        $.request.execute({
-            command: "set",
-            target: "rack",
-            rack: map
-        }, function () {
-            switch (this.status) {
-            case 200:
-                alert("Information.\n\n저장 성공.");
-
-                document.body.classList.remove("loading");
-
-                break;
-
-            default:
-                showMessage(this);
-            }
-        });
-    };
-
-    /**
-     * @param {string} id
-     **/
-    window.addRack = function (id, rack) {
-        const node = copy.cloneNode(true);
-        
-        node.setAttribute("transform", `translate(${rack.x},${rack.y})`);
-
-        node.querySelector("text").textContent = rack.name;
-        node.addEventListener("click", onSelect);
-        node.addEventListener("contextmenu", onMenu);
-        node.addEventListener("dragenter", e => {
-            e.preventDefault();
-
-            node.classList.add("over");
-        });
-
-        node.addEventListener("dragleave", e => {
-            e.preventDefault();
-
-            node.classList.remove("over");
-        });
-
-        node.addEventListener("dragover", e => {
-            e.preventDefault();
-
-            e.dataTransfer.dropEffect = "copy";
-
-            return false;
-        });
-        
-        node.addEventListener("drop", e => {
-            e.stopPropagation();
-        
-            top.showDialog(`/dc/dialog/location.html?rack=${id}&device=${e.dataTransfer.getData("text")}`);
-
-            node.classList.remove("over");
-        });
-        
-        node.dataset.id = id;
-
-        map[id] = rack;
-
-        container.appendChild(node);
-    };
-
-    onResize();
-}
+    });
+};
 
 $.request.execute({
     command: "get",
@@ -359,19 +248,21 @@ $.request.execute({
 }, function () {
     switch (this.status) {
     case 200:
-        const rackData = JSON.parse(this.responseText);
-
-        for (let id in rackData) {
-            addRack(id, rackData[id]);
-        }
-
-        document.body.classList.remove("loading");
-
         break;
 
     default:
         showMessage(this);
     }
+
+    const rackData = JSON.parse(this.responseText);
+
+    for (let id in rackData) {
+        addRack(id, rackData[id]);
+    }
+
+    onResize();
+
+    document.body.classList.remove("loading");
 });
 
         </script>

@@ -7,104 +7,16 @@
 		<style>
 
 @import "/css/style.css";
+@import "/css/dialog.css";
 @import "/css/fa.css";
 
-body {
-	margin: 0; padding: 0;
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background-color: rgba(0, 0, 0, .8);
-}
-
-form {
-	width: 380px;
-	padding: 20px;
-	background-color: #fff;
-	position: relative;
-}
-
-h2 {
-	margin: 0; padding: 10px;
-	background-color: #0084ff;
-    color: #fff;
-    text-shadow: 0 2px 3px #000;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="number"],
-input[type="submit"],
-input[type="reset"],
-select {
-	width: 100%;
-	box-sizing: border-box;
-	padding: .5em;
-}
-
-input[type="checkbox"] {
-	vertical-align: middle;
-}
-
-table {
-	margin: 1em 0;
-    width: 100%;
-}
-
-th {
-    background-color: #686160;
-    color: #fff;
-    font-weight: bold;
-    text-align: right;
-}
-
-td, th {
-    padding: 3px;
-}
-
-input[type="number"] {
-	text-align: right;
+i {
+    display: inline-block;
+    margin: 0.5em;
 }
 
 form.v3 .version:not(.v3),
-form:not(.v3) .version.v3 {
-	display: none;
-}
-
-footer {
-	display: flex;
-	margin-top: 1em;
-}
-
-footer input {
-    flex: 1;
-    font-family: "Font Awesome 5 Free";
-    font-weight: bold;
-}
-
-#close {
-    font-family: "Font Awesome 5 Free";
-    display: block;
-    float: right;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#close:hover {
-    transform: scale(1.2);
-}
-
-main {
-    position: relative;
-}
-
-.bg_loading {
-	position: absolute;
-}
-
-body:not(.root) footer,
-body:not(.edit) input[type=reset],
+form:not(.v3) .version.v3,
 body.edit input[type=submit] {
 	display: none;
 }
@@ -138,9 +50,9 @@ function initialize (profile) {
         
         $.form.elements["port"].value = profile.port;
 
-        document.body.querySelector(`input[name=version][value=${profile.version}]`).checked = true;
+        document.body.querySelector("[name=version]").value = profile.version;
         
-        if (profile.version === "v3") {
+        if (profile.version === 3) {
             $.form.elements["user"].value = profile.security;
             
             if ("md5" in profile) {
@@ -159,7 +71,7 @@ function initialize (profile) {
             $.form.elements["community"].value = profile.security;
         }
         
-        $.form.className = profile.version;
+        $.form.className = `v${profile.version}`;
         
         document.body.classList.add("edit");
         
@@ -177,7 +89,7 @@ function onSubmit (e) {
     
     var
         name = this.elements["name"].value,
-        version = document.querySelector("input[name=version]:checked").value,
+        version = Number(document.body.querySelector("[name=version]").value),
         request = {
             target: "profile",
             command: "add",
@@ -186,11 +98,12 @@ function onSubmit (e) {
                 name: name,
                 protocol: "udp",
                 port: this.elements["port"].value,
-                version: version
+                version: version,
+                level: 0
             }
         };
     
-    if (version === "v3") {
+    if (version === 3) {
         var element = this.elements["user"],
             level = 1; // noauth-nopriv
         
@@ -312,12 +225,12 @@ function showMessage(xhr) {
 	
 	<body class="loading">
 
-		<form autocomplete="off">
+		<main>
             <h2>
                 <span  id="close" title="대화창 닫기">&#xf00d;</span>
                 snmp profile
             </h2>
-            <main>
+            <form>
                 <table>
                     <tr>
                         <th>profile name</th>
@@ -336,9 +249,11 @@ function showMessage(xhr) {
                     <tr>
                         <th>snmp version</th>
                         <td>
-                            <label><input type="radio" value="v1" name="version">v1</label>
-                            <label><input type="radio" value="v2c" name="version" checked>v2c</label>
-                            <label><input type="radio" value="v3" name="version">v3</label>
+                            <select name="version">
+                                <option value="0">v1</option>
+                                <option value="1" selected>v2c</option>
+                                <option value="3">v3</option>
+                            </select>
                         </td>
                     </tr>
                     <tr class="version">
@@ -377,12 +292,12 @@ function showMessage(xhr) {
                 </table>
                 <i>※등록된 Profile은 수정할 수 없고 사용중인 프로파일은 삭제되지 않습니다.</i>
                 <footer>
-                    <input type="reset" value="&#xf1f8; 삭제">
-                    <input type="submit" value="&#xf0c7; 저장">
+                    <input type="reset" value="&#xf1f8; Remove">
+                    <input type="submit" value="&#xf0c7; Save">
                 </footer>
                 <div class="bg_loading"></div>
-            </main>
-        </form>
+            </form>
+        </main>
         
         <script src="/js/request.js"></script>
 		<script>
@@ -413,28 +328,28 @@ document.addEventListener("keydown", function (e) {
 
 document.getElementById("close").onclick = e => top.closeDialog();
 
-[].forEach.call(document.querySelectorAll("input[name=version]"), version => 
-    version.onchange = function () {
-        $.form.className = this.value;
-    });
+document.body.querySelector("[name=version]").onchange = function (e) {
+    $.form.className = `v${this.value}`;
+};
 
-$.form.elements["en_auth"].onclick = function () {
-    enableElement(this.elements["authentication"], this.checked);
+$.form.elements["en_auth"].onclick = function (e) {
+    enableElement(this.form.elements["authentication"], this.checked);
     
     if (!this.checked) {
-        this.elements["en_priv"].checked = this.checked;
-        enableElement(this.elements["privacy"], this.checked);
+        this.form.elements["en_priv"].checked = this.checked;
+
+        enableElement(this.form.elements["privacy"], this.checked);
     }
 };
 
-$.form.elements["en_priv"].onclick = function () {
-    if (this.checked && !this.elements["en_auth"].checked) {
+$.form.elements["en_priv"].onclick = function (e) {
+    if (this.checked && !this.form.elements["en_auth"].checked) {
         this.checked = false;
         
         return;
     }
     
-    enableElement(this.elements["privacy"], this.checked);
+    enableElement(this.form.elements["privacy"], this.checked);
 };
 
 if ($.name) {

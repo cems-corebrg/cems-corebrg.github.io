@@ -633,60 +633,47 @@ function initNodeTo() {
 
 function initNode() {
     document.getElementById("node_from").textContent = $.nodeFrom.name || $.nodeFrom.ip || "노드.1";
-
-    if ($.nodeFrom.resource) {
-        const select = document.getElementById("index_from");
-        let indexData, option;
-
-        for (let index in $.nodeFrom.resource) {
-            indexData = $.nodeFrom.resource[index];
-
-            if (ITAhM.snmp.oid.ifAdminStatus in indexData &&
-                indexData[ITAhM.snmp.oid.ifAdminStatus] === "1" &&
-                indexData[ITAhM.snmp.oid.ifSpeed] &&
-                Number(indexData[ITAhM.snmp.oid.ifSpeed]) > 0) {
-                option = document.createElement("option");
-
-                option.value = index;
-                option.text = indexData[ITAhM.snmp.oid.ifName] || indexData[ITAhM.snmp.oid.ifDescr];
-                option.title = indexData[ITAhM.snmp.oid.ifDescr] || indexData[ITAhM.snmp.oid.ifAlias];
-
-                select.appendChild(option);
-            }
-        }
-
-        select.selectedIndex = -1;
-
-        select.disabled = false;
-    }
-
     document.getElementById("node_to").textContent = $.nodeTo.name || $.nodeTo.ip || "노드.2";
 
-    if ($.nodeTo.resource) {
-        const select = document.getElementById("index_to");
-        let indexData, option;
+    [{
+        node: $.nodeFrom,
+        select: document.getElementById("index_from")
+    }, {
+        node: $.nodeTo,
+        select: document.getElementById("index_to")
+    }].forEach(args => {
+        if (args.node.resource) {
+            const df = document.createDocumentFragment();
+            let indexData, option;
 
-        for (let index in $.nodeTo.resource) {
-            indexData = $.nodeTo.resource[index];
+            for (let index in args.node.resource) {
+                indexData = args.node.resource[index];
 
-            if (ITAhM.snmp.oid.ifAdminStatus in indexData &&
-                indexData[ITAhM.snmp.oid.ifAdminStatus] === "1" &&
-                indexData[ITAhM.snmp.oid.ifSpeed] &&
-                Number(indexData[ITAhM.snmp.oid.ifSpeed]) > 0) {
-                option = document.createElement("option");
+                if (ITAhM.snmp.oid.ifAdminStatus in indexData &&
+                    indexData[ITAhM.snmp.oid.ifAdminStatus].value === "1" &&
+                    indexData[ITAhM.snmp.oid.ifSpeed] &&
+                    Number(indexData[ITAhM.snmp.oid.ifSpeed].value) > 0) {
+                    option = document.createElement("option");
+                    
+                    option.value = index;
+                    
+                    option.text = indexData[ITAhM.snmp.oid.ifName] && indexData[ITAhM.snmp.oid.ifName].value ||
+                        indexData[ITAhM.snmp.oid.ifDescr] && indexData[ITAhM.snmp.oid.ifDescr].value;
 
-                option.value = index;
-                option.text = indexData[ITAhM.snmp.oid.ifName] || indexData[ITAhM.snmp.oid.ifDescr];
-                option.title = indexData[ITAhM.snmp.oid.ifDescr] || indexData[ITAhM.snmp.oid.ifAlias];
+                    option.title = indexData[ITAhM.snmp.oid.ifDescr] && indexData[ITAhM.snmp.oid.ifDescr].value ||
+                        indexData[ITAhM.snmp.oid.ifAlias] && indexData[ITAhM.snmp.oid.ifAlias].value;
 
-                select.appendChild(option);
+                    df.appendChild(option);
+                }
             }
+
+            args.select.appendChild(df);
+
+            args.select.selectedIndex = -1;
+
+            args.select.disabled = false;
         }
-
-        select.selectedIndex = -1;
-
-        select.disabled = false;
-    }
+    });
 
     initPath();
 }
@@ -740,7 +727,7 @@ function initLink(path) {
             for (let id in $.linkData) {
                 addLink($.linkData[id]);
             }
-        case 204:
+
             document.body.classList.remove("loading");
 
             break;

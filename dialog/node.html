@@ -8,6 +8,7 @@
 		
 		<style>
 @import "/css/style.css";
+@import "/css/dialog.css";
 @import "/css/fa.css";
 
 body {
@@ -16,53 +17,6 @@ body {
 	justify-content: center;
 	align-items: center;
 	background-color: rgba(0, 0, 0, .8);
-}
-
-form {
-	width: 320px;
-	padding: 20px;
-	background-color: #fff;
-	position: relative;
-}
-
-h2 {
-	background-color: #0084ff;
-	padding: 10px; margin: 0;
-    color: #fff;
-    text-shadow: 0 2px 3px #000;
-}
-
-.table {
-	border: 1px solid #aaa;
-	padding: 1em;
-	margin: 1em 0;
-}
-
-.table ul {
-	list-style: none;
-	padding: 0; margin: 3px 0;
-	display: flex;
-	align-items: center;
-}
-
-.table li {
-	flex: 1;
-}
-
-.table li:first-child {
-	padding: .5em;
-	text-align: right;
-}
-
-.table li:last-child {
-	flex: 3;
-}
-
-.table li input[type="text"],
-.table li select {
-	padding: .5em;
-	width: 100%;
-	box-sizing: border-box;
 }
 
 input[type="checkbox"] {
@@ -79,42 +33,11 @@ u {
 	cursor: default;
 }
 
-footer {
-	display: flex;
-}
-
-footer> input {
-    font-family: "Font Awesome 5 Free";
-    font-weight: bold;
-	flex: 1;
-	padding: .5em;
-}
-
-#close {
-    font-family: "Font Awesome 5 Free";
-    display: block;
-    float: right;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#close:hover {
-    transform: scale(1.2);
-}
-
 .container {
     position: relative;
 }
 
-.bg_loading {
-    position: absolute;
-}
-
-body:not(.monitor) .monitor {
-	display: none;
-}
-
-body:not(.edit) input[type=reset] {
+body:not(.edit) .option {
 	display: none;
 }
 
@@ -171,113 +94,7 @@ function trimLabel(labels) {
 	return result.join(",");
 }
 
-function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert(`Notice!\n\n세션 만료.`);
-
-        break;
-    default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
-    }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
-}
-
-		</script>
-	</head>
-	
-	<body class="loading">
-	
-		<form class="rounded">
-			<h2>
-                <span  id="close" title="대화창 닫기">&#xf00d;</span>
-				장비 정보
-            </h2>
-            <div class="container">
-                <div class="table">
-                    <ul class="ip">
-                        <li>ip 주소
-                        <li>
-                            <input type="text" name="ip" autofocus>
-                    </ul>
-                    <ul>
-                        <li>이름
-                        <li>
-                            <input type="text" name="name" placeholder="장비 이름">
-                    </ul>
-                    <ul>
-                        <li>타입
-                        <li>
-                            <select name="type" required></select>
-                        
-                    </ul>
-                    <ul>
-                        <li title="콤마(,)로 구분하며 공백을 허용하지 않습니다."><i>*라벨</i>
-                        <li>
-                            <input type="text" name="label" placeholder="라벨1 [,라벨2 ...]">
-                        
-                    </ul>
-                    <ul class="monitor">
-                        <li>모니터링</li>
-                        <li>
-                            <select name="monitor" disabled>
-                                <option value="" selected  class="protocol" disabled>없음</option>
-                                <optgroup label="SNMP" class="protocol ip" disabled>
-                                    <option value="snmp">auto</option>
-                                </optgroup>
-                                <option value="icmp"  class="protocol ip" disabled>ICMP</option>
-                                <option value="tcp"  class="protocol ip tcp" disabled>TCP</option>
-                            </select>
-                        </li>
-                    </ul>
-                    
-                    <div id="custom"></div>
-                </div>
-                
-                <footer>
-                    <input type="reset" value="&#xf1f8; 삭제" disabled>
-                    <input type="submit" value="&#xf0c7; 저장" disabled>
-                </footer>
-
-                <div class="bg_loading"></div>
-			</div>
-		</form>
-        <script src="/js/ITAhM.js"></script>
-        <script src="/js/request.js"></script>
-        <script src="/js/icon.js"></script>
-		<script>
-
-const
-    search = new URLSearchParams(window.location.search),
-    $ = {
-        request: new Request(),
-        id: Number(search.get("id")) || undefined,
-        form: document.querySelector("form"),
-        customInputMap: {}
-    };
-
-document.addEventListener("keydown", function (e) {
-	switch (e.keyCode) {
-	case 27:
-    parent.closeDialog();
-		
-		break;
-	}
-});
-
-document.getElementById("close").onclick = e => parent.closeDialog();
-
-if (top.account.level === 0) {
-    document.querySelector("input[type=submit]").disabled = false;
-    document.querySelector("input[type=reset]").disabled = false;
-    
-    $.form.elements["monitor"].disabled = false;
-}
-
-$.form.onsubmit = function (e) {
+function onSubmit(e) {
     e.preventDefault();
     
     const
@@ -351,9 +168,9 @@ $.form.onsubmit = function (e) {
             showMessage(this);
         }
     });
-};
+}
 
-$.form.onreset = function (e) {
+function onReset(e) {
     e.preventDefault();
 
     if (!confirm("Warning!\n\n노드를 삭제하겠습니까?")) {
@@ -378,9 +195,37 @@ $.form.onreset = function (e) {
                 showMessage(this);
         }
     });
-};
+}
 
-$.form.elements["monitor"].onchange = function (e) {
+function onSetManager(e) {
+    if (!confirm("Confirm.\n\n관리자를 변경하겠습니까?")) {
+        this.value = $.manager;
+
+        return;
+    }
+
+    document.body.classList.add("loading");
+
+    $.request.execute({
+        command: "set",
+        target: "manager",
+        node: $.id,
+        user: this.value
+    }, function () {
+        switch (this.status) {
+            case 200:
+                break;
+            default:
+                throw showMessage(this);
+        }
+
+        alert("Notice.\n\n요청을 정상 처리 하였습니다.");
+
+        parent.closeDialog(true);
+    });
+}
+
+function onSetMonitor (e) {
     if (!confirm("Confirm.\n\n모니터 방식을 변경하겠습니까?")) {
         this.value = $.protocol;
 
@@ -415,186 +260,299 @@ $.form.elements["monitor"].onchange = function (e) {
                 showMessage(this);
         }
     });
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(`Notice!\n\n세션 만료.`);
+
+        break;
+    default:
+        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+	</head>
+	
+	<body class="loading">
+	
+		<main>
+			<h2>
+                <span  id="close" title="대화창 닫기">&#xf00d;</span>
+				장비 정보
+            </h2>
+            <form>
+                <table>
+                    <tbody>
+                        <colgroup>
+                            <col width="120">
+                        </colgroup>
+                        <tr class="ip">
+                            <th>ip 주소</th>
+                            <td>
+                                <input type="text" name="ip" autofocus>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>이름</th>
+                            <td>
+                                <input type="text" name="name" placeholder="장비 이름">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>타입</th>
+                            <td>
+                                <select name="type" required></select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th title="콤마(,)로 구분하며 공백을 허용하지 않습니다."><i>*라벨</i></th>
+                            <td>
+                                <input type="text" name="label" placeholder="라벨1 [,라벨2 ...]">
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody id="custom"></tbody>
+                    <tbody class="option">
+                        <tr class="monitor">
+                            <th>모니터링</th>
+                            <td>
+                                <select name="monitor">
+                                    <option value="" selected  class="protocol" disabled>없음</option>
+                                    <optgroup label="SNMP" class="protocol ip" disabled>
+                                        <option value="snmp">auto</option>
+                                    </optgroup>
+                                    <option value="icmp"  class="protocol ip" disabled>ICMP</option>
+                                    <option value="tcp"  class="protocol ip tcp" disabled>TCP</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>관리자</th>
+                            <td>
+                                <select name="manager"></select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <footer>
+                    <input type="reset" value="&#xf1f8; Remove">
+                    <input type="submit" value="&#xf0c7; Save">
+                </footer>
+
+                <div class="bg_loading"></div>
+			</form>
+		</main>
+        <script src="/js/ITAhM.js"></script>
+        <script src="/js/request.js"></script>
+        <script src="/js/icon.js"></script>
+		<script>
+
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: Number(search.get("id")) || undefined,
+        form: document.querySelector("form"),
+        customInputMap: {}
+    };
+
+document.addEventListener("keydown", function (e) {
+	switch (e.keyCode) {
+	case 27:
+    parent.closeDialog();
+		
+		break;
+	}
+});
+
+document.getElementById("close").onclick = e => parent.closeDialog();
+
+if (top.account.level === 0) {
+    $.form.onsubmit = onSubmit;
+    $.form.onreset = onReset;
+    
+    document.body.classList.add("root");
+}
+
+$.form.elements["manager"].onchange = onSetManager;
+$.form.elements["manager"].onclick = function (e) {
+    $.manager = this.value;
 };
 
-$.form.elements["monitor"].onclick = function () {
+$.form.elements["monitor"].onchange = onSetMonitor;
+$.form.elements["monitor"].onclick = function (e) {
     $.protocol = this.value;
 };
 
-function initProfile() {
-    $.request.execute({
-        command: "get",
-        target: "profile"
-    }, function () {
-        switch(this.status) {
-        case 200:
-            const
-                df = document.createDocumentFragment(),
-                profileData = JSON.parse(this.responseText);
+function initProfile(e) {
+    switch(this.status) {
+    case 200:
+        break;
+    default:
+        throw showMessage(this);
+    }
 
-            for (let name in profileData) {
-                df.appendChild(document.createElement("option")).text = name;
-            }
+    const
+        profileData = JSON.parse(this.responseText),
+        df = document.createDocumentFragment();
 
-            document.querySelector("optgroup").appendChild(df);
+    for (let name in profileData) {
+        df.appendChild(document.createElement("option")).text = name;
+    }
 
-            buildType();
+    document.querySelector("optgroup").appendChild(df);
 
-            break;
-        default:
-            showMessage(this);
-        }
-    });
-}
-
-function buildType() {
     $.request.execute({
         command: "get",
         target: "icon"
-    }, function () {
-        switch (this.status) {
-        case 200:
-            const
-                iconData = ITAhM.iconData,
-                customData = JSON.parse(this.responseText),
-                df = document.createDocumentFragment(),
-                group = {};
-            let 
-                groupName, optgroup, icon, type;
-
-            for (let type in customData) {
-                iconData[type] = customData[type];
-            }
-
-            for (let type in iconData) {
-                icon = iconData[type];
-
-                groupName = icon.group;
-
-                if (groupName === "group") {
-                    continue;
-                }
-
-                optgroup = group[groupName];
-                
-                if (!optgroup) {
-                    optgroup = document.createElement("optgroup");
-                    optgroup.label = groupName;
-                    
-                    group[groupName] = optgroup;
-                    
-                    df.appendChild(optgroup);
-                }
-
-                optgroup.appendChild(document.createElement("option")).text = type;
-            }
-
-            $.form.elements["type"].appendChild(df);
-            $.form.elements["type"].selectedIndex = -1;
-
-            initDialog();
-
-            break;
-
-        default:
-            showMessage(this);
-        };
-    });
+    }, buildType);
 }
 
-function initDialog() {
+function buildType() {
+    switch (this.status) {
+    case 200:
+        break;
+    default:
+        throw showMessage(this);
+    };
+
+    const
+        iconData = ITAhM.iconData,
+        customData = JSON.parse(this.responseText),
+        df = document.createDocumentFragment(),
+        group = {};
+    let 
+        groupName, optgroup, icon, type;
+
+    for (let type in customData) {
+        iconData[type] = customData[type];
+    }
+
+    for (let type in iconData) {
+        icon = iconData[type];
+
+        groupName = icon.group;
+
+        if (groupName === "group") {
+            continue;
+        }
+
+        optgroup = group[groupName];
+        
+        if (!optgroup) {
+            optgroup = document.createElement("optgroup");
+            optgroup.label = groupName;
+            
+            group[groupName] = optgroup;
+            
+            df.appendChild(optgroup);
+        }
+
+        optgroup.appendChild(document.createElement("option")).text = type;
+    }
+
+    $.form.elements["type"].appendChild(df);
+    $.form.elements["type"].selectedIndex = -1;
+
     if ($.id) {
         $.request.execute({
             command: "get",
             target: "node",
             id: $.id
-        }, function () {
-            switch (this.status) {
-            case 200:
-                const node = JSON.parse(this.responseText);
-
-                if (!node.type) {
-                    node.type = "unknown";
-                }
-                
-                if (node.ip) {
-                    const monitor = $.form.elements["monitor"];
-
-                    document.body.classList.add("monitor");
-
-                    if (node.protocol) {
-                        monitor.value = node.profile || node.protocol;
-
-                        [].forEach.call(monitor.querySelectorAll(".protocol:not(.ip)"), e => e.disabled = false);
-                    } else {
-                        if (isIPv4(node.ip)) {
-                            [].forEach.call(monitor.querySelectorAll(".protocol.ip:not(.tcp)"), e => e.disabled = false);
-                        } else if (isTCP(node.ip)){
-                            [].forEach.call(monitor.querySelectorAll(".protocol.tcp"), e => e.disabled = false);
-                        }
-                    }
-                    
-                    $.form.elements["ip"].disabled = true;
-                    $.form.elements["ip"].value = node.ip;
-                }
-                
-                $.form.elements["name"].value = node.name || "";
-                $.form.elements["type"].value = node.type;
-                // 저장할때는 trim으로 다 붙여서 넣지만 보여줄때는 보기 좋게 한칸씩 뗀다.
-                $.form.elements["label"].value = node.label && (node.label.split(",")).join(", ") || "";
-        
-                if ("extra" in node) {
-                    const extra = JSON.parse(node.extra);
-
-                    for (let name in $.customInputMap) {
-                        $.customInputMap[name].value = extra[name] || "";
-                    }
-                }
-                
-                document.body.classList.add("edit");
-
-                break;
-
-            default:
-                showMessage(this);
-            }
-
-            document.body.classList.remove("loading");
-        });
-    }
-    else {
+        }, initNode);
+    } else {
         $.form.elements["type"].value = "unknown";
 
         document.body.classList.remove("loading");
     }
 }
 
+function initNode(e) {
+    switch (this.status) {
+    case 200:
+        break;
+    default:
+        throw showMessage(this);
+    }
+
+    const node = JSON.parse(this.responseText);
+
+    if (!node.type) {
+        node.type = "unknown";
+    }
+
+    if (node.ip) {
+        const monitor = $.form.elements["monitor"];
+
+        document.body.classList.add("monitor");
+
+        if (node.protocol) {
+            monitor.value = node.profile || node.protocol;
+
+            [].forEach.call(monitor.querySelectorAll(".protocol:not(.ip)"), e => e.disabled = false);
+        } else {
+            if (isIPv4(node.ip)) {
+                [].forEach.call(monitor.querySelectorAll(".protocol.ip:not(.tcp)"), e => e.disabled = false);
+            } else if (isTCP(node.ip)){
+                [].forEach.call(monitor.querySelectorAll(".protocol.tcp"), e => e.disabled = false);
+            }
+        }
+        
+        $.form.elements["ip"].disabled = true;
+        $.form.elements["ip"].value = node.ip;
+    }
+
+    $.form.elements["name"].value = node.name || "";
+    $.form.elements["type"].value = node.type;
+    // 저장할때는 trim으로 다 붙여서 넣지만 보여줄때는 보기 좋게 한칸씩 뗀다.
+    $.form.elements["label"].value = node.label && (node.label.split(",")).join(", ") || "";
+
+    if (node.manager) {
+        $.form.elements["manager"].value = node.manager;
+    }
+    
+    if ("extra" in node) {
+        const extra = JSON.parse(node.extra);
+
+        for (let name in $.customInputMap) {
+            $.customInputMap[name].value = extra[name] || "";
+        }
+    }
+
+    document.body.classList.add("edit");
+    document.body.classList.remove("loading");
+}
+
 function initCustom(customs) {
     const df = document.createDocumentFragment();
     var
-        ul,
+        tr,
         input;
     
     customs.forEach(name => {
-        ul = df.appendChild(document.createElement("ul"));
-        ul.appendChild(document.createElement("li")).textContent = name;
+        tr = df.appendChild(document.createElement("tr"));
+        tr.appendChild(document.createElement("th")).textContent = name;
         
         input = document.createElement("input");
         input.type = "text";
         
         $.customInputMap[name] = input;
         
-        ul.appendChild(document.createElement("li")).appendChild(input);    
+        tr.appendChild(document.createElement("td")).appendChild(input);    
     });
     
     document.getElementById("custom").appendChild(df);
 }
 
-$.request.execute({
-        command: "get",
-        target: "setting",
-        key: "custom"
-    }, function () {
+function initSetting(e) {
     switch(this.status) {
     case 200:
         const settingData = JSON.parse(this.responseText);
@@ -603,13 +561,55 @@ $.request.execute({
             initCustom(settingData.custom.split(','));
         }
     case 204:
-        initProfile();
-        
         break;
     default:
-        showMessage(this);
+        throw showMessage(this);
     }
-});
+
+    $.request.execute({
+        command: "get",
+        target: "profile"
+    }, initProfile);
+}
+
+function initUser(e) {
+    switch(this.status) {
+    case 200:
+        break;
+    default:
+        throw showMessage(this);
+    }
+
+    const
+        userData = JSON.parse(this.responseText),
+        df = document.createDocumentFragment();
+    let user, option;
+
+    for (let key in userData) {
+        user = userData[key];
+
+        option = document.createElement("option");
+
+        option.value = user.id;
+        option.text = `${user.name}(${user.id})`;
+
+        df.appendChild(option);
+    }
+
+    $.form.elements["manager"].appendChild(df);
+    $.form.elements["manager"].selectedIndex = -1;
+
+    $.request.execute({
+        command: "get",
+        target: "setting",
+        key: "custom"
+    }, initSetting);
+}
+
+$.request.execute({
+    command: "get",
+    target: "user"
+}, initUser);
 
 	</script>
 	

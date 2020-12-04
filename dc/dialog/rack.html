@@ -8,101 +8,11 @@
 		
 		<style>
 @import "/css/style.css";
+@import "/css/dialog.css";
 @import "/css/fa.css";
 
-body {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background-color: rgba(0, 0, 0, .8);
-}
-
-main {
-	width: 300px;
-	padding: 20px;
-	background-color: #fff;
-	position: relative;
-}
-
-h2 {
-	background-color: #0084ff;
-	padding: 10px; margin: 0;
-    color: #fff;
-    text-shadow: 0 2px 3px #000;
-}
-
-form {
-    position: relative;
-}
-
-.table {
-	border: 1px solid #aaa;
-	padding: 1em;
-	margin: 1em 0;
-}
-
-.table ul {
-	list-style: none;
-	padding: 0; margin: 3px 0;
-	display: flex;
-	align-items: center;
-}
-
-.table li {
-	flex: 1;
-}
-
-.table li:first-child {
-	padding: .5em;
-	text-align: right;
-}
-
-.table li:last-child {
-	flex: 3;
-}
-
-.table li input[type="text"],
-.table li input[type="number"] {
-	padding: .5em;
-	width: 100%;
-	box-sizing: border-box;
-}
-
-.table li input[type="number"] {
-    text-align: right;
-}
-
-footer {
-	display: flex;
-}
-
-footer> input {
-    font-family: "Font Awesome 5 Free";
-    font-weight: bold;
-	flex: 1;
-	padding: .5em;
-}
-
-
-#close {
-    font-family: "Font Awesome 5 Free";
-    display: block;
-    float: right;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#close:hover {
-    transform: scale(1.2);
-}
-
-.bg_loading {
-    position: absolute;
-}
-
-body:not(.edit) input[type=reset] {
-	display: none;
+i {
+    white-space: nowrap;
 }
 
 		</style>
@@ -139,27 +49,60 @@ function showMessage(xhr) {
 		<main>
 			<h2>
                 <span  id="close" title="대화창 닫기">&#xf00d;</span>
-				Rack 정보
+				Facility 정보
             </h2>
             <form>
-                <div class="table">
-                    <ul>
-                        <li>이름
-                        <li>
-                            <input type="text" name="name" required>
-                        </li>
-                    </ul>
-                    <ul>
-                        <li>높이 (Unit)
-                        <li>
-                            <input type="number" name="unit" value="42" required>
-                        </li>
-                    </ul>
-                </div>
-                
+                <table>
+                    <tbody>
+                        <tr>
+                            <th>이름</th>
+                            <td colspan="2">
+                                <input type="text" name="name" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>타입</th>
+                            <td colspan="2">
+                                <select required>
+                                    <option value="rack" selected>랙</option>
+                                    <option value="structure">구조물</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>높이 (mm)</th>
+                            <td>
+                                <input type="number" name="height" value="2100" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>너비 (mm)</th>
+                            <td>
+                                <input type="number" name="width" value="600" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>길이 (mm)</th>
+                            <td>
+                                <input type="number" name="length" value="900" required>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <p>
+                                    <i> * 1U = 44.50mm  (1.752in)</i>
+                                    <br>
+                                    <i> * 19in = 482.60mm</i>
+                                </p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
                 <footer>
-                    <input type="reset" value="&#xf1f8; 삭제" disabled>
-                    <input type="submit" value="&#xf0c7; 저장" disabled>
+                    <input type="reset" value="&#xf1f8; Remove">
+                    <input type="submit" value="&#xf0c7; Save">
                 </footer>
 
                 <div class="bg_loading"></div>
@@ -177,8 +120,10 @@ const
     };
 
 if (top.account.level == 0) {
-    document.querySelector("input[type=submit]").disabled = false;
-    document.querySelector("input[type=reset]").disabled = false;
+    document.querySelector("form").onsubmit = onRubmit;
+    document.querySelector("form").onreset = onReset;
+ 
+    document.body.classList.add("root");
 }
 
 document.addEventListener("keydown", function (e) {
@@ -192,7 +137,9 @@ document.addEventListener("keydown", function (e) {
 
 document.getElementById("close").onclick = e => top.closeDialog();
 
-document.querySelector("form").onreset = function (e) {
+[].forEach.call(document.body.querySelectorAll("td.size>input"), input => input.onchange = onChangeSize);
+
+function onReset (e) {
     e.preventDefault();
 
     if (!(confirm("Warning!\n\nRack에 거치된 장치 정보가 함께 삭제됩니다.\n계속 하겠습니까?"))) {
@@ -217,7 +164,7 @@ document.querySelector("form").onreset = function (e) {
     });
 };
 
-document.querySelector("form").onsubmit = function (e) {
+function onRubmit (e) {
     e.preventDefault();
 
     document.body.classList.add("loading");
@@ -252,6 +199,13 @@ document.querySelector("form").onsubmit = function (e) {
     });
 };
 
+function onChangeSize(e) {
+    if (this.name) {// mm to U
+        document.getElementById(this.name).value = this.value / 44.5;
+    } else if (this.id) {// U to mm
+        document.body.querySelector(`input[name=${this.id}]`).value = this.value * 44.5;
+    }
+}
 
 if ($.id) {
     document.body.classList.add("edit");

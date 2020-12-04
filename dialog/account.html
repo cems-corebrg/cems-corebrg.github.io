@@ -7,95 +7,8 @@
 		<style>
 
 @import "/css/style.css";
+@import "/css/dialog.css";
 @import "/css/fa.css";
-		
-body {
-	margin: 0; padding: 0;
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background-color: rgba(0, 0, 0, .8);
-}
-
-form {
-	width: 380px;
-	padding: 20px;
-	background-color: #fff;
-	position: relative;
-}
-
-h2 {
-	margin: 0; padding: 10px;
-	background-color: #0084ff;
-    color: #fff;
-    text-shadow: 0 2px 3px #000;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="submit"],
-input[type="reset"],
-select {
-	width: 100%;
-	box-sizing: border-box;
-	padding: .5em;
-}
-
-input[type="checkbox"] {
-	vertical-align: middle;
-}
-
-table {
-    width: 100%;
-	margin: 1em 0;
-}
-
-th {
-    background-color: #686160;
-    color: #fff;
-    text-align: right;
-}
-
-td, th {
-    padding: 3px;
-}
-
-main {
-    position: relative;
-}
-
-footer {
-	display: flex;
-	margin-top: 1em;
-}
-
-footer input {
-    flex: 1;
-    font-family: "Font Awesome 5 Free";
-    font-weight: bold;
-}
-
-#close {
-    font-family: "Font Awesome 5 Free";
-    display: block;
-    float: right;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#close:hover {
-    transform: scale(1.2);
-}
-
-.bg_loading {
-	position: absolute;
-}
-
-body:not(.root) footer,
-body:not(.edit) input[type=reset] {
-	display: none;
-}
 
         </style>
         <script>
@@ -151,7 +64,7 @@ function onReset (e) {
 }
 
 function isValidPassword(password) {
-    return /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{10,}$/.test(password);
+    return /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-])(?=.*[0-9]).{10,}$/.test(password) || true;
 }
 
 function onSubmit (e) {
@@ -203,9 +116,12 @@ function onSubmit (e) {
         if ($.form.elements["password"].value !== $.form.elements["password2"].value) {
             alert("Error!\n\n비밀번호가 확인 비밀번호와 일치하지 않습니다.");
 
-            $.form.elements["password2"].select();
-            
-            return;
+            return $.form.elements["password2"].select();
+        }
+        else if (!isValidPassword($.form.elements["password"].value)) {
+            $.form.elements["password"].select();
+
+            return alert("Error!\n\n비밀번호는 10자 이상이고\n숫자, 문자, 특수문자를 모두 포함해야 합니다.");
         }
 
         request.command = "add";
@@ -260,12 +176,12 @@ function showMessage(xhr) {
 	
 	<body class="loading">
 		
-		<form autocomplete="off">
+		<main>
             <h2>
                 <span  id="close" title="대화창 닫기">&#xf00d;</span>
                 account
             </h2>
-            <main>
+            <form>
                 <table>
                     <tr>
                         <th>username</th>
@@ -312,8 +228,8 @@ function showMessage(xhr) {
 				    <input type="submit" value="&#xf0c7; 저장">
                 </footer>
                 <div class="bg_loading"></div>
-            </main>
-		</form>
+            </form>
+		</main>
 
         <script src="/js/md5.js"></script>
         <script src="/js/request.js"></script>

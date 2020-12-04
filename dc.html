@@ -99,6 +99,8 @@ function _preLoadTextures(keys, maker, type, onload) {
         const model = modelData[maker][name];
 
         new THREE.TextureLoader().load(model[type], texture => {
+            texture.minFilter = THREE.LinearFilter;
+
             model[type] = texture;
 
             _preLoadTextures(keys, maker, type, onload);
@@ -165,25 +167,51 @@ if (window.account.level === 0) {
         <script>
 
 const $ = {
-        request: new Request()
+        request: new Request(),
+        data: {
+            position: {},
+            scale: 0.1
+        }
     };
 
 document.getElementById("edit").onclick = e => {
     document.body.classList.toggle("edit");
 
-    document.getElementById("frame").contentWindow.location.replace("/dc/edit.html");
+    document.getElementById("frame").contentWindow.location.replace("/dc/editor.html");
 };
 
 document.getElementById("close").onclick = e => {
     document.body.classList.toggle("edit");
 
-    document.getElementById("frame").contentWindow.location.replace("/dc/view.html");
+    document.getElementById("frame").contentWindow.location.replace("/dc/viewer.html");
 };
 
-preLoadTextures(Object.keys(modelData), function () {
-    document.getElementById("frame").src = "/dc/view.html";
-});
+function getData() {
+    return $.data;
+}
 
+{
+    function initPosition() {
+        switch (this.status) {
+        case 200:
+            $.data.position = JSON.parse(this.responseText);
+        case 204:
+            break;
+        default:
+            throw showMessage(this);
+        }
+
+        preLoadTextures(Object.keys(modelData), function () {
+            document.getElementById("frame").src = "/dc/viewer.html";
+        });
+    }
+
+    $.request.execute({
+        command: "get",
+        target: "position",
+        name: "facility"
+    }, initPosition);
+}
         </script>
     </body>
 </html>
