@@ -82,6 +82,10 @@ function onEvent (event) {
     }
 }
 
+function getModelData() {
+    return parent.getModelData();
+}
+
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
