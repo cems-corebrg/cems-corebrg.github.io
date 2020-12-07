@@ -69,6 +69,7 @@ RealDC3D.prototype = {
         this.screen = document.body.getBoundingClientRect();
         this.label = document.getElementById("close");
         this.labels = [];
+        this.status = [];
 
         this.controls.maxPolarAngle = Math.PI /2;
         this.controls.minPolarAngle = Math.PI /2;
@@ -134,6 +135,12 @@ RealDC3D.prototype = {
 
             this.move(label.name, position, new THREE.Box3().setFromObject(label.device));
         });
+        
+        this.status.forEach(
+            status => {
+                status.material.opacity = ((status.material.opacity *10 +1) %10) /10;
+            }
+        );
         
         window.requestAnimationFrame(this.update.bind(this));
     },
@@ -270,10 +277,15 @@ RealDC3D.prototype = {
                 new THREE.MeshBasicMaterial({
                     color: new THREE.Color(0xc0c0c0)
                 })
-            );
+            ),
+            status = new THREE.Mesh(new THREE.SphereGeometry(UNIT_SIZE /3, 32, 32 ), new THREE.MeshBasicMaterial({
+                color: 0x00ff00
+            }));
             
         device.position.set(0, UNIT_SIZE * ($.realDC.rackData.unit /-2 + args.model.unit /2 + args.position -1), PDU_WIDTH /2);
         
+        status.position.set(RACK19_WIDTH /-2 +UNIT_SIZE, 0, $.realDC.rackData.depth /2);
+
         if (args.label) {
             const name = document.createElement("span");
 
@@ -296,7 +308,10 @@ RealDC3D.prototype = {
             });
         }
 
+        this.status.push(status);
+
         device.add(mesh);
+        device.add(status);
 
         this.rackObject.add(device);
     }
