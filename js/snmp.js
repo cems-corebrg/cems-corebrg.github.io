@@ -51,16 +51,39 @@ ITAhM.snmp = {
         sysName: "1.3.6.1.2.1.1.5"
     },
     enterprise: {
-        2: "IBM",
-        9: "ciscoSystems", // 1.3.6.1.4.1.9.1.1823, 9.1.1279
-        311: "Microsoft",
-        368: "Axis Communications AB",
-        11: "Hewlett-Packard",
-        789: "Network Appliance Corporation",
-        2142: "Future Systems, Inc.",
-        37288: "AXGATE CO., LTD",
-        6296: "DASAN Co.,LTD.",
-        8072: "net-snmp"
+        2: {
+            name: "IBM"
+        },
+        9: {
+            name: "ciscoSystems",
+            logo: "/img/enterprise/cisco.png"
+        },
+        311: {
+            name: "Microsoft",
+            logo: "/img/enterprise/microsoft.png"
+        },
+        368: {
+            name: "Axis Communications AB"
+        },
+        11: {
+            name: "Hewlett-Packard"
+        },
+        789: {
+            name: "Network Appliance Corporation"
+        },
+        2142: {
+            name: "Future Systems, Inc."
+        },
+        37288: {
+            name: "AXGATE CO., LTD",
+            logo: "/img/enterprise/axgate2.png"
+        },
+        6296: {
+            name: "DASAN Co.,LTD."
+        },
+        8072: {
+            name: "net-snmp"
+        }
     },
     ifAdminStatus: {
         1: "up",

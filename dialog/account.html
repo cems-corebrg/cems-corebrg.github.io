@@ -15,8 +15,8 @@
 
 function initialize(account) {
     if (account) {
-        $.form.elements["username"].value = account.username;
-        $.form.elements["username"].disabled = true;
+        $.form.elements["id"].value = account.id;
+        $.form.elements["id"].disabled = true;
         $.form.elements["level"].value = account.level;
         
         $.password = account.password;
@@ -41,8 +41,8 @@ function onReset (e) {
 
     new Request().execute({
         command: "remove",
-        target: "account",
-        username: $.form.elements["username"].value
+        target: "user",
+        id: $.form.elements["id"].value
     }, function () {
         switch (this.status) {
         case 200:
@@ -72,11 +72,10 @@ function onSubmit (e) {
     
     const
         request = {
-            target: "account",
-            username: $.form.elements["username"].value,
-            account: {
-                username: $.form.elements["username"].value,
-                level: parseInt($.form.elements["level"].value)
+            target: "user",
+            id: $.form.elements["id"].value,
+            user: {
+                level: Number($.form.elements["level"].value)
             }
         };
         
@@ -186,7 +185,7 @@ function showMessage(xhr) {
                     <tr>
                         <th>username</th>
                         <td>
-                            <input type="text" name="username" class="text" required autofocus>
+                            <input type="text" name="id" class="text" required autofocus>
                         </td>
                     </tr>
                     <tr>
@@ -239,7 +238,7 @@ const
     search = new URLSearchParams(window.location.search),
     $ = {
         request: new Request(),
-        username: search.get("username") || undefined,
+        id: search.get("id") || undefined,
         form: document.querySelector("form")
     };
 
@@ -261,20 +260,20 @@ if (top.account.level === 0) {
     document.body.classList.add("root");
 }
 
-if ($.username) {
+if ($.id) {
     $.request.execute({
         command: "get",
-        target: "account",
-        username: $.username
+        target: "user",
+        id: $.id
     }, function () {
         switch (this.status) {
         case 200:
-            initialize(JSON.parse(this.responseText));
-
             break;
         default:
-            showMessage(this);
+            throw showMessage(this);
         }
+
+        initialize(JSON.parse(this.responseText));
     });
 } else {
     initialize();

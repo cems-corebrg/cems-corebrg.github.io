@@ -168,8 +168,7 @@ body:not(.name) #node tspan:first-child,
 body:not(.name) #select tspan:first-child,
 body:not(.exit) #exit,
 body:not(.exit) #up,
-body:not(.drag) #up,
-body:not(.root) .root {
+body:not(.drag) #up {
 	display: none;
 }
 
@@ -178,7 +177,7 @@ body:not(.root) .root {
 		<script>
 
 function onSelect(id, group) {
-    parent.showDialog(`/dialog/${group? "group": "node"}.html?id=${id}`);
+    top.showDialog(`/dialog/${group? "group": "node"}.html?id=${id}`, this);
 }
 
 function onEnter(id) {
@@ -190,7 +189,7 @@ function onEnter(id) {
 }
 
 function onLink(from, to) {
-    parent.showDialog(`/topology/dialog/path.html?from=${Math.min (from, to)}&to=${Math.max (from, to)}`);
+    top.showDialog(`/dialog/path.html?from=${Math.min (from, to)}&to=${Math.max (from, to)}`, this);
 }
 
 function findPosFromStage(id) {
@@ -203,6 +202,12 @@ function findPosFromStage(id) {
             return;
         }
     }
+}
+
+function uuidv4() {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
 }
 
 function showMessage(xhr) {
@@ -305,7 +310,7 @@ function showMessage(xhr) {
         <script src="/js/icon.js"></script>
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
-        <script src="/topology/edit.js"></script>
+        <script src="/topology/tool.js"></script>
 		<script>
 
 const
@@ -318,14 +323,6 @@ const
         upper: Number(search.get("group")) || undefined,
         pathData: {}
     };
-
-if (parent !== top) {
-    throw "";
-}
-
-if (parent.account.level === 0) {
-	document.body.classList.add("root");
-}
 
 document.getElementById("save").onclick = function () {	
 	document.body.classList.add("loading");
@@ -355,13 +352,9 @@ document.getElementById("refresh").onclick = function () {
 	window.location.reload();
 };
 
-document.getElementById("search").onclick = e => parent.showDialog("/topology/dialog/search.html");
-document.getElementById("add_node").onclick = e => {
-    parent.showDialog("/dialog/node.html");
-}
-document.getElementById("add_group").onclick = e => {
-    parent.showDialog("/dialog/group.html");
-}
+document.getElementById("search").onclick = e => top.showDialog("/dialog/search.html", this);
+document.getElementById("add_node").onclick = e => top.showDialog("/dialog/node.html", this);
+document.getElementById("add_group").onclick = e => top.showDialog("/dialog/group.html", this);
 
 function initialize() {
     let node, pos, icon, link, linkMap = {}, nodeToMap, args;
@@ -379,7 +372,7 @@ function initialize() {
 
             document.getElementById("exit").onclick = e => window.location.search = search;
         } else {
-            document.getElementById("exit").onclick = e => window.location.replace("/topology/edit.html");
+            document.getElementById("exit").onclick = e => window.location.replace("/topology/tool.html");
         }
 
         document.body.classList.add("exit");
@@ -466,7 +459,7 @@ function initNode(e) {
                 command: "get",
                 target: "path"
             }, initPath);
-
+            
             break;
         default:
             showMessage(this);

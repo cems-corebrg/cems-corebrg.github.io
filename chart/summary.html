@@ -8,6 +8,7 @@
 
 		<style>
 @import "/css/itahm.css";
+@import "/css/fa.css";
 
 body {
 	background-color: #4d525a;
@@ -15,10 +16,7 @@ body {
 }
 
 article {
-	page-break-inside: avoid;
-}
-
-article {
+    page-break-inside: avoid;
 	display: flex;
 	justify-content: space-between;
 	flex-wrap: wrap;
@@ -35,138 +33,108 @@ h2 {
 
 section {
     position: relative;
-	padding: 5px; margin: 5px;
-	border-radius: 5px;
+	padding: 5px;
 	background-color: #424242;
+}
+
+section li {
+    position: relative;
+}
+
+#information li,
+#response li,
+#processor li,
+#storage li,
+#memory li {
+    height: 100px;
+}
+
+#response li::after {
+    display: inline-block;
+    position: absolute; top: 100%; left: 50%;
+    transform: translate(-50%, -100%);
+    content: attr(data-response);
+}
+
+#processor,
+#storage {
+    display: flex;
+}
+
+#processor li {
+    width: 120px; 
+}
+
+#processor li::after {
+    display: inline-block;
+    position: absolute; top: 100%; left: 50%;
+    transform: translate(-50%, -100%);
+}
+
+#processor li:nth-child(1)::after {
+    content: "최소";
+}
+
+#processor li:nth-child(2)::after {
+    content: "평균";
+}
+
+#processor li:nth-child(3)::after {
+    content: "최대";
+}
+
+#response li,
+#storage li,
+#memory li {
+    width: 200px;
+}
+
+#portmap li {
+    flex: none; width: 80px;
+}
+
+#information {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 section.information {
     flex: 1 0;
 }
 
-section.hr_processor_load {
-    flex: none;
+section.portmap {
+    flex: none; width: 100%; box-sizing: border-box;
+    position: relative;
 }
 
-section.hr_storage_memory {
-	flex: none;
-}
-
-section.response_time {
-	flex: none;
-}
-
-section.hr_storage_used {
-	flex: 1 1 800px;
-}
-
-section.throughput {
-    flex: 1 1 1024px;
-}
-
-.selectable:hover {
+.selectable {
+    border: 1px solid transparent;
     cursor: pointer;
-    outline:3px dotted #ddd;
+}
+.selectable:hover {
+    border: 1px dotted #ddd;
 }
 
-.error.selectable:hover {
-    outline: none;
-    background-color: rgba(255, 255, 255, 0.5);
-    color: #000000;
-}
-
-.not.selectable {
-	pointer-events: none;
-}
-
-section.status::after {
+.status::after {
 	content: "";
 	position: absolute; top: 1em; left: 1em;
 	display: inline-block;
-	width: 1em; height: 1em;
+	width: 20px; height: 20px;
 	border-radius: 50%;
 	background-color: #0f0;
 }
 
-section.status.critical::after {
+.status.critical::after {
 	background-color: #ffa500;
 }
 
-/* hr_processor_load*/
+.status.shutdown::after {
+	background-color: #ff0000;
+}
 
-.processor.container {
-    height: 120px;
+.fixed.container {
     display: flex;
-}
-
-.processor.item {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-
-.processor.item::after {
-    content: attr(data-rate);
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 18px;
-    font-weight: bolder;
-}
-
-.processor.gauge {
-    font-size: 10px;
-    height: 6em; width: 12em;
-    border-radius: 50% / 100% 100% 0 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.processor.gauge::after {
-    content: "";
-    position: absolute; bottom: 0; left: 50%;
-    width:9em; height: 9em;
-    border-radius: 50%;
-    transform: translate(-50%, 50%);
-    background-color: #424242;
-}
-
-.processor.bar {
-    position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-    border-radius: 50% / 100% 100% 0 0;
-    transform-origin: center bottom;
-}
-
-.processor.bar.green {
-    transform: rotate(calc(-180deg * 0.3));
-    background-color: rgb(0, 137, 123);
-}
-
-.processor.bar.orange {
-    transform: rotate(calc(180deg * 0.7));
-    background-color: rgb(246, 191, 38);
-}
-
-.processor.bar.red {
-    transform: rotate(calc(180deg * 0.9));
-    background-color: rgb(142, 36, 170);
-}
-
-.processor.bar.mask {
-    background-color: #fefefe;
-    animation: pGauge 1s cubic-bezier(0, 1, 1, 1.2);
-}
-
-@keyframes pGauge {
-    from {
-		transform: rotate(0deg);
-	}
-}
-
-.processor.label {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 ul {
@@ -174,214 +142,34 @@ ul {
 	margin: 0; padding: 0;
 }
 
-.response.container {
-    height: 120px;
-    display: flex;
+label.switch {
+    position: absolute; top: 10px; right: 10px;
+    font: 2em 'Font Awesome 5 Free';
 }
 
-.response.time {
-    position: relative;
-    width: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+label.switch .on {
+    color: #ffffff;
 }
 
-.response.circle {
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    background-color: #333;
-    box-shadow: 0px 0px 3px 2px #aaa;
-    display: flex; justify-content: center; align-items: center;
+label.switch .off {
+    color: #aaaaaa;
 }
 
-#response {
-    color: #0084ff;
-    font-size: 1.6em;
-    font-weight: bolder;
-    text-shadow: 0 2px 3px #000;
-    animation: time 1s cubic-bezier(0, 1, 1, 1.2);
-}
-
-@keyframes time {
-    from {
-        transform: scale(0);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1.5);
-    }
-}
-
-.response iframe {
-    width: 100%; height: 100%;
-    border: none;
-}
-
-/*memory*/
-.memory.container {
-    display: flex;
-    padding: 0 1em;
-}
-
-.memory.gauge {
-    flex: none;
-    position: relative;
-}
-
-.memory.gauge.green .red,
-.memory.gauge.green .orange,
-.memory.gauge.orange .red {
+#toggle {
     display: none;
 }
 
-.memory.used {
-    flex: 1;
+#portmap {    
     display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bolder;
-    font-size: 1.5em;
-    color: #0084ff;
-    text-shadow: 0 2px 3px #000;
+    overflow-x: auto;
 }
 
-.memory.gauge::after {
-    position: absolute; top: 50%; left: 50%;
-    content: attr(data-rate);
-    transform: translate(-50%, -50%);
-    font-weight: bolder;
-    font-size: 1em;
+#toggle:checked ~#portmap {
+    flex-wrap: wrap;
 }
-
-.memory.gauge::before {
-    position: absolute; top: 0; left: 100%;
-    content: attr(data-size);
-    border-top: 1px solid #ddd;
-    padding: 5px;
-    font-weight: bolder;
-    font-size: 1.2em;
-}
-
-.cylinder {
-    font-size: 10px;
-	position: relative;
-	overflow: hidden;
-	width: 10em;
-	height: 12em;
-	background-color: rgba(160, 160, 160, 0.5);
-}
-
-.cylinder,
-.cylinder::before,
-.cylinder::after {
-    border-radius: 5em/1.5em;
-}
-
-.cylinder::before,
-.cylinder::after {
-    position: absolute; left: 0; right: 0;
-    height: 3em;
-	background-color: rgba(160, 160, 160, 0.2);
-	content: '';
-}
-
-.cylinder::before {
-    z-index: 1;
-	top: 0;
-}
-
-.cylinder::after {
-	bottom: 0;
-}
-
-.fill {
-	position: absolute; left: 0; right: 0; bottom: -5em;
-	height: 0;
-    padding-top: 3em;
-    animation: mGauge 1s cubic-bezier(0, 1, 1, 1.2);
-}
-
-@keyframes mGauge {
-    from {
-        bottom: 0;
-        height: 0;
-    }
-}
-
-.fill,
-.fill::before {
-    border-radius: 5em/1.5em;
-}
-
-.fill::before {
-	position: absolute; top: 0; right: 0; left: 0;
-	height: 3em;
-	content: '';
-}
-
-.fill.red {
-    background-color: rgba(142, 36, 170, 0.5);
-}
-
-.fill.red::before {
-    background-color: rgb(142, 36, 170);
-}
-
-.fill.orange {
-    background-color: rgba(246, 191, 38, 0.5);
-}
-.fill.orange::before {
-    background-color: rgb(246, 191, 38);
-}
-
-.fill.green {
-    background-color: rgba(0, 137, 123, 0.5);
-}
-
-.fill.green::before {
-    background-color: rgb(0, 137, 123);
-}
-/**/
 
 div.tbody {
 	text-align: initial;
-}
-
-/*
-interface, storage 공통
-*/
-.item {
-	display: flex;
-	align-items: center;
-	margin: 3px 0;
-}
-
-.item >li {
-	padding: 3px 0.5em;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.item >li.right {
-	text-align: right;
-}
-
-.item.red >li {
-	border-color: #f00;
-}
-
-.item.red >li >div {
-	background: linear-gradient(to right, rgba(255, 0, 0, 0.5), #f00);
-}
-
-.item.orange >li {
-	border-color: #ffa500;
-}
-
-.item.orange >li >div {
-	background: linear-gradient(to right, rgba(255, 165, 0, 0.5), #ffa500);
 }
 
 .title {
@@ -398,154 +186,6 @@ interface, storage 공통
 
 .title >li:not(:last-of-type) {
 	border-right: 1px solid #555;
-}
-
-/*
-interface
-*/
-
-.throughput >li {
-	box-sizing: border-box;
-	flex: 1;
-}
-
-.throughput >li.status {
-	flex: none;
-	width: 3em;
-}
-
-.throughput >li.bandwidth {
-	flex: none;
-	width: 9em;
-}
-
-.throughput >li.error {
-	flex: none;
-	width: 6em;
-}
-
-.throughput.title >li.fixed {
-	flex: none;
-	width: 24em; /* = 9 + 15 */
-}
-
-.throughput.item >li.fixed {
-	flex: none;
-	width: 9em;
-}
-
-.throughput.item >li.rate {
-	flex: none;
-	width: 15em;
-}
-
-.throughput.item >li.status {
-	position: relative;
-	overflow: visible;
-}
-
-.throughput.item >li.status::after {
-	content: "";
-	position: absolute; top: 50%; left: 50%;
-	display: inline-block;
-	width: 1em; height: 1em;
-	border-radius: 50%;
-	transform: translateX(-50%) translateY(-50%);
-	background-color: #0f0;
-}
-
-.throughput.item.critical li.status::after {
-	background-color: #ffa500; 
-}
-
-.throughput.item.shutdown li.status::after {
-	background-color: #f00; 
-}
-
-.throughput.item.disabled li.status::after {
-	background-color: #ddd; 
-}
-
-.throughput.item.disabled {
-	color: #aaa;
-}
-
-/*
-storage
-*/
-.storage.gauge,
-.throughput.gauge {
-    height: 2em;
-    box-sizing: border-box;
-    background: linear-gradient(to right, rgb(0, 137, 123) 70%, rgb(246, 191, 38) 70% 90%, rgb(142, 36, 170) 90%);
-    position: relative;
-}
-
-.storage.gauge::after,
-.throughput.gauge::after {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    content: attr(data-rate);
-    font-weight: bolder;
-}
-
-.storage.mask,
-.throughput.mask {
-    background-color: #424242;
-    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-    animation: tGauge 1s cubic-bezier(0, 1, 1, 1.2);
-}
-
-@keyframes tGauge {
-    from {
-		left: 0;
-	}
-}
-
-.hr_storage_used >li {
-	box-sizing: border-box;
-	flex: 1;
-}
-
-.hr_storage_used >li.status {
-	flex: none;
-	width: 3em;
-	position: relative;
-	overflow: visible;
-}
-
-.hr_storage_used >li.size,
-.hr_storage_used >li.fixed {
-	flex: none;
-	width: 10em;
-}
-
-.hr_storage_used >li.rate {
-    flex: none;
-	width: 15em;
-}
-
-.hr_storage_used.item >li.status::after {
-	content: "";
-	position: absolute; top: 50%; left: 50%;
-	display: inline-block;
-	width: 1em; height: 1em;
-	border-radius: 50%;
-	transform: translateX(-50%) translateY(-50%);
-	background-color: #0f0;
-}
-
-.hr_storage_used.item.critical >li.status::after {
-	background-color: #ffa500;
-}
-/**/
-
-.layout {
-	display: none;
-}
-
-.title {
-	display: flex;
 }
 
 section.information table {
@@ -572,18 +212,6 @@ section.information td {
 	padding: 3px 1em;
 }
 
-#status::before {
-	font-weight: bold;
-	color: #0f0;
-	content: "정상 ";
-}
-
-label.filter {
-	float: right;
-	font-size: 20px;
-	float: right;
-}
-
 div.flex {
 	display: flex;
 }
@@ -592,127 +220,454 @@ div.flex span {
 	flex: 1;
 }
 
-body.shutdown #status::before {
-	color: #f00;
-	content: "응답 없음 ";
-}
-
-body.filter .throughput.item.disabled {
+body:not(.response) section.response,
+body:not(.processor) section.processor,
+body:not(.storage) section.storage,
+body:not(.memory) section.memory,
+body:not(.portmap) section.portmap,
+body.shutdown .status::after,
+#toggle:checked ~label.switch .off,
+#toggle:not(:checked) ~label.switch .on {
 	display: none;
-}
-
-body:not(.hr_processor_load) section.hr_processor_load,
-body:not(.hr_storage_used) section.hr_storage_used,
-body:not(.hr_storage_memory) section.hr_storage_memory,
-body:not(.throughput) section.throughput,
-body:not(.debug) .throughput >li.debug,
-.application {
-	display: none;
-}
-
-/* switch button*/
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 2em;
-    height: 1em;
-    font-size: 20px;
-}
-
-.switch >input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.switch >.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 0.5em;
-}
-
-.switch >.slider:before {
-    position: absolute;
-    content: "";
-    height: 0.6em;
-    width: 0.6em;
-    left: 0.2em;
-    bottom: 0.2em;
-    background-color: #fff;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-input:checked +.slider {
-    background-color: #424242;
-}
-
-input:focus +.slider {
-    box-shadow: 0 0 1px #424242;
-}
-
-input:checked + .slider:before {
-    transform: translateX(1em);
 }
 
 		</style>
 		
 		<script>
 		
-function createStorageItem(index, label) {
-	const item = document.querySelector(".layout>.hr_storage_used.item").cloneNode(true);
-	
-	item.children[1].textContent = label;
-
-    $.storageIndexObj[index] = {
-        item: item,
-        used: item.children[3],
-        size: item.children[2],
-        gauge: item.children[4]
-    }
-
-	return item;
+function PortMap() {
+    this.initialize(arguments);
 }
 
-function createIFaceItem(index, name, descr, alias, type) {
-	const item = document.body.querySelector(".layout>.throughput.item").cloneNode(true);
+{
+    PortMap.prototype = {
+        initialize: function(args) {
+            this.container = args[0];
+            this.map = {};
+        },
+        add: function (index, indexData) {
+            const container = document.createElement("li");
+            let port, bandwidth, label, ifAdminStatus, ifOperStatus, inBPS, outBPS, inErrs, outErrs,
+                critical = false;
+            
+            bandwidth = indexData[ITAhM.snmp.oid.bandwidth];
 
-    $.throughputIndexObj[index] = {
-        item: item,
-        speed: item.children[4],
-        in: item.children[5],
-        inGauge: item.children[6],
-        out: item.children[7],
-        outGauge: item.children[8],
-        err: item.children[9]
-    }
-	
-    item.children[1].textContent = name || alias || descr;
-	item.children[2].textContent =  alias || descr;
-	item.children[3].textContent = type + "("+ ITAhM.snmp.ifType[type] +")";
+            bandwidth = bandwidth && Number(bandwidth.value);
+            
+            if (!bandwidth) {
+                bandwidth = indexData[ITAhM.snmp.oid.ifHighSpeed];
 
-    if (descr) {
-        item.title = descr;
-    }
+                bandwidth = bandwidth && Number(bandwidth.value) *1000000;
 
-	return item;
+                if (!bandwidth) {
+                    bandwidth = indexData[ITAhM.snmp.oid.ifSpeed];
+
+                    bandwidth = bandwidth && Number(bandwidth.value);
+                }
+
+                if (!bandwidth) {
+                    return;
+                }
+            }
+
+            ifAdminStatus = indexData[ITAhM.snmp.oid.ifAdminStatus];
+
+            if (!ifAdminStatus) {
+                return;
+            }
+
+            ifAdminStatus = Number(ifAdminStatus.value);
+
+            ifOperStatus = indexData[ITAhM.snmp.oid.ifOperStatus];
+
+            if (!ifOperStatus) {
+                return;
+            }
+
+            ifOperStatus = Number(ifOperStatus.value);
+
+            inBPS = indexData[ITAhM.snmp.oid.inBPS];
+
+            if (!inBPS) {
+                return;
+            }
+
+            critical ||= inBPS.critical;
+
+            inBPS = Number(inBPS.value);
+
+            outBPS = indexData[ITAhM.snmp.oid.outBPS];
+
+            if (!outBPS) {
+                return;
+            }
+
+            critical ||= outBPS.critical;
+
+            outBPS = Number(outBPS.value);
+
+            label = indexData[ITAhM.snmp.oid.ifName];
+
+            label = label && label.value;
+
+            if (!label) {
+                label = indexData[ITAhM.snmp.oid.ifDescr];
+
+                label = label && label.value;
+
+                if (!label) {
+                    label = indexData[ITAhM.snmp.oid.ifAlias];
+
+                    label = label && label.value;
+                }
+            }
+            
+            inErrs = indexData[ITAhM.snmp.oid.inErrs];
+
+            inErrs = inErrs && Number(inErrs.value) || 0;
+                        
+            outErrs = indexData[ITAhM.snmp.oid.outErrs];
+
+            outErrs = outErrs && Number(outErrs.value) || 0;
+
+            port = new Ethernet(this.container.appendChild(container), {
+                image: $.loader.map["/canvas/ethernet.png"],
+                bandwidth: bandwidth,
+                status: ifAdminStatus !== 1?
+                    Ethernet.STATUS_DISABLED: ifOperStatus !==1?
+                    Ethernet.STATUS_SHUTDOWN: critical?
+                    Ethernet.STATUS_CRITICAL:
+                    Ethernet.STATUS_NORMAL
+            });
+
+            container.classList.add("selectable");
+            
+            container.onclick = e => onSelectResource("/chart/throughput.html", index);
+
+            this.map[index] = port;
+
+            if (ifAdminStatus == 1 && ifOperStatus == 1) {
+                port.set(inBPS, outBPS);
+            }
+
+            if (label) {
+                port.label(label);
+            }
+
+            //port.link(Math.round(Math.random() *10000000000000), $.loader.map[++i %3 ==0? "/img/svg/router.svg": i %3 ==1? "/img/svg/firewall.svg": "/img/svg/workgroup.svg"]);
+        },
+        set: function (index, indexData) {
+            const port = this.map[index];
+
+            try {
+                const
+                    ifAdminStatus = Number(indexData[ITAhM.snmp.oid.ifAdminStatus].value),
+                    ifOperStatus = Number(indexData[ITAhM.snmp.oid.ifOperStatus].value),
+                    inBPS = indexData[ITAhM.snmp.oid.inBPS],
+                    outBPS = indexData[ITAhM.snmp.oid.outBPS],
+                    status = ifAdminStatus !== 1?
+                        Ethernet.STATUS_DISABLED: ifOperStatus !==1?
+                        Ethernet.STATUS_SHUTDOWN: inBPS.critical || outBPS.critical?
+                        Ethernet.STATUS_CRITICAL:
+                        Ethernet.STATUS_NORMAL;
+
+                if (port.config.status === status) {
+                    if (ifAdminStatus == 1 && ifOperStatus == 1) {
+                       port.set(Number(inBPS.value), Number(outBPS.value));
+                    }
+                } else {
+                    port.status(status);
+
+                    if (ifAdminStatus == 1 && ifOperStatus == 1) {
+                        port.set(Number(inBPS.value), Number(outBPS.value));
+                    } else {
+                        port.set();
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
+        update: function (resourceData) {
+            for (let index in this.map) {
+                this.set(index, resourceData[index]);
+            }
+        }
+    };
+}
+
+function Processor() {
+    this.initialize(arguments);
+}
+
+{
+    const options = {
+            cutoutPercentage: 70,
+            circumference: Math.PI,
+            rotation: Math.PI *-1
+        },
+        COLOR_GREEN = "#00897b",
+        COLOR_ORANGE = "#f6bf26",
+        COLOR_RED = "#8e24aa",
+        COLOR_NULL = "transparent",
+        COLOR_GAUGE = "#dddddd";
+
+    Processor.prototype = {
+        initialize: function (args) {
+            container = args[0];
+
+            this.array = [];
+
+            const
+                min = document.createElement("li"),
+                avg = document.createElement("li"),
+                max = document.createElement("li"),
+                df = document.createDocumentFragment();
+            
+            this.min = new Chart(min.appendChild(document.createElement("canvas")), {
+                type: "doughnut",
+                data: {
+                    datasets: [{
+                        data: [70, 20, 10],
+                        backgroundColor: [COLOR_GREEN, COLOR_ORANGE, COLOR_RED]
+                    }]
+                },
+                options: options
+            });
+            
+            this.avg = new Chart(avg.appendChild(document.createElement("canvas")), {
+                type: "doughnut",
+                data: {
+                    datasets: [{
+                        data: [70, 20, 10],
+                        backgroundColor: [COLOR_GREEN, COLOR_ORANGE, COLOR_RED]
+                    }]
+                },
+                options: options
+            });
+
+            this.max = new Chart(max.appendChild(document.createElement("canvas")), {
+                type: "doughnut",
+                data: {
+                    datasets: [{
+                        data: [70, 20, 10],
+                        backgroundColor: [COLOR_GREEN, COLOR_ORANGE, COLOR_RED],
+                        borderWidth: 0
+                    }]
+                },
+                options: options
+            });
+
+            df.appendChild(min);
+            df.appendChild(avg);
+            df.appendChild(max);
+
+            container.appendChild(df);
+        },
+        add: function (index) {
+            this.array.push(index);
+        },
+        set: function (index, value) {
+            const chart = this[index];
+
+            chart.config.data.datasets[1] = {
+                data: [value, 100 - value],
+                backgroundColor: [COLOR_GAUGE, COLOR_NULL]
+            };
+            
+            chart.config.label = `${value.toFixed(2)}%`;
+
+            chart.update();
+        },
+        update: function (resourceData) {
+            if (!this.array.length) {
+                return;
+            }
+            
+            const array = [];
+
+            this.array.forEach(index => {
+                array.push(Number(resourceData[index][ITAhM.snmp.oid.hrProcessorLoad].value));
+            });
+
+            this.set("max", Math.max.apply(undefined, array));
+            this.set("min", Math.min.apply(undefined, array));
+            this.set("avg", array.reduce((a, b) => a + b) / array.length);
+        }
+    };
+}
+
+function Response() {
+    this.initialize(arguments);
+}
+
+{
+    const options = {
+            cutoutPercentage: 0
+        },
+        COLOR_GAUGE = "#4d525a";
+
+    Response.prototype = {
+        initialize: function (args) {
+            const
+                container = args[0],
+                chart = document.createElement("li");
+
+            this.chart = new Chart(chart.appendChild(document.createElement("canvas")), {
+                type: "pie",
+                data: {
+                    datasets: []
+                },
+                options: options
+            });
+
+            container.appendChild(chart);
+        },
+        set: function (value) {
+            this.chart.config.label = `${value}ms`;
+
+            this.chart.config.data.datasets[0] = {
+                data: [100],
+                backgroundColor: [COLOR_GAUGE]
+            };
+
+            this.chart.update();
+        }
+    };
+}
+
+function Storage() {
+    this.initialize(arguments);
+}
+
+{
+    const
+        options = {
+            scales: {
+                xAxes: [{
+                    stacked: true,
+                    gridLines: {
+                        display: false
+                    },
+                    ticks: {
+                        fontColor: "#ffffff",
+                        callback: value => value.substr(0, 30)
+                    }
+                }],
+                yAxes: [{
+                    stacked: true,
+                    gridLines: {
+                        display: false
+                    },
+                    ticks: {
+                        display: false,
+                        max: 100,
+                        min: 0
+                    }
+                }]
+            },
+            layout: {
+                padding: {
+                    right: 20,
+                    left: 20
+                }
+            }
+        },
+        COLOR_GREEN = "#00897b",
+        COLOR_ORANGE = "#f6bf26",
+        COLOR_RED = "#8e24aa";
+
+    Storage.prototype = {
+        initialize: function (args) {
+            this.container = args[0];
+            this.map = {};
+        },
+        add: function (index, indexData) {
+            const
+                storage = document.createElement("li"),
+                canvas = document.createElement("canvas");
+
+            this.map[index] = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: [indexData[ITAhM.snmp.oid.hrStorageDescr] && indexData[ITAhM.snmp.oid.hrStorageDescr].value || ""]
+                },
+                options: options
+            });
+            
+            storage.classList.add("status", "selectable");
+            
+            storage.onclick = e => onSelectResource("/chart/storage.html", index);
+
+            storage.appendChild(canvas);
+
+            this.container.appendChild(storage);
+
+            this.set(index, indexData);
+        },
+        set: function (index, indexData) {
+            const
+                chart = this.map[index],
+                used = Number(indexData[ITAhM.snmp.oid.hrStorageUsed].value), // used
+                size = Number(indexData[ITAhM.snmp.oid.hrStorageSize].value), // size
+                datasets = [{
+                    data: [0],
+                    backgroundColor: COLOR_GREEN
+                }, {
+                    data: [0],
+                    backgroundColor: COLOR_ORANGE
+                }, {
+                    data: [0],
+                    backgroundColor: COLOR_RED
+                }];
+            let value = (used / size *100).toFixed(2);
+
+            if (value > 70) {
+                datasets[0].data[0] = 70;
+
+                if (value > 90) {
+                    datasets[1].data[0] = 20;
+                    datasets[2].data[0] = value -90;
+                } else {
+                    datasets[1].data[0] = value -70;
+                }
+            } else {
+                datasets[0].data[0] = Math.round(value);
+            }
+
+            chart.config.label = `${value}%`;
+            chart.config.data.datasets = datasets;
+
+            chart.update();
+        },
+        update: function (resourceData) {
+            for (let index in this.map) {
+                this.set(index, resourceData[index]);
+            }
+        }
+    };
 }
 
 function initialize(node) {
-    var indexData;
-    const
-        hrProcessorLoad = [],
-        hrStorageUsed = {},
-        hrStorageMemory = {},
-        ifEntry = {};
+    let indexData;
 
     document.title = node.name || node.ip || "Summary";
+
+    document.getElementById("node").textContent = ((name, ip) =>{
+        if (name) {
+            if (ip) {
+                return `${name} [${ip}]`;
+            } else {
+                return name;
+            }
+        } else if (ip) {
+            return ip;
+        } else {
+            return "기본 정보";
+        }
+    })(node.name, node.ip);
+
+    document.body.classList.add("response");
 
     for (let index in node.resource) {
         indexData = node.resource[index];
@@ -734,37 +689,39 @@ function initialize(node) {
         //sysObjectID
         (function(sysObjectID) {
             if (sysObjectID) {
-                document.getElementById("sys_enterprise").textContent = ITAhM.util.enterpriseFromOID(sysObjectID.value);
+                const enterprise = ITAhM.util.enterpriseFromOID(sysObjectID.value);
+
+                document.getElementById("information").title = enterprise? enterprise.name: sysObjectID;
+                
+                if (enterprise) {
+                    document.getElementById("information").style.backgroundImage = `url(${enterprise.logo})`;
+                }
             }
         })(indexData[ITAhM.snmp.oid.sysObjectID]);
 
         //responseTime
         (function(rtt) {
             if (rtt) {
-                document.getElementById("response").textContent = `${rtt.value}ms`;
-                document.getElementById("last_response").textContent = toDateString(rtt.timestamp);
+                $.response.set(rtt.value);
+
+                document.getElementById("response").querySelector("li").dataset.response = toElapseString(rtt.timestamp);
             }
         })(indexData[ITAhM.snmp.oid.responseTime]);
         
         //스토리지, 물리 메모리
         (function(type, used, size, units, descr) {
             if (type && used && size && units && Number(size.value) > 0) {
-                const data = {
-                        used: Number(used.value),
-                        size: Number(size.value),
-                        units: Number(units.value),
-                        descr: descr.value || undefined
-                    };
-                
                 switch(type.value) {
                 case ITAhM.snmp.oid.hrStorageRam:
-                    hrStorageMemory[index] = data;
+                    document.body.classList.add("memory");
 
-                    $.memoryIndexArray.push(index);
+                    $.memory.add(index, indexData);
 
                     break;
                 case ITAhM.snmp.oid.hrStorageFixedDisk:
-                hrStorageUsed[index] = data;
+                    document.body.classList.add("storage");
+
+                    $.storage.add(index, indexData);
 
                     break;
                 }
@@ -778,20 +735,9 @@ function initialize(node) {
         // 인터페이스
         (function(descr, type, bandwidth, ifHighSpeed, ifSpeed, aStatus, oStatus, inOcts, outOcts, inErrs, outErrs, name, alias) {
             if (inOcts && outOcts && (bandwidth || ifHighSpeed || ifSpeed) && inErrs && outErrs && aStatus && oStatus) {
-                const data = {
-                        speed: bandwidth && Number(bandwidth.value) || ifHighSpeed && Number(ifHighSpeed.value) *1000000 || ifSpeed && Number(ifSpeed.value),
-                        inOcts: Number(inOcts.value),
-                        outOcts: Number(outOcts.value),
-                        inErrs: Number(inErrs.value),
-                        outErrs: Number(outErrs.value),
-                        aStatus: Number(aStatus.value),
-                        oStatus: Number(oStatus.value),
-                        type: type && Number(type.value) || undefined,
-                        descr: descr && descr.value || undefined,
-                        name: name && name.value|| undefined,
-                        alias: alias && alias.value|| undefined
-                    };
-                ifEntry[index] = data;
+                document.body.classList.add("portmap");
+                
+                $.portMap.add(index, indexData);
             }
         })(indexData[ITAhM.snmp.oid.ifDescr]
             , indexData[ITAhM.snmp.oid.ifType]
@@ -810,150 +756,14 @@ function initialize(node) {
         //CPU
         (function(load) {
             if (load) {
-                hrProcessorLoad.push(Number(load.value));
+                document.body.classList.add("processor");
 
-                $.processorIndexArray.push(index);
+                $.processor.add(index, indexData);
             }
         })(indexData[ITAhM.snmp.oid.hrProcessorLoad]);
     }
 	
-	document.getElementById("ip").textContent = node.ip;
-	
-	if (!("status" in node) || !node.status) {
-		document.body.classList.add("shutdown");
-	}
-	
-    if (hrProcessorLoad.length > 0) {
-        const
-            max = Math.max.apply(undefined, hrProcessorLoad),
-            min = Math.min.apply(undefined, hrProcessorLoad),
-            sum = hrProcessorLoad.reduce((a, b) => Number(a)+ Number(b)),
-            avg = sum / hrProcessorLoad.length,
-            section = document.querySelector("section.hr_processor_load");
-        
-        let critical = false;
-        
-        try {
-            critical = node.resource["0"][ITAhM.snmp.oid.cpu].critical;
-        } catch (e) {}
-
-        setProcessor(min, avg, max, critical);
-        
-        section.onclick = onSelectResource.bind(section, "/chart/processor.html", "0");
-
-        document.body.classList.add("hr_processor_load");
-    }
-
-    if (Object.keys(hrStorageMemory).length > 0) {
-        let critical;
-
-        for (let index in hrStorageMemory) {
-            const
-                indexData = hrStorageMemory[index],
-                section = document.querySelector("section.hr_storage_memory");
-
-            critical = false;
-
-            try {
-                critical = node.resource[index][ITAhM.snmp.oid.hrStorageUsed].critical;
-            } catch (e) {}
-
-            setMemory(
-                indexData.used,
-                indexData.size,
-                indexData.units,
-                critical);
-
-            section.onclick = onSelectResource.bind(section, "/chart/storage.html", index);
-
-            break;
-        }
-
-        document.body.classList.add("hr_storage_memory");
-    }
-
-    if (Object.keys(hrStorageUsed).length > 0) {
-        let item, indexData, critical;
-
-        for (let index in hrStorageUsed) {
-            indexData = hrStorageUsed[index];
-
-            item = document.getElementById("hr_storage_used").appendChild(
-                createStorageItem(index, indexData.descr));
-
-            critical = false;
-
-            try {
-                critical = node.resource[index][ITAhM.snmp.oid.hrStorageUsed].critical;
-            } catch (e) {}
-
-            setStorage(
-                index,
-                indexData.used,
-                indexData.size,
-                indexData.units,
-                critical);
-
-            item.onclick = onSelectResource.bind(item, "/chart/storage.html", index);
-            
-            document.body.classList.add("hr_storage_used");
-        }
-    }
-    
-    if (Object.keys(ifEntry).length > 0) {
-        let item, indexData, usageIn, usageOut, critical;
-
-        for (let index in ifEntry) {
-            indexData = ifEntry[index];
-
-            item = document.getElementById("throughput").appendChild(
-                createIFaceItem(
-                    index,
-                    indexData.name,
-                    indexData.descr,
-                    indexData.alias,
-                    indexData.type));
-            
-            if (indexData.aStatus != 1) {
-                item.classList.add("disabled");
-            }
-            else if (indexData.oStatus !== 1) {
-                item.classList.add("shutdown");
-            }
-            
-            critical = false;
-
-            try {
-                critical = node.resource[index][ITAhM.snmp.oid.inBPS].critical
-                    || node.resource[index][ITAhM.snmp.oid.outBPS].critical
-                    || node.resource[index][ITAhM.snmp.oid.inErrs].critical
-                    || node.resource[index][ITAhM.snmp.oid.outErrs].critical;
-            } catch (e) {}
-
-            setThroughput(
-                index,
-                indexData.speed,
-                indexData.inOcts,
-                indexData.outOcts,
-                Math.max(indexData.inErrs, indexData.outErrs),
-                critical);
-                
-            if (indexData.speed > 0) {
-                item.onclick = onSelectResource.bind(item, "/chart/throughput.html", index);
-                
-                item.children[9].onclick = function (index, e) {
-                    e.stopPropagation();
-
-                    onSelectResource("/chart/error.html", index);
-                }.bind(window, index);
-            }
-            else {
-                item.classList.add("not");
-            }
-        }
-
-        document.body.classList.add("throughput");
-    }
+    $.processor.update(node.resource);
 
     [].forEach.call(document.body.querySelectorAll("section"), section => {
 		section.draggable = true;
@@ -981,139 +791,14 @@ function initialize(node) {
 			}
 		});
 	});
+    
+	if (!("status" in node) || !node.status) {
+        document.body.classList.add("shutdown");
+    } else {
+        refresh();
+    }
 
     document.body.classList.remove("loading");
-    
-    refresh();
-}
-
-function setProcessor(min, avg, max, critical) {
-    const
-        maxItem = document.querySelector(".processor.item.max"),
-        avgItem = document.querySelector(".processor.item.avg"),
-        minItem = document.querySelector(".processor.item.min");
-
-    maxItem.dataset.rate = max.toFixed(2) +"%";
-    avgItem.dataset.rate = avg.toFixed(2) +"%";
-    minItem.dataset.rate = min.toFixed(2) +"%";
-
-    maxItem.querySelector(".mask").style.transform = "rotate(calc(180deg * "+ (max /100) +"))";
-    
-    maxItem.parentNode.replaceChild(maxItem.cloneNode(true), maxItem);
-
-    avgItem.querySelector(".mask").style.transform = "rotate(calc(180deg * "+ (avg /100) +"))";
-    avgItem.parentNode.replaceChild(avgItem.cloneNode(true), avgItem);
-
-    minItem.querySelector(".mask").style.transform = "rotate(calc(180deg * "+ (min /100) +"))";
-    minItem.parentNode.replaceChild(minItem.cloneNode(true), minItem);
-
-    document.querySelector("section.hr_processor_load").classList[critical? "add": "remove"]("critical");
-}
-
-function setMemory(used, size, units, critical) {
-    // style에서 ::before ::after의 height와 fill의 padding-top의 값이 padding과 같아야 한다.
-    // height 는 cylinder의 높이와 같아야 한다. font-size * em = height
-
-    const
-        rate = (100* used / size).toFixed(2),
-        green = document.querySelector("div.fill.green"),
-        orange = document.querySelector("div.fill.orange"),
-        red = document.querySelector("div.fill.red"),
-        gauge = document.querySelector(".memory.gauge"),
-        padding = "-3em",
-        height = 12 - 3;
-        
-    if (rate > 90) {
-        gauge.className = "memory gauge red";
-
-        red.style.height = (height *0.1 * (rate -90) /10)+ "em";
-        red.style.bottom = height *0.9 +"em";
-        red.parentNode.replaceChild(red.cloneNode(true), red);
-
-        orange.style.height = height *0.2 +"em";
-        orange.style.bottom = height *0.7 +"em";
-        orange.parentNode.replaceChild(orange.cloneNode(true), orange);
-
-        green.style.height = height *0.7 +"em";
-        green.style.bottom = 0;
-        green.parentNode.replaceChild(green.cloneNode(true), green);
-    }
-    else if (rate > 70) {
-        gauge.className = "memory gauge orange";
-
-        orange.style.height = (height *0.2 * (rate -70) /20) +"em";
-        orange.style.bottom = height *0.7 +"em";
-        orange.parentNode.replaceChild(orange.cloneNode(true), orange);
-
-        green.style.height = height *0.7 +"em";
-        green.style.bottom = 0;
-        green.parentNode.replaceChild(green.cloneNode(true), green);
-    }
-    else {
-        gauge.className = "memory gauge green";
-
-        green.style.height = (height *0.7 * rate /70) +"em";
-        green.style.bottom = 0;
-        green.parentNode.replaceChild(green.cloneNode(true), green);
-    }
-    
-    gauge.dataset.rate = rate +"%";
-    gauge.dataset.size = ITAhM.util.toBytesString(size * units);
-    document.querySelector(".memory.used").textContent = ITAhM.util.toBytesString(used * units);
-    
-    document.querySelector("section.hr_storage_memory").classList[critical? "add": "remove"]("critical");
-}
-
-function setStorage(index, used, size, units, critical) {
-    const
-        obj = $.storageIndexObj[index],
-        rate = used *100 / size;
-    var mask;
-
-    obj.size.textContent = ITAhM.util.toBytesString(size * units);
-    obj.used.textContent = ITAhM.util.toBytesString(used * units);
-    obj.gauge.dataset.rate = rate.toFixed(2) +"%";
-
-    mask = obj.gauge.querySelector(".mask");
-    mask.style.left = `${rate}%`;
-    
-    mask.parentNode.replaceChild(mask.cloneNode(true), mask);
-
-    obj.item.classList[critical? "add": "remove"]("critical");
-}
-
-function setThroughput(index, speed, inOcts, outOcts, errors, critical) {
-    const
-        obj = $.throughputIndexObj[index];
-
-    obj.speed.textContent = ITAhM.util.toBPSString(speed);
-
-    if (speed > 0) {
-        let rate, mask;
-
-        obj.in.textContent = ITAhM.util.toBPSString(inOcts);
-        obj.out.textContent = ITAhM.util.toBPSString(outOcts);
-
-        rate = inOcts *100 /speed;
-        
-        obj.inGauge.dataset.rate = rate.toFixed(2) +"%";
-        
-        mask = obj.inGauge.querySelector(".mask");
-        mask.style.left = rate +"%";
-        mask.parentNode.replaceChild(mask.cloneNode(true), mask);
-
-        rate = outOcts *100 /speed;
-
-        obj.outGauge.dataset.rate = rate.toFixed(2) +"%";
-
-        mask = obj.outGauge.querySelector(".mask");
-        mask.style.left = rate +"%";
-        mask.parentNode.replaceChild(mask.cloneNode(true), mask);
-    }
-    
-    obj.err.textContent = errors;
-
-    obj.item.classList[critical? "add": "remove"]("critical");
 }
 
 function refresh() {
@@ -1126,8 +811,12 @@ function refresh() {
         }, function (e) {
             switch (this.status) {
             case 200:
-                window.requestAnimationFrame(t => update(JSON.parse(this.responseText)));
+                break;
+            default:
+                throw showMessage(this);
             }
+
+            window.requestAnimationFrame(t => update(JSON.parse(this.responseText)));
         })
     }, INTERVAL);
 }
@@ -1140,89 +829,17 @@ function update(node) {
     }
 
     try {
-        let
-            e = document.getElementById("response"),
-            rt = resourceData["0"][ITAhM.snmp.oid.responseTime];
+        let rt = resourceData["0"][ITAhM.snmp.oid.responseTime];
         
-        e.textContent = Number(rt.value) +"ms";
-        e.parentNode.replaceChild(e.cloneNode(true), e);
-
-        document.getElementById("last_response").textContent = toDateString(rt.timestamp);
-
-        document.querySelector("section.response_time")
-            .classList[rt.critical? "add": "remove"]("critical");
+        $.response.set(rt.value);
+        
+        document.getElementById("response").querySelector("li").dataset.response = toElapseString(rt.timestamp);
     } catch (e) {}
 
-    if ($.processorIndexArray.length > 0) {
-        try {
-
-        } catch (e) {}
-        
-        try {
-            const load = [];
-
-            $.processorIndexArray.forEach (index => load.push(Number(resourceData[index][ITAhM.snmp.oid.hrProcessorLoad].value)));
-            
-            setProcessor(Math.min.apply(undefined, load),
-                load.reduce((a, b) => a +b) / load.length,
-                Math.max.apply(undefined, load),
-                resourceData["0"][ITAhM.snmp.oid.cpu].critical);
-        } catch (e) {}
-    }
-
-    if ($.memoryIndexArray.length > 0) {
-        try {
-            const
-                index = $.memoryIndexArray[0],
-                indexData = resourceData[index];
-            
-            setMemory(
-                Number(indexData[ITAhM.snmp.oid.hrStorageUsed].value), // used
-                Number(indexData[ITAhM.snmp.oid.hrStorageSize].value), // size
-                Number(indexData[ITAhM.snmp.oid.hrStorageAllocationUnits].value), // units
-                resourceData[index][ITAhM.snmp.oid.hrStorageUsed].critical);
-        } catch (e) {}
-    }
-
-    if (Object.keys($.storageIndexObj).length > 0) {
-        try {
-            let indexData;
-
-            for (let index in $.storageIndexObj) {
-                indexData = resourceData[index];
-
-                setStorage(index,
-                    Number(indexData[ITAhM.snmp.oid.hrStorageUsed].value), // used
-                    Number(indexData[ITAhM.snmp.oid.hrStorageSize].value), // size
-                    Number(indexData[ITAhM.snmp.oid.hrStorageAllocationUnits].value), //units
-                    resourceData[index][ITAhM.snmp.oid.hrStorageUsed].critical); 
-            }
-        } catch (e) {}
-    }
-
-    if (Object.keys($.throughputIndexObj).length > 0) {
-        try {
-            let indexData;
-
-            for (let index in $.throughputIndexObj) {
-                indexData = resourceData[index];
-
-                setThroughput(index,
-                    indexData[ITAhM.snmp.oid.bandwidth] && Number(indexData[ITAhM.snmp.oid.bandwidth].value) ||
-                    indexData[ITAhM.snmp.oid.ifHighSpeed] && Number(indexData[ITAhM.snmp.oid.ifHighSpeed].value) *1000000|| // ifHighSpeed
-                    indexData[ITAhM.snmp.oid.ifSpeed] && Number(indexData[ITAhM.snmp.oid.ifSpeed].value), // ifSpeed
-                    Number(indexData[ITAhM.snmp.oid.inBPS].value), // in
-                    Number(indexData[ITAhM.snmp.oid.outBPS].value), // out
-                    Math.max(Number(indexData[ITAhM.snmp.oid.inErrs].value), Number(indexData[ITAhM.snmp.oid.outErrs].value)), //err
-                    resourceData[index][ITAhM.snmp.oid.inBPS].critical ||
-                    resourceData[index][ITAhM.snmp.oid.outBPS].critical ||
-                    resourceData[index][ITAhM.snmp.oid.inErrs].critical ||
-                    resourceData[index][ITAhM.snmp.oid.outErrs].critical);
-            }
-        } catch (e) {
-            console.trace(e);
-        }
-    }
+    $.processor.update(resourceData);
+    $.storage.update(resourceData);
+    $.memory.update(resourceData);
+    $.portMap.update(resourceData);
 
     refresh();
 }
@@ -1241,6 +858,21 @@ function toDateString(millis) {
 	return ar[0] +"-"+ ar[1] +"-"+ ar[2] +" "+ ar[3] +":"+ ar[4] +":"+ ar[5];
 }
 
+function toElapseString(millis) {
+    const elapse = new Date().getTime() - millis;
+
+    if (elapse < 1000) {
+        return "1초 미만";
+    } else if (elapse < 60 *1000) {
+        return `${Math.round(elapse /1000)}초 전`;
+    } else if (elapse < 60 *60 *1000) {
+        return `${Math.round(elapse /60 /1000)}분 전`;
+    } else if (elapse < 24 *60 *60 *1000) {
+        return `${Math.round(elapse /60 /60 /1000)}시간 전`;
+    } else {
+        return `${Math.round(elapse /24 /60 /60 /1000)}일 전`;
+    }
+}
 //private
 function onSelectResource(chart, index) {
     const date = new Date();
@@ -1267,166 +899,132 @@ function showMessage(xhr) {
 		</script>
 	</head>
 
-	<body class="loading filter">
+	<body class="loading">
 		<article>
 			<section class="information">
-                <h2>기본 정보</h2>
-				<table>
-					<tr>
-						<th>장비명</th>
-						<td id="sys_name"></td>
-					</tr>
-					<tr>
-						<th>공급자</th>
-						<td id="sys_enterprise"></td>
-					</tr>
-					<tr>
-						<th>IP 주소</th>
-						<td id="ip"></td>
-					</tr>
-					<tr>
-						<th>마지막 응답</th>
-						<td id="last_response"></td>
-					</tr>
-					<tr>
-						<th>상태</th>
-						<td id="status"></td>
-					</tr>
-				</table>
+                <h2 id="node">기본 정보</h2>
+                <ul id="information">
+                    <li>
+                        <table>
+                            <tr>
+                                <th>장비명</th>
+                                <td id="sys_name"></td>
+                            </tr>
+                        </table>
+                    </li>
+                </ul>
 			</section>
-            
-            <section class="response_time resource status selectable">
+
+            <section class="response status">
                 <h2>응답 시간</h2>
-                <div class="response container">
-                    <div class="response time">
-                        <div class="response circle">
-                            <span id="response"></span>
-                        </div>
-                    </div>
+                <ul id="response" class="fixed container selectable"></ul>
                 </div>
             </section>
 
-			<section class="hr_processor_load resource status selectable">
+			<section class="processor status">
 				<h2>프로세서 로드</h2>
-				<div class="processor container">
-                    <div class="processor item min">
-                        <div class="processor gauge">
-                            <div class="processor bar green"></div>
-                            <div class="processor bar orange"></div>
-                            <div class="processor bar red"></div>
-                            <div class="processor bar mask"></div>
-                        </div>
-                        <div class="processor label">최소</div>
-                    </div>
-                    <div class="processor item avg">
-                        <div class="processor gauge">
-                            <div class="processor bar green"></div>
-                            <div class="processor bar orange"></div>
-                            <div class="processor bar red"></div>
-                            <div class="processor bar mask"></div>
-                        </div>
-                        <div class="processor label">평균</div>
-                    </div>
-                    <div class="processor item max">
-                        <div class="processor gauge">
-                            <div class="processor bar green"></div>
-                            <div class="processor bar orange"></div>
-                            <div class="processor bar red"></div>
-                            <div class="processor bar mask"></div>
-                        </div>
-                        <div class="processor label">최대</div>
-                    </div>
-					<div id="hr_processor_load"></div>
-				</div>
-			</section>
-			
-			<section class="hr_storage_memory resource status selectable">
-				<h2>물리적 메모리</h2>
-				<div class="memory container">
-                    <div class="memory gauge">
-                        <div class="cylinder">
-                            <div class="fill green"></div>
-                            <div class="fill orange"></div>
-                            <div class="fill red"></div>
-                        </div>
-                    </div>
-                    <div class="memory used">
-                    </div>
-				</div>
-			</section>
-            
-            <section class="hr_storage_used resource">
-                <h2>스토리지</h2>
-                <div class="storage container">
-                    <div class="storage table">
-                        <ul class="title hr_storage_used">
-                            <li class="status">상태
-                            <li >이름
-                            <li class="size">크기
-                            <li class="fixed">사용량
-                            <li class="rate">사용률
-                        </ul>
-                        <div id="hr_storage_used" class="tbody"></div>
-                    </div>
-                </div>
+				<ul id="processor" class="fixed container selectable"></ul>
             </section>
             
-			<section class="throughput resource">
-				<h2>통신
-                    <label class="switch filter" title="비활성 인터페이스 표시">
-                        <input type="checkbox" id="filter">
-                        <span class="slider"></span>
+            <section class="memory">
+                <h2>물리 메모리</h2>
+                <ul id="memory" class="fixed container"></ul>
+            </section>
+
+            <section class="storage">
+                <h2>스토리지</h2>
+                <ul id="storage" class="fixed container"></ul>
+            </section>
+			
+			<section class="portmap">
+				<h2>
+                    포트맵
+                </h2>
+                <div>
+                    <input type="checkbox" id="toggle">
+                    <label class="switch" for="toggle">
+                        <span class="off">
+                            &#xf204;
+                        </span>
+                        <span class="on">
+                            &#xf205;
+                        </span>
                     </label>
-				</h2>
-				<div>
-					<ul class="title throughput">
-						<li class="status">상태
-						<li>이름
-						<li>설명
-						<li class="debug">종류
-						<li class="bandwidth">대역폭
-						<li class="input fixed">수신
-						<li class="output fixed">송신
-						<li class="error">에러
-					</ul>
-					<div id="throughput"  class="tbody"></div>
-				</div>
+                    <ul id="portmap"></ul>
+                </div>
 			</section>
 		</article>
 
 		<div class="bg_loading"></div>
-		
-		<div class="layout">
-			<ul class="hr_storage_used item selectable">
-				<li class="status"></li>
-				<li></li>
-				<li class="size right"></li>
-				<li class="fixed right"></li>
-				<li class="rate storage gauge">
-                    <div class="storage mask"></div>
-                </li>
-			</ul>		
-	
-			<ul class="throughput item selectable">
-				<li class="status">
-				<li>
-				<li>
-				<li class="debug">
-				<li class="bandwidth right">
-				<li class="fixed right">
-				<li class="rate throughput gauge">
-					<div class="throughput mask"></div>
-				<li  class="fixed right">
-                <li class="rate throughput gauge">
-					<div class="throughput mask"></div>
-				<li class="error right selectable">
-			</ul>
-		</div>
 	
 		<script src="/js/ITAhM.js"></script>
         <script src="/js/snmp.js"></script>
+        <script src="/util/gauge.js"></script>
+        <script src="/util/ethernet.js"></script>
+        <script src="/js/import/chart.js"></script>
+        <script>
+Chart.defaults.global.defaultFontFamily = "'맑은 고딕', 'Arial', 'Tahoma'";
+//Chart.defaults.global.defaultFontSize = 20;
+Chart.defaults.global.elements.arc.borderWidth = 0;
+Chart.defaults.global.tooltips.enabled = false;
+Chart.defaults.global.legend.display = false;
+
+Ethernet.fontColor = "#ffffff";
+
+Chart.Chart.pluginService.register({
+    afterDraw: function(chart) {
+        if (chart.config.label) {
+            const
+                width = chart.chart.width,
+                text = chart.config.label,
+                ctx = chart.chart.ctx;
+            let height = chart.chart.height;
+
+            ctx.save();
+            
+            ctx.fillStyle = "#ffffff";
+
+            switch(chart.config.type) {
+            case "doughnut":
+                ctx.textBaseline = "bottom";
+                ctx.font = `16px "맑은 고딕", Tahoma`;
+
+                break;
+            default:
+                ctx.textBaseline = "middle";
+                ctx.font = `20px "맑은 고딕", Tahoma`;
+
+                height /= 2;
+            }
+
+            ctx.fillText(text, Math.round((width - ctx.measureText(text).width) / 2), height);
+
+            ctx.restore();
+        }
+    },
+    beforeDraw: function (chart) {
+        if (chart.config.type === "pie") {
+            const
+                x = chart.chart.width /2,
+                y = chart.chart.height /2,
+                ctx = chart.chart.ctx;
+
+            ctx.save();
+            
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+
+            ctx.beginPath();
+            ctx.arc(x, y, y -1, 0, Math.PI *2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+    }
+});
+        </script>
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
+        <script src="/util/loader.js"></script>
 		<script>
 
 const
@@ -1438,34 +1036,42 @@ const
         processorIndexArray: [],
         memoryIndexArray: [],
         storageIndexObj: {},
-        throughputIndexObj: {}
+        response: new Response(document.getElementById("response")),
+        processor: new Processor(document.getElementById("processor")),
+        storage: new Storage(document.getElementById("storage")),
+        memory: new Storage(document.getElementById("memory")),
+        portMap: new PortMap(document.getElementById("portmap")),
+        ethernet: new Image(),
+        loader: new ImageLoader(onImageLoad)
     };
 
-if (!$.id) {
-    throw top.location.replace("/warning.html");
-}
+document.getElementById("processor").onclick = e => onSelectResource("/chart/processor.html", "0");
+document.getElementById("response").onclick = e => onSelectResource("/chart/responseTime.html", "0");
 
-document.querySelector(".response_time").onclick = e => onSelectResource("/chart/responseTime.html", "0");
-
-document.getElementById("filter").onclick = function (e) {
-	document.body.classList[this.checked? "remove": "add"]("filter");
-};
-
-$.request.execute({
-    command: "get",
-    target: "node",
-    id: $.id,
-    resource: true
-}, function () {
+function initNode () {
     switch (this.status) {
         case 200:
             break;
         default:
-            return showMessage(this);
+            throw showMessage(this);
     }
 
     initialize(JSON.parse(this.responseText));
-});
+}
+
+function onImageLoad() {
+    $.request.execute({
+        command: "get",
+        target: "node",
+        id: $.id,
+        resource: true
+    }, initNode);
+}
+
+if ($.id) {
+    $.loader.load(["/canvas/ethernet.png", "/img/svg/router.svg", "/img/svg/firewall.svg", "/img/svg/workgroup.svg"]);
+}
+
 
 		</script>
 	

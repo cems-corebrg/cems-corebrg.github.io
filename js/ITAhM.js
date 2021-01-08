@@ -20,7 +20,7 @@ Array.prototype.fill = Array.prototype.fill || function (val) {
 			var match = /^1\.3\.6\.1\.4\.1\.(\d+)/.exec(oid);
 			
 			if (match) {
-				return ITAhM.snmp.enterprise[match[1]] || match[1];
+				return ITAhM.snmp.enterprise[match[1]];
 			}
 		},
 		

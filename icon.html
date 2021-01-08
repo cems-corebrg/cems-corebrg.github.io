@@ -9,17 +9,30 @@
 @import "/css/fa.css";
 
 body {
-	padding: 1em; margin: 0;
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	margin: 0; padding: 1em;
+    display: flex; flex-direction: column;
+}
+
+header {
+    flex: none;
+	padding: 0.5em;
+	display: flex;
+    justify-content: space-between;
+    color: #ffffff;
+    font: 20px "Font Awesome 5 Free", "맑은 고딕", Tahoma, Arial;
+    user-select: none;
+}
+
+main {
+    flex: 1;
+    overflow-y: auto;
 }
 
 h1 {
 	font-size: 20px;
-    color: #4d525a;
-	text-shadow: 0 2px 2px #ddd;
-}
-
-header {
-	text-align: right;
+    color: #ffffff;
+	text-shadow: 0 2px 3px #000000;
 }
 
 #list {
@@ -79,24 +92,19 @@ header {
 	color: #000;
 }
 
-nav {
-    position: fixed; top: 1em; right: 1em;
-    font: 2em "Font Awesome 5 Free";
-    user-select:none;
-}
-
 .button {
 	display:inline-block;
     cursor: pointer;
 }
 
-.button:hover{
-    transform: translateY(-2px);
-    text-shadow: 0 2px 2px #dddddd;
+.button:active{
+    color: #0084ff;
+    transform: translateY(0);
 }
 
-.button:active{
-    transform: none;
+.button:hover {
+    display: inline-block;
+    transform: translateY(-2px);
 }
 
 body:not(.root) .root,
@@ -108,7 +116,7 @@ body:not(.root) .root,
         <script>
         
 function onSelectIcon(type) {
-	top.showDialog(`cems/dialog/icon.html?type=${type}`);
+	top.showDialog(`/dialog/icon.html?type=${type}`, this);
 }
 
 function createGroup(name) {
@@ -174,10 +182,12 @@ function showMessage(xhr) {
 	</head>
 	
 	<body class="loading">
-        <ul id="list"></ul>
-        <nav>
+        <header>
             <span id="add" title="아이콘 추가" class="root button">&#xf055;</span>
-        </nav>
+        </header>
+        <main>
+            <ul id="list"></ul>
+        </main>
 		<div class="layout">
 			<ul>
 				<li class="group">
@@ -209,7 +219,7 @@ if (top.account.level === 0) {
 }
 
 document.getElementById("add").onclick = e => {
-    top.showDialog("/dialog/icon.html");
+    top.showDialog("/dialog/icon.html", this);
 };
 
 $.request.execute({

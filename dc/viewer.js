@@ -68,13 +68,7 @@
 
             document.body.insertBefore(this.label, renderer.domElement);
 
-            this.label.onclick = function (e) {
-                const iframe = document.querySelector("iframe");
-
-                iframe.onload = e => document.body.classList.add("focus");
-
-                iframe.src = `/dc/dialog/focus.html?id=${args[2]}`;
-            };
+            this.label.onclick = e => window.onSelectRack && onSelectRack(args[2]);
 
             Label.map.push(this);
         },
@@ -121,7 +115,7 @@
 
     /*Hemisphere light*/
     {
-        const light = new THREE.HemisphereLight(0xffffff, 0xaaaaaa, 1);
+        const light = new THREE.HemisphereLight(0xffffff, 0x777777, 1);
 
         light.position.set(0, 100, 0);
 
@@ -174,9 +168,9 @@
     }
     
     window.addEventListener("resize", onResize);
-    renderer.domElement.addEventListener("mousedown", onMouseDown);
-    renderer.domElement.addEventListener("mouseup", onMouseUp);
-    renderer.domElement.addEventListener("mousemove", onMouseMove);
+    //renderer.domElement.addEventListener("mousedown", onMouseDown);
+    //renderer.domElement.addEventListener("mouseup", onMouseUp);
+    //renderer.domElement.addEventListener("mousemove", onMouseMove);
 
     onResize();
     
@@ -350,7 +344,7 @@ try {
                 color: new THREE.Color(0x333333)
             });
         
-        new THREE.TextureLoader().load("/dc/img/rack.png", function (texture) {
+        new THREE.TextureLoader().load("/dc/img/rack-side.png", function (texture) {
             texture.minFilter = THREE.LinearFilter;
 
             const mat = new THREE.MeshPhongMaterial({

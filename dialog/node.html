@@ -11,19 +11,6 @@
 @import "/css/dialog.css";
 @import "/css/fa.css";
 
-body {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background-color: rgba(0, 0, 0, .8);
-}
-
-input[type="checkbox"] {
-	margin: .5em;
-	vertical-align: middle;
-}
-
 #profile:hover {
 	cursor: default;
 	text-decoration: underline;
@@ -151,7 +138,7 @@ function onSubmit(e) {
     $.request.execute(request, function () {
         switch (this.status) {
         case 200:
-            parent.resetDialog();
+            top.resetParent();
 
             window.location.replace(`${window.location.pathname}?id=${$.id || JSON.parse(this.responseText).id}`);
             
@@ -186,7 +173,7 @@ function onReset(e) {
     }, function () {
         switch (this.status) {
             case 200:
-                parent.closeDialog(true);
+                top.closeDialog(true);
 
                 break;
             case 409:
@@ -221,7 +208,7 @@ function onSetManager(e) {
 
         alert("Notice.\n\n요청을 정상 처리 하였습니다.");
 
-        parent.closeDialog(true);
+        top.closeDialog(true);
     });
 }
 
@@ -252,7 +239,7 @@ function onSetMonitor (e) {
             case 200:
                 alert("Notice.\n\n모니터 요청 정상.");
 
-                parent.closeDialog(true);
+                top.closeDialog(true);
                 //document.body.classList.remove("loading");
                 
                 break;
@@ -353,6 +340,8 @@ function showMessage(xhr) {
         <script src="/js/ITAhM.js"></script>
         <script src="/js/request.js"></script>
         <script src="/js/icon.js"></script>
+        <script src="/js/channel.js"></script>
+        <script src="/js/dialog.js"></script>
 		<script>
 
 const
@@ -363,17 +352,6 @@ const
         form: document.querySelector("form"),
         customInputMap: {}
     };
-
-document.addEventListener("keydown", function (e) {
-	switch (e.keyCode) {
-	case 27:
-    parent.closeDialog();
-		
-		break;
-	}
-});
-
-document.getElementById("close").onclick = e => parent.closeDialog();
 
 if (top.account.level === 0) {
     $.form.onsubmit = onSubmit;

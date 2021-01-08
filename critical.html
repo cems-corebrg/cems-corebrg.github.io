@@ -22,6 +22,7 @@ main {
 iframe {
     border: none;
     width: 100%; height: 100%;
+    background-color: #efefef;
 }
 
 form {
@@ -229,13 +230,7 @@ document.getElementById("chart").onclick = e => {
         return alert(ERROR_CHART_NOSUP["kr"]);
     }
 
-    const popup = window.open();
-
-    popup.sessionStorage.setItem("id", $.critical.id);
-    popup.sessionStorage.setItem("chart", $.critical.chart);
-    popup.sessionStorage.setItem("index", $.critical.index);
-    
-    popup.location.replace("/chart.html");
+    top.showDialog(`/chart.html?id=${$.critical.id}&chart=${$.critical.chart}&index=${$.critical.index}`);
 }
 
 document.body.querySelector("form").onsubmit =

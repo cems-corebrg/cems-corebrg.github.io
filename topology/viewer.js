@@ -261,7 +261,7 @@
 
             svgPath.appendChild(peer);
         }
-
+        
         if (labelFrom) {
             const text = document.createElementNS(SVG_NS_URI, "text");
             let tspan;
@@ -392,7 +392,7 @@
         }
     };
 
-    window.createTitle = function () {
+    function createTitle () {
         return document.createElementNS(SVG_NS_URI, "title");
     }
 }

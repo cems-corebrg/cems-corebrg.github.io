@@ -288,9 +288,7 @@ function postRealtimeRequest(realtimeData) {
         case 200:
             break;
         default:
-            try {
-                console.log(JSON.parse(this.responseText).error);
-            } catch (e) {}
+            throw showMessage(this);
         }
 
         const value = JSON.parse(this.responseText);
@@ -475,7 +473,11 @@ document.querySelector(".glyph").onclick = function (e) {
             return showMessage(this);
         }
 
-        $.summary = new SummaryData(JSON.parse(this.responseText));
+        const resourceData = JSON.parse(this.responseText);
+
+        $.summary = new SummaryData(resourceData);
+
+        parent.preview(resourceData);
 
         document.body.classList.remove("loading");
 

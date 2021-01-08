@@ -23,10 +23,8 @@
         },
         map = {};
     let
-        topData = {
-            position: {},
-            scale: 1
-        },
+        scale = 0.1,
+        positionData,
         selected,
         screen,
         mouseDown;
@@ -38,9 +36,9 @@
     }
 
     function onScale(e) {
-        e.deltaY < 0? topData.scale *= 1.1: topData.scale /= 1.1;
+        e.deltaY < 0? scale *= 1.1: scale /= 1.1;
 
-        transform.scale.setScale(topData.scale, topData.scale);
+        transform.scale.setScale(scale, scale);
 
         moveHelper();
     }
@@ -98,7 +96,7 @@
                 matrix.a = e.clientX - mouseDown.x;
                 matrix.d = e.clientY - mouseDown.y;
             } else {//DragMoveNodeAll
-                transform.translate.setTranslate(Math.round((e.clientX - mouseDown.x) / topData.scale), Math.round((e.clientY - mouseDown.y) / topData.scale));
+                transform.translate.setTranslate(Math.round((e.clientX - mouseDown.x) / scale), Math.round((e.clientY - mouseDown.y) / scale));
 
                 moveHelper();
             }
@@ -106,8 +104,8 @@
             document.body.classList.add("drag");
 
             const
-                x = Math.round((e.clientX - mouseDown.x) / topData.scale),
-                y = Math.round((e.clientY - mouseDown.y) / topData.scale);
+                x = Math.round((e.clientX - mouseDown.x) / scale),
+                y = Math.round((e.clientY - mouseDown.y) / scale);
 
             [].forEach.call(layerMap.select.querySelectorAll("g"), node => {
                 const matrix = node.transform.baseVal.getItem(1).matrix;
@@ -134,23 +132,23 @@
                     const matrix = selector.transform.baseVal.getItem(0).matrix;
                     let x1, y1, x2, y2;
 
-                    x1 = (matrix.e - screen.width /2) /topData.scale;
-                    y1 = (matrix.f - screen.height /2) /topData.scale;
+                    x1 = (matrix.e - screen.width /2) /scale;
+                    y1 = (matrix.f - screen.height /2) /scale;
             
                     if (matrix.a < 0) {
                         x2 = x1;
-                        x1 = x1 + matrix.a / topData.scale;
+                        x1 = x1 + matrix.a / scale;
                     }
                     else {
-                        x2 = x1 + matrix.a / topData.scale;
+                        x2 = x1 + matrix.a / scale;
                     }
                     
                     if (matrix.d < 0) {
                         y2 = y1;
-                        y1 = y1 + matrix.d / topData.scale;
+                        y1 = y1 + matrix.d / scale;
                     }
                     else {
-                        y2 = y1 + matrix.d / topData.scale;
+                        y2 = y1 + matrix.d / scale;
                     }
 
                     if (mouseDown.shiftKey) {
@@ -199,7 +197,7 @@
                         [].forEach.call(layer.querySelectorAll("g"), node => {
                             const
                                 matrix = node.transform.baseVal.getItem(0).matrix,
-                                pos = topData.position[node.dataset.id];
+                                pos = positionData[node.dataset.id];
 
                             pos.x = matrix.e += x;
                             pos.y = matrix.f += y;
@@ -213,7 +211,7 @@
                         transform = node.transform.baseVal,
                         matrix0 = transform.getItem(0).matrix,
                         matrix1 = transform.getItem(1).matrix,
-                        pos = topData.position[node.dataset.id];
+                        pos = positionData[node.dataset.id];
 
                     pos.x = matrix0.e += matrix1.e;
                     pos.y = matrix0.f += matrix1.f;
@@ -278,7 +276,7 @@
         if (e.target !== this) {
             const node = e.target.parentNode;
 
-            top.showDialog(`/dc/dialog/location.html?facility=${node.dataset.id}`);
+            top.showDialog(`/dc/dialog/location.html?facility=${node.dataset.id}`, this);
         }
     }
 
@@ -289,7 +287,7 @@
 
         const
             rect = selected.querySelector("circle").getBoundingClientRect(),
-            pos = topData.position[selected.dataset.id],
+            pos = positionData[selected.dataset.id],
             matrix1 = transform.translate.matrix,
             matrix2 = selected.transform.baseVal.getItem(1).matrix;
 
@@ -302,9 +300,9 @@
     }
 
     window.initialize = function (data) {
-        topData = data;
-
-        transform.scale.setScale(topData.scale, topData.scale);
+        positionData = data;
+        
+        transform.scale.setScale(scale, scale);
 
         onResize();
     };
@@ -314,7 +312,7 @@
      **/
     window.addFacility = function (id, rack) {
         const node = copy.cloneNode(true);
-        let pos = topData.position[id], transform;
+        let pos = positionData[id], transform;
         
         if (!pos) {
             pos = {
@@ -322,7 +320,7 @@
                 y: 0
             };
 
-            topData.position[id] = pos;
+            positionData[id] = pos;
         }
         
         node.classList.add("node");
@@ -363,7 +361,7 @@
         node.addEventListener("drop", e => {
             e.stopPropagation();
             
-            top.showDialog(`/dc/dialog/location.html?facility=${id}&device=${e.dataTransfer.getData("id")}&name=${e.dataTransfer.getData("name")}`);
+            top.showDialog(`/dc/dialog/location.html?facility=${id}&device=${e.dataTransfer.getData("id")}&name=${e.dataTransfer.getData("name")}`, this);
 
             node.classList.remove("over");
         });
@@ -385,7 +383,7 @@
         e.preventDefault();
 
         const
-            pos = topData.position[selected.dataset.id];
+            pos = positionData[selected.dataset.id];
 
         selected.transform.baseVal.getItem(0).setTranslate(pos.x = Number(gridX.value), pos.y = Number(gridY.value));
         pos.z = Number(gridZ.value);

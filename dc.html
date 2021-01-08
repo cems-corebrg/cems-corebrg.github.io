@@ -9,9 +9,9 @@
 
 body {
     font : 10pt "맑은 고딕", Arial, Tahoma;
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    position: fixed; inset: 0 0 0 0;
     padding: 0; margin: 0;
-    display: flex;
+    display: flex; flex-direction: column;
 }
 
 main {
@@ -21,14 +21,18 @@ main {
 
 iframe {
     width: 100%; height: 100%;
+    padding: 0; margin: 0;
     border: none;
 }
 
 nav {
-    position: absolute; top: 5px; right: 5px;
+    position: absolute; inset: 0 0 0 0;
+    padding: 5px;
+    display: flex; justify-content: space-between;
+    pointer-events: none;
 }
 
-nav >span {
+nav span {
     font: 20px "Font Awesome 5 Free";
     border-radius: 50%;
     display: inline-flex; width: 32px; height: 32px;
@@ -38,21 +42,18 @@ nav >span {
     border-color: #0084ff;
     color: #ffffff;
     cursor: pointer;
+    pointer-events: all;
 }
 
-nav >span:hover {
+nav span:hover {
     background-color: #0084ff;
 }
 
 #dialog {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	padding: 0; margin: 0;
+	position: fixed; inset: 0 0 0 0;
 }
 
-body:not(.edit) #close,
-body.edit #edit,
-body.frame nav,
-body:not(.root) nav,
+body:not(.frame) .frame,
 body:not(.dialog) #dialog {
     display: none;
 }
@@ -62,10 +63,48 @@ body:not(.dialog) #dialog {
         
         <script>
 
-function showDialog(src) {
+function onEvent (e) {
+    const event = e.data;
+
+    if (event == null || event.level < 0) {
+        return;
+    }
+    
+    if (event.id) {
+        if ($.timer) {
+            clearTimeout($.timer);
+        }
+        
+        const location = window.locationData[String(event.id)];
+
+        if (location) {
+            $.timer = setTimeout(() => window.requestAnimationFrame(t => {
+                $.request.execute({
+                    command: "get",
+                    target: "node"
+                }, function (e) {
+                    switch(this.status) {
+                    case 200:
+                        break;
+                    default:
+                        throw showMessage(this);
+                    }
+
+                    window.nodeData = JSON.parse(this.responseText);
+                    
+                    document.body.querySelector("iframe").contentWindow.location.replace(`/dc/viewer.html?focus=${location.rack}`);
+                })
+            }), 1000);
+        }
+    }
+}
+
+function showDialog(src, parent) {
     const dialog = document.getElementById("dialog");
 
     dialog.onload = function () {
+        $.parent = parent;
+
 		document.body.classList.add("dialog");
 	};
 
@@ -76,142 +115,242 @@ function closeDialog(reset) {
     document.body.classList.remove("dialog");
     
     if (reset) {
-        resetDialog();
+        resetParent();
+    }
+
+    delete $.parent;
+}
+
+function resetParent() {
+    if ($.parent) {
+        $.parent.location.reload();
     }
 }
 
-function resetDialog() {
-    document.querySelector("iframe").contentWindow.location.reload();
+function loadTexture (url) {
+    return new Promise((resolve, reject) => {
+        new THREE.TextureLoader().load(url,
+            texture => {
+                texture.minFilter = THREE.LinearFilter;
+
+                resolve(texture);
+            },
+            undefined,
+            e => reject(e));
+    });
 }
 
-function showChart(id) {
-    const popup = window.open();
+function getLocationData() {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "location"
+        }, function (e) {
+            switch(this.status) {
+            case 200:
+                break;
+            default:
+                return reject(this);
+            }
 
-    popup.sessionStorage.setItem("node_id", id);
+            window.locationData = JSON.parse(this.responseText);
 
-    popup.location.replace("/chart.html");
-}
-
-function _preLoadTextures(keys, maker, type, onload) {
-    const name = keys.pop();
-
-    if (name) {
-        const model = modelData[maker][name];
-
-        new THREE.TextureLoader().load(model[type], texture => {
-            texture.minFilter = THREE.LinearFilter;
-
-            model[type] = texture;
-
-            _preLoadTextures(keys, maker, type, onload);
+            resolve();
         });
-    } else {
-        onload();
-    }
+    });
 }
 
-function preLoadTextures(keys, onload) {
-    const maker = keys.pop();
-    
-    if (maker) {
-        _preLoadTextures(Object.keys(modelData[maker]), maker, "front", function () {
-            _preLoadTextures(Object.keys(modelData[maker]), maker, "rear", function () {
-                preLoadTextures(keys, onload);
-            });
+function getSettingData() {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "setting",
+            key: "dc"
+        }, function (e) {
+            window.settingData = {};
+
+            switch(this.status) {
+            case 200:
+                window.settingData = JSON.parse(this.responseText);
+            case 204:
+                break;
+            default:
+                return reject(this);
+            }
+
+            resolve();
         });
-    } else {
-        onload();
-    }
+    });
 }
 
-function getModelData() {
-    return modelData;
+function getFacilityData () {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "facility"
+        }, function (e) {
+            switch(this.status) {
+            case 200:
+                break;
+            default:
+                return reject(this);
+            }
+            
+            window.facilityData = JSON.parse(this.responseText);
+
+            resolve();
+        });
+    });
+}
+
+function getNodeData () {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "node"
+        }, function (e) {
+            switch(this.status) {
+            case 200:
+                break;
+            default:
+                return reject(this);
+            }
+            
+            window.nodeData = JSON.parse(this.responseText);
+
+            resolve();
+        });
+    });
+}
+
+function getPositionData () {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "position",
+            name: "facility"
+        }, function (e) {
+            window.positionData = {};
+
+            switch(this.status) {
+            case 200:
+                window.positionData = JSON.parse(this.responseText);
+            case 204:
+                break;
+            default:
+                return reject(this);
+            }
+            
+            resolve();
+        });
+    });
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESS_EXPIRE["kr"]);
+
+        break;
+    default:
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
 }
 
         </script>
 
-        <body>
+        <body class="loading">
             <main>
                 <iframe id="frame"></iframe>
             </main>
             <nav>
-                <span id="close" title="편집 종료">
-                    &#xf00d;
-                </span>
-                <span id="edit" title="편집 모드">
-                    &#xf013;
-                </span>
+                <div>
+                </div>
+                <div class="frame">
+                    <span id="popup" title="새 창">&#xf2d2;</span>
+                </div>
             </nav>
             <iframe id="dialog"></iframe>
 
             <script>
-
-if (opener && opener.account) {
-    window.account = JSON.parse(JSON.stringify(opener.account));
-} else if (top !== window && top.account) {
-    window.account = JSON.parse(JSON.stringify(top.account));
-
-    document.body.classList.add("frame");
-} else {
-    throw window.location.replace("/warning.html");
-}
-
-if (window.account.level === 0) {
-    document.body.classList.add("root");
-}
-
         </script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
         <script src="/js/import/three.js"></script>
         <script src="/dc/model.js"></script>
+        <script src="/util/loader.js"></script>
+        <script src="/js/channel.js"></script>
         <script>
 
 const $ = {
         request: new Request(),
-        data: {
-            position: {},
-            scale: 0.1
-        }
+        loader: new ImageLoader(onLoadImage, loadTexture)
     };
 
-document.getElementById("edit").onclick = e => {
-    document.body.classList.toggle("edit");
+function initAccount (account) {
+    if (window === top) {
+        window.account = account;
+    } else {
+        document.getElementById("popup").onclick = e => {
+            const popup = window.open();
 
-    document.getElementById("frame").contentWindow.location.replace("/dc/editor.html");
-};
+            popup.onload = e => popup.focus();
 
-document.getElementById("close").onclick = e => {
-    document.body.classList.toggle("edit");
+            popup.location.replace(window.location.pathname);
+        };
 
-    document.getElementById("frame").contentWindow.location.replace("/dc/viewer.html");
-};
-
-function getData() {
-    return $.data;
-}
-
-{
-    function initPosition() {
-        switch (this.status) {
-        case 200:
-            $.data.position = JSON.parse(this.responseText);
-        case 204:
-            break;
-        default:
-            throw showMessage(this);
-        }
-
-        preLoadTextures(Object.keys(modelData), function () {
-            document.getElementById("frame").src = "/dc/viewer.html";
-        });
+        document.body.classList.add("frame");
     }
 
-    $.request.execute({
-        command: "get",
-        target: "position",
-        name: "facility"
-    }, initPosition);
+    const urls = [];
+    let makerData, model;
+
+    for (let maker in modelData) {
+        makerData = modelData[maker];
+
+        for (let name in makerData) {
+            model = makerData[name];
+
+            urls.push(model.front);
+            urls.push(model.rear);
+        }
+    }
+
+    $.loader.load(urls);
 }
+
+function onLoadImage() {
+    window.modelData = $.loader.map;
+
+    const iframe = document.body.querySelector("iframe");
+
+    iframe.onload = e => {
+        Channel.listen(onEvent);
+
+        document.body.classList.remove("loading");
+    };
+    
+    iframe.src = "/dc/viewer.html";
+}
+
+Promise
+    .all([
+        getPositionData(),
+        getNodeData(),
+        getFacilityData(),
+        getLocationData(),
+        getSettingData()
+    ])
+    .then(() => {
+        Channel.getAccount(initAccount);
+    })
+    .catch(xhr => {
+        showMessage(xhr)
+    });
         </script>
     </body>
 </html>

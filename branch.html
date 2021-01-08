@@ -1,69 +1,134 @@
+
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>CeMS Map</title>
-        <style>
-
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		
+		<style>
+@import "/css/itahm.css";
 @import "/css/fa.css";
 
 body {
-    font-family: "맑은 고딕", arial, tahoma;
-	font-size: 10pt;
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-    padding: 0; margin: 0;
-    display: flex;
+    position: fixed; inset: 0 0 0 0;
+    margin: 0; padding: 0;
+    user-select: none;
+    display: flex; flex-direction: column;
 }
 
 main {
     flex: 1;
-    position: relative;
 }
 
 iframe {
     width: 100%; height: 100%;
+    padding: 0; margin: 0;
     border: none;
 }
 
 #dialog {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	padding: 0; margin: 0;
+	position: fixed; inset: 0 0 0 0;
+    z-index: 1;
 }
 
 nav {
-    position: absolute; top: 5px; right: 5px;
+    position: absolute; inset: 0 0 auto 0;
+    padding: 5px;
+    display: flex; justify-content: space-between;
+    font: 20px "Font Awesome 5 Free";
+    color: #ffffff;
+    pointer-events: none;
 }
 
-nav >span {
-    font: 20px "Font Awesome 5 Free";
+nav span {
     border-radius: 50%;
     display: flex; width: 32px; height: 32px;
     align-items: center;
     justify-content: center;
     background-color: rgba(0, 132, 255, 0.5);
     border-color: #0084ff;
-    color: #ffffff;
     cursor: pointer;
+    pointer-events: all;
 }
 
-nav >span:hover {
+nav span:hover {
     background-color: #0084ff;
 }
 
-body:not(.dialog) #dialog,
-body:not(.popup) nav {
+.label {
+    display: inline-block;
+    padding: 0.5em;
+    text-align: center;
+    font-weight: bold;
+    background-color: #71706e;
+    box-shadow: 0px 2px 3px 0px #000000;
+    text-shadow: 0px 1px 1px rgba(0,0,0,0.5);
+    color: #ffffff;
+    border-radius: 0.5em;
+    user-select: none;
+}
+
+.bg_loading {
+    z-index: 9;
+}
+
+@keyframes status {
+	from {
+    	opacity: 0;
+        transform: scale(0);
+    }
+    to {
+    	opacity: 1;
+        transform: scale(2);
+    }
+}
+
+body:not(.frame) .frame,
+body:not(.dialog) #dialog {
     display: none;
 }
 
-			</style>            
-        </head>
-        
+        </style>
         <script>
 
-function showDialog(src) {
+function onEvent(e) {
+    const event = e.data;
+
+    if (!event || event.level < 0) {
+        return;
+    }
+    
+    if (event.id) {
+        if ($.timer) {
+            clearTimeout($.timer);
+        }
+
+        $.timer = setTimeout(() => requestAnimationFrame(t =>
+            $.request.execute({
+                command: "get",
+                target: "node"
+            }, function (e) {
+                switch(this.status) {
+                case 200:
+                    break;
+                default:
+                    throw showMessage(this);
+                }
+
+                window.nodeData = JSON.parse(this.responseText);
+
+                moveStage(null, event.id);
+            })
+        ), 1000);
+    }
+}
+
+function showDialog(src, parent) {
     const dialog = document.getElementById("dialog");
 
     dialog.onload = function () {
+        $.parent = parent;
+
 		document.body.classList.add("dialog");
 	};
 
@@ -74,34 +139,179 @@ function closeDialog(reset) {
     document.body.classList.remove("dialog");
     
     if (reset) {
-        resetDialog();
+        resetParent();
+    }
+
+    delete $.parent;
+}
+
+function resetParent() {
+    if ($.parent) {
+        $.parent.location.reload();
     }
 }
 
-function resetDialog() {
-    document.getElementById("frame").contentWindow.location.reload();
+function moveStage (group, id) {
+    if (id) {
+        document.body.querySelector("iframe").contentWindow.location
+            .replace(`/branch/viewer.html?focus=${id}`);
+    } else if (group) {
+        document.body.querySelector("iframe").contentWindow.location
+            .replace(`/topology/viewer.html?group=${group}`);
+    } else {
+        window.location.reload();
+    }
 }
 
-function showChart(id) {
-    const popup = window.open();
+function getBranchData () {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "branch"
+        }, function (e) {
+            switch(this.status) {
+            case 200:
+                break;
+            default:
+                reject(this);
+            }
 
-    popup.sessionStorage.setItem("node_id", id);
+            window.branchData = JSON.parse(this.responseText);
 
-    popup.location.replace("/chart.html");
+            resolve();
+        });
+    });
 }
 
-function getPositionData() {
-    return $.positionData;
+function getNodeData () {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "node"
+        }, function (e) {
+            switch(this.status) {
+            case 200:
+                break;
+            default:
+                reject(this);
+            }
+
+            window.nodeData = JSON.parse(this.responseText);
+
+            resolve();
+        });
+    });
 }
 
-function showMessage(xhr) {
+function getPositionData () {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "position",
+            name: "position"
+        }, function (e) {
+            switch(this.status) {
+            case 200:
+                break;
+            default:
+                reject(this);
+            }
+
+            window.positionData = JSON.parse(this.responseText);
+
+            resolve();
+        });
+    });
+}
+
+function getPathData() {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "path"
+        }, function (e) {
+            switch(this.status) {
+            case 200:
+                break;
+            default:
+                reject(this);
+            }
+
+            window.pathData = JSON.parse(this.responseText);
+
+            resolve();
+        });
+    });
+}
+
+function getSettingData() {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "setting"
+        }, function (e) {
+            switch(this.status) {
+            case 200:
+                break;
+            default:
+                reject(this);
+            }
+
+            window.settingData = JSON.parse(this.responseText);
+
+            resolve();
+        });
+    });
+}
+
+function getLinkData () {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "link"
+        }, function (e) {
+            switch(this.status) {
+            case 200:    
+                break;
+            default:
+                reject(this);
+            }
+
+            window.linkData = JSON.parse(this.responseText);
+    
+            resolve();
+        });
+    });
+}
+
+function getIconData () {
+    return new Promise ((resolve, reject) => {
+        $.request.execute({
+            command: "get",
+            target: "icon"
+        }, function (e) {
+            switch(this.status) {
+            case 200:    
+                break;
+            default:
+                reject(this);
+            }
+
+            window.linkData = JSON.parse(this.responseText);
+    
+            resolve();
+        });
+    });
+}
+
+function showMessage (xhr) {
     switch (xhr.status) {
     case 401:
-        alert(`Notice!\n\n세션 만료.`);
+        alert(NOTICE_SESS_EXPIRE["kr"]);
 
         break;
     default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+        alert(ERROR_RES_CODE(xhr.status)["kr"]);
     }
 
     try {
@@ -110,46 +320,78 @@ function showMessage(xhr) {
 }
 
         </script>
+    </head>
+    <body class="loading">
+        <nav>
+            <div>
+            </div>
+            <div class="frame">
+                <span id="popup" title="새 창">&#xf2d2;</span>
+            </div>
+        </nav>
+        <main>
+            <iframe></iframe>
+        </main>
+        <iframe id="dialog" name="dialog"></iframe>
+        <div class="bg_loading"></div>
 
-        <body>
-            <main>
-                <iframe id="frame"></iframe>
-            </main>
-            <iframe id="dialog"></iframe>
-
-        <script>
-if (opener && opener.account) {
-    window.account = JSON.parse(JSON.stringify(opener.account));
-} else if (top !== window && top.account) {
-    window.account = JSON.parse(JSON.stringify(top.account));
-} else {
-    throw window.location.replace("/warning.html");
-}
-        </script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script src="/js/icon.js"></script>
+        <script src="/js/channel.js"></script>
         <script>
 
-const $ = {
+const
+    $ = {
         request: new Request()
     };
 
-$.request.execute({
-    command: "get",
-    target: "position",
-    name: "position"
-}, function (e) {
-    switch(this.status) {
-    case 200:
-        $.positionData = JSON.parse(this.responseText);
-        
-        document.getElementById("frame").src = "/branch/view.html";
-        
-        break;
-    default:
-        showMessage(this);
+function initAccount (account) {
+    if (window === top) {
+        window.account = account;
+    } else {
+        document.getElementById("popup").onclick = e => {
+            const popup = window.open();
+
+            popup.onload = e => popup.focus();
+
+            popup.location.replace(window.location.pathname);
+        };
+
+        document.body.classList.add("frame");
     }
-});
+
+    const iconData = ITAhM.iconData;
+
+    for (let type in window.iconData) {
+        iconData[type] = window.iconData[type];
+    }
+
+    window.iconData = iconData;
+
+    document.body.querySelector("iframe").src = "/branch/viewer.html";
+    
+    Channel.listen(onEvent);
+
+    document.body.classList.remove("loading");
+}
+
+Promise
+    .all([
+        getPositionData(),
+        getNodeData(),
+        getBranchData(),
+        getLinkData(),
+        getPathData(),
+        getSettingData(),
+        getIconData()
+    ])
+    .then(() => {
+        Channel.getAccount(initAccount);
+    })
+    .catch(xhr => showMessage(xhr));
 
         </script>
+        
     </body>
 </html>

@@ -76,7 +76,7 @@
             }
 
             if ($.id) {
-                top.resetDialog();
+                top.resetParent();
 
                 const search = new URLSearchParams();
 

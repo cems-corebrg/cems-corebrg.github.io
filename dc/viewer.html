@@ -53,10 +53,9 @@ nav >span:hover {
 }
 
 iframe {
-    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    position: absolute; inset: 0 0 0 0;
+    width: 100%; height: 100%;
     border: none;
-    width: 100%;
-    height: 100%;
 }
 
 body:not(.focus) iframe,
@@ -68,22 +67,33 @@ body:not(.play) #stop {
             </style>
             <script>
 
-function onEvent (event) {
-    if (event == null || event.level < 0) {
-        return;
-    }
-    return console.log("test...");
-    if (event.id) {
-        if ($.timer) {
-            clearTimeout($.timer);
-        }
-        
-        $.timer = setTimeout(() => window.requestAnimationFrame(t => window.location.replace(`/dc/view.html?focus=${event.id}`)) , 1000);
-    }
-}
+function onSelectRack (id) {
+    const iframe = document.querySelector("iframe");
 
-function getModelData() {
-    return parent.getModelData();
+    iframe.onload = e => {
+        const locationData = {};
+        let location;
+
+        for (let key in parent.locationData) {
+            location = parent.locationData[key];
+
+            if (location.rack === id) {
+                locationData[key] = location;
+            }
+        }
+
+        iframe.contentWindow.initialize({
+            id: id,
+            facility: parent.facilityData[id],
+            locationData: locationData,
+            nodeData: parent.nodeData,
+            modelData: parent.modelData
+        });
+
+        document.body.classList.add("focus");
+    };
+
+    iframe.src = `/dc/dialog/focus.html?id=${id}`;
 }
 
 function showMessage(xhr) {
@@ -111,30 +121,36 @@ function showMessage(xhr) {
             <script src="/js/import/OrbitControls.js"></script>
             <script src="/dc/viewer.js"></script>
             <script src="/js/request.js"></script>
+            <script src="/dc/model.js"></script>
             <script>
 
 const
     search = new URLSearchParams(window.location.search),
     $ = {
         request: new Request(),
-        modelData: parent.getModelData(),
-        positionData: parent.getData().position,
-        devMap: {}
+        focus: Number(search.get("focus")) || undefined
     };
 
 /**
  * @param {string} id
  **/
-function addDevice(id) {
+function addDevice(id, location) {
     const
-        location = $.locationData[id],
-        node = $.nodeData[id],
+        node = parent.nodeData[id],
         config = {
             position: location.position
         };
 
     try {
-        config.model = $.modelData[location.maker][location.model];
+        const model = modelData[location.maker][location.model];
+
+        if (model) {
+            config.model = {
+                unit: model.unit,
+                front: parent.modelData[model.front],
+                rear: parent.modelData[model.rear]
+            };
+        }
     } catch (e) {
     }
     
@@ -144,8 +160,6 @@ function addDevice(id) {
         } else if ("critical" in node && node.critical) {
             config.status = "critical";
         }
-
-        config.onclick = e => parent.showChart(id);
     }
     
     if (location.node_name || location.node_ip) {
@@ -155,108 +169,43 @@ function addDevice(id) {
     putDevice(location.rack, id, config);
 }
 
-function initialize() {
-    draw();
-
-    document.body.classList.remove("loading");
-
-    new BroadcastChannel("bc_event").onmessage = e => onEvent(e.data);
-}
-
-function initLocation() {
-    switch (this.status) {
-    case 200:
-        break;
-    default:
-        throw showMessage(this);
-    }
-
-    $.locationData = JSON.parse(this.responseText);
-
-    for (let id in $.locationData) {
-        addDevice(id);
-    }
-
-    initialize();
-}
-
-function initFacility () {
-    switch (this.status) {
-    case 200:
-        break;
-    default:
-        throw showMessage(this);
-    }
-
-    $.facilityData = JSON.parse(this.responseText);
-    
+{  
     let facility, model, pos;
 
-    for (let id in $.facilityData) {
-        facility = $.facilityData[id];
+    for (let id in parent.facilityData) {
+        facility = parent.facilityData[id];
         
-        pos = $.positionData[id];
+        pos = parent.positionData[id];
 
         if (!pos) {
             pos = {
                 x: 0,
-                y: 0
+                y: 0,
+                z: 0
             };
 
-            $.positionData[id] = pos;
+            parent.positionData[id] = pos;
         }
         
         createFacility(facility, pos);
     }
-
-    $.request.execute({
-        command: "get",
-        target: "location"
-    }, initLocation);
 }
 
-function initNode () {
-    switch (this.status) {
-    case 200:
-        break;
-    default:
-        throw showMessage(this);
-    }
-
-    $.nodeData = JSON.parse(this.responseText);
-
-    $.request.execute({
-        command: "get",
-        target: "facility"
-    }, initFacility);
+for (let id in parent.locationData) {
+    addDevice(id, parent.locationData[id]);
 }
 
-function initSetting () {
-    let settingData = {};
-    switch (this.status) {
-    case 200:
-        settingData = JSON.parse(this.responseText);
-    case 204:
-        break;
-    default:
-        throw showMessage(this);
-    }
-
-    if (settingData.dc) {
-        setFloor(JSON.parse(settingData.dc));
-    }
-
-    $.request.execute({
-    command: "get",
-    target: "node"
-}, initNode);
+if (parent.settingData.dc) {
+    setFloor(JSON.parse(parent.settingData.dc));
 }
 
-$.request.execute({
-    command: "get",
-    target: "setting",
-    key: "dc"
-}, initSetting);
+draw();
+
+if ($.focus) {
+    onSelectRack($.focus);
+}
+
+document.body.classList.remove("loading");
 
         </script>
     </body>

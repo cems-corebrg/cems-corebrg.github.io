@@ -6,13 +6,14 @@
 		
 		<style>
 @import "/css/style.css";
+@import "/css/var.css";
 @import "/css/fa.css";
 
 body {
     position: fixed; top: 0; right: 0; bottom: 0; left: 0;
     padding: 1em; margin: 0;
     display: flex; flex-direction: column;
-    background-color: #424242;
+    background-color: var(--var-color-bg);
 }
 
 main {
@@ -25,6 +26,17 @@ main {
 section {
     flex: 1 1 260px;
     margin: 0.5em 0;
+}
+
+iframe {
+    width: 100%; height: 100%;
+    padding: 0; margin: 0;
+    border: none;
+}
+
+#dialog {
+	position: fixed; inset: 0 0 0 0;
+    z-index: 1;
 }
 
 section header {
@@ -106,6 +118,7 @@ li:last-child >div {
 nav {
     flex: none;
     display: flex; justify-content: space-between;
+    user-select: none;
 }
 
 nav span {
@@ -121,9 +134,10 @@ nav span {
 }
 
 section.empty,
-body:not(.popup) #restore,
 body.name li:nth-child(2),
-body:not(.name) li:nth-child(1) {
+body:not(.name) li:nth-child(1),
+body:not(.frame) .frame,
+body:not(.dialog) #dialog {
 	display: none;
 }
 
@@ -180,6 +194,34 @@ function toBPSString(bandwidth) {
 	return bandwidth.toFixed(2) + unit[i];
 }
 
+function showDialog(src, parent) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function () {
+        $.parent = parent;
+
+		document.body.classList.add("dialog");
+	};
+
+    dialog.src = src;
+}
+
+function closeDialog(reset) {
+    document.body.classList.remove("dialog");
+    
+    if (reset) {
+        resetParent();
+    }
+
+    delete $.parent;
+}
+
+function resetParent() {
+    if ($.parent) {
+        $.parent.location.reload();
+    }
+}
+
 function setTop(section, topArray) {
     const footer = section.querySelector("footer");
 
@@ -223,24 +265,12 @@ function createTopItem(value, toString, chart) {
 		item.title = toPercentageString(value.rate);
 	}
 	
-	item.onclick = function () {
-        const popup = window.open();
-
-        popup.sessionStorage.setItem("id", value.id);
-
-        popup.location.replace("/chart.html");
-	};
+	item.onclick = e => top.showDialog(`/chart.html?id=${value.id}`);
 	
-	gauge.onclick = function (e) {
+	gauge.onclick = e => {
 		e.stopPropagation();
         
-        const popup = window.open();
-
-        popup.sessionStorage.setItem("id", value.id);
-        popup.sessionStorage.setItem("chart", chart);
-        popup.sessionStorage.setItem("index", value.index);
-        
-        popup.location.replace("/chart.html");
+        top.showDialog(`/chart.html?id=${value.id}&chart=${chart}&index=${value.index}`);
 	};
 	
     return item;
@@ -298,10 +328,8 @@ function showMessage(xhr) {
                     &#xf074;
                 </span>
             </div>
-            <div>
-                <span id="restore" title="창 복원">
-                    &#xf2d0;
-                </span>
+            <div class="frame">
+                <span id="popup" title="새 창">&#xf2d2;</span>
             </div>
         </nav>
         <main>
@@ -354,10 +382,12 @@ function showMessage(xhr) {
                 <footer></footer>
             </section>
         </main>
+        <iframe id="dialog" name="dialog"></iframe>
         <div class="bg_loading"></div>
         
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
+        <script src="/js/channel.js"></script>
 		<script>
 
 const
@@ -365,24 +395,6 @@ const
     $ = {
     request: new Request()
 };
-
-if (window === top) {
-    if (!$.request.try(function (e) {
-        if (this.status === 200) {
-            window.account = JSON.parse(this.responseText);
-        } else {
-            throw window.location.replace("/warning.html");    
-        }
-    })) {
-        throw window.location.replace("/warning.html");
-    }
-} else if (top.account) {
-    window.account = JSON.parse(JSON.stringify(top.account));
-
-    document.body.classList.add("frame");
-} else {
-    throw window.location.replace("/warning.html");
-}
 
 document.getElementById("display").onclick = e => document.body.classList.toggle("name");
 
@@ -414,14 +426,6 @@ document.getElementById("display").onclick = e => document.body.classList.toggle
         }
     });
 });
-
-function setDraggable() {
-    [].forEach.call(document.body.querySelectorAll("section"), section => {
-		
-		
-		
-	});
-}
 
 function initNode() {
     switch (this.status) {
@@ -456,10 +460,34 @@ function initSetting () {
     }, initNode);
 }
 
-$.request.execute({
-    command: "get",
-    target: "setting"
-}, initSetting);
+function initialize() {
+    $.request.execute({
+        command: "get",
+        target: "setting"
+    }, initSetting);
+}
+
+function initAccount(account) {
+    window.account = account;
+
+    initialize();
+}
+
+if (window === top) {
+    Channel.getAccount(initAccount);
+} else {
+    document.getElementById("popup").onclick = e => {
+        const popup = window.open();
+
+        popup.onload = e => popup.focus();
+
+        popup.location.replace(window.location.pathname);
+    };
+
+    document.body.classList.add("frame");
+
+    initialize();
+}
 
 		</script>
 	

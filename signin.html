@@ -76,6 +76,7 @@ input[type=reset] {
 
 .footer >input {
     flex: 1;
+    font-family: "Font Awesome 5 Free", "맑은 고딕", Tahoma, Arial;
 }
 
 body:not(:lang(en)) :lang(en) {
@@ -93,7 +94,7 @@ function onSignIn() {
             alert("Error!\n\n"+
                 "계정이 존재하지 않거나 비밀번호가 일치하지 않습니다.");
             
-            document.getElementById("signin").elements["username"].select();
+            document.getElementById("signin").elements["id"].select();
             
             break;
         default:
@@ -118,7 +119,7 @@ function onSignIn() {
                 <p>Username</p>
                 <div class="input">
                     <span class="glyph">&#xf007;</span>
-                    <input type="text" name="username" required>
+                    <input type="text" name="id" required>
                 </div>
                 <p>Password</p>
                 <div class="input">
@@ -128,8 +129,8 @@ function onSignIn() {
                 <div class="footer">
                     <input type="reset" value="Cancel" class="button" lang="en">
                     <input type="submit" value="Sign in" class="button" lang="en">
-                    <input type="reset" value="취소" class="button">
-                    <input type="submit" value="접속" class="button">
+                    <input type="reset" value="&#xf55a; 취소" class="button">
+                    <input type="submit" value="&#xf2f6; 접속" class="button">
                 </div>
             </form>
             <h1>
@@ -156,7 +157,7 @@ document.getElementById("signin").onsubmit = function (e) {
     
     document.body.classList.add("loading");
 
-    $.request.signIn(this.elements["username"].value, hex_md5(this.elements["password"].value), onSignIn);
+    $.request.signIn(this.elements["id"].value, hex_md5(this.elements["password"].value), onSignIn);
 };
 
 document.getElementById("signin").onreset = function (e) {

@@ -92,26 +92,6 @@ body:not(.event) #event {
 
         </style>
         <script>
-        
-function onEvent(event) {
-    if (!event || event.level < 0) {
-        return;
-    }
-    
-    if (event.id) {
-        if ($.timer) {
-            clearTimeout($.timer);
-        }
-
-        $.timer = setTimeout(() => requestAnimationFrame(t => {
-            const search = new URLSearchParams();
-
-            search.set("focus", event.id);
-
-            window.location.search = search;
-        }), 1000);
-    }
-}
 
 function addBranch(id, branch, status) {
     if (!("lat" in branch) || !("lng" in branch)) {
@@ -128,7 +108,7 @@ function addBranch(id, branch, status) {
         }),
         div = document.createElement("div");
 
-    kakao.maps.event.addListener(marker, "click", onSelect.bind(marker, branch.id));
+    kakao.maps.event.addListener(marker, "click", e => parent.moveStage(branch.id));
     
     if (branch.name) {
         new kakao.maps.CustomOverlay({
@@ -157,15 +137,14 @@ function addBranch(id, branch, status) {
     $.branchMap[id] = branch;
 }
 
-function initialzie() {
+function initialize() {
     const
         shutdown = {},
-        critical = {},
-        focus = new URLSearchParams(window.location.search).get("focus");
+        critical = {};
     var group;
 
-    for (let id in $.nodeData) {
-        node = $.nodeData[id];
+    for (let id in parent.nodeData) {
+        node = parent.nodeData[id];
 
         if ("protocol" in node) {
             if (group = findBranch(id)) {
@@ -181,13 +160,13 @@ function initialzie() {
         }
     }
 
-    for (let id in $.branchData) {
-        addBranch(id, $.branchData[id], shutdown[id]? "shutdown": critical[id]? "critical": undefined);
+    for (let id in parent.branchData) {
+        addBranch(id, parent.branchData[id], shutdown[id]? "shutdown": critical[id]? "critical": undefined);
     }
 
-    if (focus) {console.log(focus);
-        group = findBranchFromStage(focus);
-        console.log(group);
+    if ($.focus) {
+        const group = findBranchFromStage($.focus);
+                
         if (group) {
             const branch = $.branchMap[group];
             
@@ -196,30 +175,54 @@ function initialzie() {
         }
     }
 
-    new BroadcastChannel("bc_event").onmessage = e => onEvent(e.data);
-}
-
-function onSelect (id) {
-    location.replace(`/topology/view.html?group=${id}`);
+    document.body.classList.remove("loading");
 }
 
 function findBranch(id) {
-    var pos = $.positionData[id];
+    var pos = parent.positionData[id];
 
     if (pos && ("parent" in pos)) {
-        return findBranchFromStage(String(pos.parent), $.positionData);
+        return findBranchFromStage(String(pos.parent), parent.positionData);
     }
 }
 
-function findBranchFromStage(id, stage = $.branchMap) {const tmp = id;
-    for (let pos; pos = $.positionData[id]; id = String(pos.parent)) {if (tmp == "13") console.log(id, typeof id);
+function findBranchFromStage(id, stage = $.branchMap) {
+    for (let pos; pos = parent.positionData[id]; id = String(pos.parent)) {
         if (id in stage) {
             return id;
         }
 
-        if (!("parent" in pos)) {if (tmp == "13") console.log(pos);
+        if (!("parent" in pos)) {
             return;
         }
+    }
+}
+
+function onSearch (e) {
+    const keyword = prompt("노드 이름 또는 IP주소를 입력하세요.");
+    
+    if (!keyword) {
+        return;
+    }
+
+    let
+        found = false,
+        node;
+
+    for (let id in parent.nodeData) {
+        node = parent.nodeData[id];
+
+        if (keyword === node.ip || keyword === node.name) {
+            parent.moveStage(parent.positionData[id].parent, id);
+            
+            found = true;
+
+            break;
+        }
+    }
+
+    if (!found) {
+        alert("Information.\n\n검색 결과가 없습니다.");
     }
 }
 
@@ -246,52 +249,28 @@ function showMessage(xhr) {
             <span title="초기화" id="reload">
                 &#xf2f9;
             </span>
+            <span title="노드 찾기" id="search">
+                &#xf002;
+            </span>
         </nav>
         <div class="bg_loading"></div>
 
-        <script src="/js/request.js"></script>
+        <script src="/js/channel.js"></script>
         <script src="/js/constants.js"></script>
         <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=2d5f1506a806e98b9b51ecb765853bd7&libraries=services,clusterer,drawing"></script>
         <script>
 
 const
+    search = new URLSearchParams(window.location.search),
     $ = {
-        request: new Request(),
         statusMap: {},
         branchMap: {},
+        focus: Number(search.get("focus")) || undefined,
         positionData: parent.getPositionData()
     };
 
 document.getElementById("reload").onclick = e => window.location.reload();
-
-function initNode(e) {
-    switch(this.status) {
-        case 200: break;
-        default:
-            return showMessage(this);
-    }
-
-    $.nodeData = JSON.parse(this.responseText);
-            
-    $.request.execute({
-        command: "get",
-        target: "branch"
-    }, initBranch);
-}
-
-function initBranch () {
-    switch(this.status) {
-    case 200: break;
-    default:
-        return showMessage(this);
-    }
-
-    $.branchData = JSON.parse(this.responseText);
-
-    initialzie();
-    
-    document.body.classList.remove("loading");
-}
+document.getElementById("search").onclick = onSearch;
 
 try {
     $.map = new kakao.maps.Map(document.getElementById("map"), {
@@ -319,10 +298,7 @@ kakao.maps.event.addListener(
     cluster => $.map.setLevel($.map.getLevel() -1, {anchor: cluster.getCenter()})
 );
 
-$.request.execute({
-    command: "get",
-    target: "node"
-}, initNode);
+initialize();
 
         </script>
         

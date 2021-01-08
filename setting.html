@@ -18,8 +18,8 @@ body {
 
 h2 {
     font-size: 20px;
-    color: #4d525a;
-	text-shadow: 0 2px 2px #ddd;
+    color: #ffffff;
+    text-shadow: 0 2px 2px #000000;
 }
 
 h2 >span {
@@ -350,10 +350,11 @@ function showMessage(xhr) {
                     기본 화면 : 
                     <select name="home">
                         <option value="0" selected>없음</option>
-                        <option value="1">토폴로지</option>
-                        <option value="2">지도</option>
-                        <option value="3">데이터센터</option>
-                        <option value="4">성능Top</option>
+                        <option value="1">노선도</option>
+                        <option value="2">토폴로지</option>
+                        <option value="3">지도</option>
+                        <option value="4">데이터센터</option>
+                        <option value="5">성능Top</option>
                     </select>
 					<input type="submit" value="적용" class="root">
 				</form>
@@ -391,20 +392,6 @@ function showMessage(xhr) {
 			</p>
 			<div class="bg_loading"></div>
 		</div>
-		
-		<form id="account" class="container loading lock">
-			<h2>
-				<span class="logo">
-                    &#xf500;
-                </span>
-                계정
-                <span title="계정 추가" class="root add button">&#xf055;</span>
-			</h2>
-			<div class="box">
-				<ul id="account_list" class="list"></ul>
-			</div>
-			<div class="bg_loading"></div>
-		</form>
 		
 		<form id="profile" class="container loading">
 			<h2>
@@ -1057,8 +1044,8 @@ function initInformation() {
 
             $.request.execute({
                 command: "get",
-                target: "account",
-            }, initAccount);
+                target: "profile"
+            }, initProfile);
 
             break;
         default:
@@ -1069,48 +1056,10 @@ function initInformation() {
 }) (document.getElementById("setting"));
 
 (function (container) {
-	container.querySelector(".add").onclick = function (e) {
-		e.preventDefault();
-
-		top.showDialog("/dialog/account.html");
-	};
-
-	function onSelectAccount(username) {
-		top.showDialog(`/dialog/account.html?username=${username}`);
-	}
-    
-    window.initAccount = function () {
-		switch (this.status) {
-		case 200:
-			const
-				account = JSON.parse(this.responseText);
-				df = document.createDocumentFragment();
-
-			for (let name in account) {
-				df.appendChild(createItem(name, account[name], onSelectAccount));
-			}
-
-			document.getElementById("account_list").appendChild(df);
-    
-            container.classList.remove("loading", "lock");
-        case 400:
-            $.request.execute({
-                command: "get",
-                target: "profile"
-            }, initProfile);
-
-            break;
-		default:
-			showMessage(this);
-		}
-    };
-}) (document.getElementById("account"));
-
-(function (container) {
-	container.querySelector(".add").onclick = e => top.showDialog("/dialog/profile.html");
+	container.querySelector(".add").onclick = e => top.showDialog("/dialog/profile.html", this);
 
 	function onSelectProfile(name, profile) {
-		top.showDialog(`/dialog/profile.html?name=${name}`);
+		top.showDialog(`/dialog/profile.html?name=${name}`, this);
 	}
 
     window.initProfile = function () {

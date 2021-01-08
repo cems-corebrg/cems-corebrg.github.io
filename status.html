@@ -10,9 +10,11 @@
 @import "/css/fa.css";
 
 body {
+    position: fixed; inset: 0 0 0 0;
+    margin: 0; padding: 0;
     background-color: #424242;
-    position: fixed; top: 0; right: 0; bottom: 0 ; left: 0;
-    /*display: flex; flex-direction: column;
+    /*
+    display: flex; flex-direction: column;
     padding: 3em; box-sizing: border-box;*/
 }
 
@@ -213,7 +215,7 @@ function updateSummaryChart(normal, critical, shutdown, min) {
                     backdropColor: "rgba(0, 0, 0, 0)"
                 },
                 gridLines: {
-                    lineWidth: 1,
+                    lineWidth: 3,
                     color: "#c6bdea"
                     //color: "#79fffe"
                 }
@@ -284,7 +286,7 @@ function updateTypeChart() {
                     callback: label => label.length > 8? `${label.substring(0, 8)}...`: label
                 },
                 gridLines: {
-                    lineWidth: 1,
+                    lineWidth: 3,
                     circular: true,
                     color: "#c6bdea"
                     //color: "#9d72ff"
@@ -413,9 +415,9 @@ const $ = {
         typeMap: {}
     };
 
-document.getElementById("normal").onclick = e => top.open("/node.html?status=normal", "cems");
-document.getElementById("critical").onclick = e => top.open("/node.html?status=critical", "cems");
-document.getElementById("shutdown").onclick = e => top.open("/node.html?status=shutdown", "cems");
+document.getElementById("normal").onclick = e => top.open("/node.html?status=normal", "main");
+document.getElementById("critical").onclick = e => top.open("/node.html?status=critical", "main");
+document.getElementById("shutdown").onclick = e => top.open("/node.html?status=shutdown", "main");
 
 function initNode() {
     switch (this.status) {

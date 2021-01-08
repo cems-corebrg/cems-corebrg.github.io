@@ -198,8 +198,8 @@ const $ = {
         request: new Request()
     };
 
-document.getElementById("add").onclick = function () {
-    top.showDialog("/dc/dialog/facility.html");
+document.getElementById("add").onclick = e => {
+    top.showDialog("/dc/dialog/facility.html", this);
 };
 
 document.getElementById("tab").onclick = function (e) {

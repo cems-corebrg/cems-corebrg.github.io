@@ -9,9 +9,9 @@
 
 body {
     font : 10pt "맑은 고딕", Arial, Tahoma;
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    position: fixed; inset: 0 0 0 0;
     padding: 0; margin: 0;
-    background-color: #ffffff;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 canvas {
@@ -97,7 +97,7 @@ RealDC3D.prototype = {
 
         /*Hemisphere light*/
         {
-            const light = new THREE.HemisphereLight(0xb1e1ff, 0xdddddd, 1);
+            const light = new THREE.HemisphereLight(0xffffff, 0x777777, 1);
 
             light.position.set(0, 100, 0);
 
@@ -138,10 +138,10 @@ RealDC3D.prototype = {
         
         this.status.forEach(
             status => {
-                status.material.opacity = ((status.material.opacity *10 +1) %10) /10;
+                status.material.opacity = ((status.material.opacity *100 +5) %100) /100;
             }
         );
-        
+
         window.requestAnimationFrame(this.update.bind(this));
     },
     move: function (label, position, box) {
@@ -173,7 +173,7 @@ RealDC3D.prototype = {
         this.rackObject = new THREE.Group(),
         this.rackData = facility;
 
-        new THREE.TextureLoader().load("/dc/img/rack.png", texture => {
+        new THREE.TextureLoader().load("/dc/img/rack-side.png", texture => {
             texture.minFilter = THREE.LinearFilter;
 
             const mat = new THREE.MeshPhongMaterial({
@@ -277,14 +277,9 @@ RealDC3D.prototype = {
                 new THREE.MeshBasicMaterial({
                     color: new THREE.Color(0xc0c0c0)
                 })
-            ),
-            status = new THREE.Mesh(new THREE.SphereGeometry(UNIT_SIZE /3, 32, 32 ), new THREE.MeshBasicMaterial({
-                color: 0x00ff00
-            }));
-            
-        device.position.set(0, UNIT_SIZE * ($.realDC.rackData.unit /-2 + args.model.unit /2 + args.position -1), PDU_WIDTH /2);
+            );
         
-        status.position.set(RACK19_WIDTH /-2 +UNIT_SIZE, 0, $.realDC.rackData.depth /2);
+        device.position.set(0, UNIT_SIZE * ($.realDC.rackData.unit /-2 + args.model.unit /2 + args.position -1), PDU_WIDTH /2);
 
         if (args.label) {
             const name = document.createElement("span");
@@ -295,11 +290,7 @@ RealDC3D.prototype = {
             document.body.appendChild(name);
 
             name.onclick = e => {
-                const popup = window.open();
-
-                popup.sessionStorage.setItem("id", args.id);
-        
-                popup.location.replace("/chart.html");
+                top.showDialog(`/chart.html?id=${args.id}`);
             };
 
             this.labels.push({
@@ -308,18 +299,23 @@ RealDC3D.prototype = {
             });
         }
 
-        this.status.push(status);
+        if (args.status) {
+            const status = new THREE.Mesh(new THREE.SphereGeometry(UNIT_SIZE /3, 32, 32 ), new THREE.MeshPhongMaterial({
+                color: args.status === "shutdown"? 0xff0000: args.status === "critical"? 0xffa500: 0x00ff00
+            }))
+
+            status.position.set(RACK19_WIDTH /-2 +UNIT_SIZE, 0, $.realDC.rackData.depth /2);
+
+            device.add(status);
+
+            this.status.push(status);
+        }
 
         device.add(mesh);
-        device.add(status);
 
         this.rackObject.add(device);
     }
 };
-
-function createRack(facility) {
-    
-}
 
 function showMessage(xhr) {
     switch (xhr.status) {
@@ -344,101 +340,62 @@ function showMessage(xhr) {
                 &#xf00d;
             </span>
 
-            <div class="_bg_loading"></div>
+            <div class="bg_loading"></div>
             <script src="/js/import/three.js"></script>
             <script src="/js/import/OrbitControls.js"></script>
-            <script src="/js/request.js"></script>
+            <script src="/dc/model.js"></script>
             <script>
 
 const
     search = new URLSearchParams(window.location.search),
     $ = {
-        id: Number(search.get("id")),
-        request: new Request(),
-        modelData: parent.getModelData()
     };
-
-function initialize() {
-    $.realDC.update();
-
-    document.body.classList.remove("loading");
-}
 
 document.getElementById("close").onclick = function (e) {
     parent.document.body.classList.remove("focus");
 }
 
-function initLocation() {
-    switch (this.status) {
-    case 200:
-        break;
-    default:
-        throw showMessage(this);
-    }
+function initialize(config) {
+    $.realDC = new RealDC3D(config.facility);
 
-    initRack($.facility, JSON.parse(this.responseText));
-    
-    if ($.devID) {
-        const form = document.getElementById("location");
+    let location, node, model, status;
 
-        form.elements["maker"].disabled = false;
-        form.elements["name"].value = search.get("name") || "";
+    for (let key in config.locationData) {
+        location = config.locationData[key];
+        
+        node = config.nodeData[key];
 
-        form.classList.add("add");
-    }
+        if (node && "protocol" in node) {
+            if ("status" in node && !node.status) {
+                status = "shutdown";
+            } else if ("critical" in node && node.critical) {
+                status = "critical";
+            } else {
+                status = "normal";
+            }
+        } else {
+            status = undefined;
+        }
 
-    document.body.classList.add("rack");
-    document.body.classList.remove("loading");
-}
+        model = modelData[location.maker][location.model];
 
-function initLocation() {
-    switch (this.status) {
-    case 200:
-        break;
-    default:
-        throw showMessage(this);
-    }
-
-    const locationData = JSON.parse(this.responseText);
-    let location;
-
-    for (let id in locationData) {
-        location = locationData[id];
-
-        $.realDC.add(id, {
+        $.realDC.add(key, {
             position: location.position,
-            model: $.modelData[location.maker][location.model],
-            label: location.name,
-            id: location.node
+            model: {
+                unit: model.unit,
+                front: config.modelData[model.front],
+                rear: config.modelData[model.rear]
+            },
+            label: location.node_name || location.node_ip || undefined,
+            id: location.node,
+            status: status
         });
     }
 
-    initialize();
+    $.realDC.update();
+
+    document.body.classList.remove("loading");
 }
-
-function initFacility () {
-    switch (this.status) {
-    case 200:
-        break;
-    default:
-        throw showMessage(this);
-    }
-
-    $.realDC = new RealDC3D(JSON.parse(this.responseText));
-
-    $.request.execute({
-        command: "get",
-        target: "location",
-        rack: $.id
-    }, initLocation);
-}
-
-$.request.execute({
-    command: "get",
-    target: "facility",
-    id: $.id
-}, initFacility);
-
         </script>
     </body>
 </html>

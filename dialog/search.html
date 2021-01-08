@@ -7,121 +7,7 @@
 		<style>
 @import "/css/style.css";
 @import "/css/fa.css";
-
-body {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background-color: rgba(0, 0, 0, .8);
-}
-
-form {
-	width: 360px;
-	padding: 20px;
-	background-color: #fff;
-	position: relative;
-}
-
-h2 {
-	background-color: #0084ff;
-	padding: 10px; margin: 0;
-    color: #fff;
-    text-shadow: 0 2px 3px #000;
-}
-
-.table {
-	border: 1px solid #aaa;
-	padding: 1em;
-	margin: 1em 0;
-}
-
-.table ul {
-	list-style: none;
-	padding: 0; margin: 3px 0;
-	display: flex;
-	align-items: center;
-}
-
-.table li {
-	flex: 1;
-}
-
-.table li:first-child {
-	padding: .5em;
-	text-align: right;
-}
-
-.table li:last-child {
-	flex: 2;
-	display: flex;
-}
-
-[name="network"],
-[name="profile"] {
-	padding: .5em;
-	width: 100%;
-	box-sizing: border-box;
-}
-
-.table li select,
-#mask {
-	padding: .5em;
-}
-
-#mask {
-	flex: 1;
-}
-
-input[type="checkbox"] {
-	margin: .5em;
-	vertical-align: middle;
-}
-
-#profile:hover {
-	cursor: default;
-	text-decoration: underline;
-}
-
-footer {
-	display: flex;
-	margin-top: 1em;
-}
-
-footer> input {
-	flex: 1;
-	border-radius: 1.2em;
-	background-color: #0084ff;
-	color: #fff;
-	border: .2em solid transparent;
-	padding: .5em;
-}
-
-footer> input:hover {
-	background-color: #fff;
-	color: #0084ff;
-	border-color: #0084ff;
-}
-
-#close {
-    font-family: "Font Awesome 5 Free";
-    display: block;
-    float: right;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#close:hover {
-    transform: scale(1.2);
-}
-
-.container {
-    position: relative;
-}
-
-.bg_loading {
-    position: absolute;
-}
+@import "/css/dialog.css";
 
 body:not(.monitor) .monitor {
 	display: none;
@@ -148,134 +34,127 @@ function showMessage(xhr) {
         </script>
 	</head>
 	
-	<body>
-	
-		<form>
+	<body class="loading">
+		<main>
 			<h2>
                 <span  id="close" title="대화창 닫기">&#xf00d;</span>
-                네트워크 탐색
+                Smart search
             </h2>
-            <div class="container">
-                <div class="table">
-                    <ul>
-                        <li>네트워크 주소
-                        <li>
-                            <input type="text" required name="network" autofocus placeholder="Network address"
-                                pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
-                    </ul>
-                    <ul>
-                        <li>서브넷 마스크
-                        <li>
-                            <div id="mask">255.255.255.192</div>
-                            <select name="mask">
-                                <option value="255.255.255.0">24
-                                <option value="255.255.255.128">25
-                                <option value="255.255.255.192" selected>26
-                                <option value="255.255.255.224">27
-                                <option value="255.255.255.240">28
-                                <option value="255.255.255.248">29
-                                <option value="255.255.255.252">30
-                            </select>
-                    </ul>
-                    <ul>
-                        <li>SNMP 프로파일</li>
-                        <li>
-                            <select name="profile">
-                                <option value="" selected>자동</option>
-                            </select>
-                        </li>
-                    </ul>
-                </div>
-                
+            <form>
+                <table>
+                    <colgroup>
+                        <col width="120">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>네트워크 주소</th>
+                            <td colspan="2">
+                                <input type="text" required name="network" autofocus placeholder="Network address"
+                                    pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>서브넷 마스크</th>
+                            <td id="mask">
+                                255.255.255.192
+                            </td>
+                            <td>
+                                <select name="mask">
+                                    <option value="255.255.255.0">24
+                                    <option value="255.255.255.128">25
+                                    <option value="255.255.255.192" selected>26
+                                    <option value="255.255.255.224">27
+                                    <option value="255.255.255.240">28
+                                    <option value="255.255.255.248">29
+                                    <option value="255.255.255.252">30
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>SNMP 프로파일</th>
+                            <td colspan="2">
+                                <select name="profile">
+                                    <option value="" selected>자동</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
                 <footer>
-                    <input type="submit" value="확인" disabled>
+                    <input type="submit" value="&#xf002; 탐색">
                 </footer>
-
                 <div class="bg_loading"></div>
-            </div>
-		</form>
+            </form>
+        </main>
         
         <script src="/js/request.js"></script>
+        <script src="/js/dialog.js"></script>
 		<script>
 
 const $ = {
+        form: document.querySelector("form"),
         request: new Request()
     };
 
-function close() {
-	top.closeDialog(true);
-}
-
-document.addEventListener("keydown", function (e) {
-	switch (e.keyCode) {
-	case 27:
-		close();
-		
-		break;
-	}
-});
-
-document.getElementById("close").onclick = close;
-
 if (top.account.level === 0) {
-	document.querySelector("input[type=submit]").disabled = false;
+    document.querySelector("input[type=submit]").onsubmit = onSubmit;
+    
+    document.body.classList.add("root");
 }
 
-(function (form) {
-	
-	form.elements["mask"].onchange = function (e) {
-		document.getElementById("mask").textContent = this.value;
-	};
+$.form.elements["mask"].onchange = function (e) {
+    document.getElementById("mask").textContent = this.value;
+};
 
-	form.onsubmit = function (e) {
-		e.preventDefault();
+function onSubmit (e) {
+    e.preventDefault();
+
+    document.body.classList.add("loading");
     
-        document.body.classList.add("loading");
-        
-        $.request.execute({
-            command: "search",
-            network: form.elements["network"].value,
-            mask: parseInt(form.elements["mask"].options[form.elements["mask"].selectedIndex].text),
-            profile: form.elements["profile"].value || undefined
-        }, function () {
-            switch (this.status) {
-			case 200:
-				alert("자동 탐지 요청을 처리하고 있습니다.");
+    $.request.execute({
+        command: "search",
+        network: $.form.elements["network"].value,
+        mask: parseInt($.form.elements["mask"].options[$.form.elements["mask"].selectedIndex].text),
+        profile: $.form.elements["profile"].value || undefined
+    }, function () {
+        switch (this.status) {
+        case 200:
+            alert("자동 탐지 요청을 처리하고 있습니다.");
 
-				close();
+            close();
 
-				break;
-			default:
-                showMessage(this);
-			}
-        });
-	};
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
 
-	window.initialize = function () {
-        $.request.execute({
-            command: "get",
-            target: "profile"
-        }, function () {
-            switch (this.status) {
-			case 200:
-                const
-                    df = document.createDocumentFragment(),
-                    profileData = JSON.parse(this.responseText);
+function initProfile () {
+    switch (this.status) {
+    case 200:
+        break;
+    default:
+        throw showMessage(this);
+    }
 
-                for (let name in profileData) {
-                    df.appendChild(document.createElement("option")).text = name;
-                }
+    const
+        df = document.createDocumentFragment(),
+        profileData = JSON.parse(this.responseText);
 
-                form.elements["profile"].appendChild(df);
+    for (let name in profileData) {
+        df.appendChild(document.createElement("option")).text = name;
+    }
 
-				break;
-			default:
-                showMessage(this);
-			}
-        });
-	};
+    $.form.elements["profile"].appendChild(df);
 
-}) (document.querySelector("form"));
+    document.body.classList.remove("loading");
+}
+	
+$.request.execute({
+    command: "get",
+    target: "profile"
+}, initProfile);
 
 		</script>
 	

@@ -8,93 +8,12 @@
 		
 		<style>
 @import "/css/style.css";
+@import "/css/dialog.css";
 @import "/css/fa.css";
-
-body {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background-color: rgba(0, 0, 0, .8);
-}
-
-main {
-	width: 320px;
-	padding: 20px;
-	background-color: #fff;
-    position: relative;
-}
-
-form {
-    position: relative;
-}
-
-h2 {
-	margin: 0; padding: 10px;
-	background-color: #0084ff;
-    color: #fff;
-    text-shadow: 0 2px 3px #000;
-}
-
-.table {
-	border: 1px solid #aaa;
-	padding: 1em;
-	margin: 1em 0;
-}
-
-.table ul {
-	list-style: none;
-	padding: 0; margin: 3px 0;
-	display: flex;
-	align-items: center;
-}
-
-.table li {
-	flex: 1;
-}
-
-.table li:first-child {
-	padding: .5em;
-	text-align: right;
-}
-
-.table li:last-child {
-	flex: 3;
-}
-
-.table li input[type="text"],
-.table li select {
-	padding: .5em;
-	width: 100%;
-	box-sizing: border-box;
-}
 
 input[type="checkbox"] {
 	margin: .5em;
 	vertical-align: middle;
-}
-
-table {
-    width: 100%;
-    margin: 1em 0;
-}
-
-th {
-    background-color: #686160;
-    color: #fff;
-    width: 120px;
-}
-
-td, th {
-    padding: 3px;
-}
-
-td >input[type=text],
-td >input[type=number],
-td >select {
-    padding: 0.5em;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .address {
@@ -120,35 +39,6 @@ td >select {
     display: none;
 }
 
-footer {
-	display: flex;
-	margin-top: 1em;
-}
-
-footer> input {
-    font-family: "Font Awesome 5 Free";
-	flex: 1;
-	padding: .5em;
-    font-weight: bold;
-}
-
-#close {
-    font-family: "Font Awesome 5 Free";
-    display: block;
-    float: right;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#close:hover {
-    transform: scale(1.2);
-}
-
-.bg_loading {
-    position: absolute;
-}
-
-body:not(.edit) input[type=reset],
 iframe {
 	display: none;
 }
@@ -182,6 +72,9 @@ function showMessage(xhr) {
             </h2>
             <form autocomplete="off">
                 <table>
+                    <colgroup>
+                        <col width="120">
+                    </colgroup>
                     <tbody>
                         <tr>
                             <th>
@@ -203,6 +96,9 @@ function showMessage(xhr) {
                 </table>
                 <input id="branch" type="checkbox">Branch 등록
                 <table>
+                    <colgroup>
+                        <col width="120">
+                    </colgroup>
                     <tbody>
                         <tr>
                             <th class="address">
@@ -238,6 +134,7 @@ function showMessage(xhr) {
         <script src="/js/ITAhM.js"></script>
         <script src="/js/icon.js"></script>
         <script src="/js/request.js"></script>
+        <script src="/js/dialog.js"></script>
 		<script>
 
 const
@@ -252,19 +149,21 @@ const
 
 if (top.account.level === 0) {
 	document.querySelector("input[type=submit]").disabled = false;
-	document.querySelector("input[type=reset]").disabled = false;
+    document.querySelector("input[type=reset]").disabled = false;
+    
+    document.body.classList.add("root");
 }
 
 document.addEventListener("keydown", function (e) {
 	switch (e.keyCode) {
 	case 27:
-    parent.closeDialog();
+    top.closeDialog();
 		
 		break;
 	}
 });
 
-document.getElementById("close").onclick = e => parent.closeDialog();
+document.getElementById("close").onclick = e => top.closeDialog();
 
 document.getElementById("branch").onclick = function (e) {
     if (this.checked) {
@@ -292,7 +191,7 @@ $.form.onreset = function (e) {
     }, function () {
         switch (this.status) {
             case 200:
-                parent.closeDialog(true);
+                top.closeDialog(true);
 
                 break;
             default:
@@ -339,7 +238,7 @@ $.form.onsubmit = function (e) {
     $.request.execute(request, function () {
         switch (this.status) {
         case 200:
-            parent.closeDialog(true);
+            top.closeDialog(true);
 
             break;
         default:
@@ -382,13 +281,7 @@ $.form.elements["validate"].onclick = function (e) {
     map.src = "/util/map.html";
 };
 
-function initDialog() {
-    if ($.id) {
-        $.request.execute({
-            command: "get",
-            target: "node",
-            id: $.id
-        }, function () {
+function initDialog () {
             switch (this.status) {
             case 200:
                 $.base = JSON.parse(this.responseText);
@@ -419,7 +312,39 @@ function initDialog() {
             }
 
             document.body.classList.remove("loading");
-        });
+        }
+
+function initIcon() {
+    switch (this.status) {
+    case 200:
+        break;
+    default:
+        throw showMessage(this);
+    }
+
+    const
+        iconData = JSON.parse(this.responseText),
+        df = document.createDocumentFragment();
+
+    for (let type in iconData) {
+        $.iconData[type] = iconData[type];
+    }
+
+    for (let type in $.iconData) {
+        if ($.iconData[type].group === "group") {
+            df.appendChild(document.createElement("option")).text = type;
+        }
+    }
+
+    $.form.elements["type"].appendChild(df);
+    $.form.elements["type"].selectedIndex = -1;
+
+    if ($.id) {
+        $.request.execute({
+            command: "get",
+            target: "node",
+            id: $.id
+        }, initDialog);
     }
     else {
         document.body.classList.remove("loading");
@@ -429,34 +354,7 @@ function initDialog() {
 $.request.execute({
     command: "get",
     target: "icon"
-}, function () {
-    switch (this.status) {
-    case 200:
-        const
-            iconData = JSON.parse(this.responseText),
-            df = document.createDocumentFragment();
-
-        for (let type in iconData) {
-            $.iconData[type] = iconData[type];
-        }
-
-        for (let type in $.iconData) {
-            if ($.iconData[type].group === "group") {
-                df.appendChild(document.createElement("option")).text = type;
-            }
-        }
-
-        $.form.elements["type"].appendChild(df);
-        $.form.elements["type"].selectedIndex = -1;
-
-        initDialog();
-
-        break;
-
-    default:
-        showMessage(this);
-    }
-});
+}, initIcon);
 
 	</script>
 	

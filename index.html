@@ -7,6 +7,7 @@
 		
 		<style>
 
+@import "/css/var.css";
 @import "/css/fa.css";
 
 body {
@@ -15,6 +16,7 @@ body {
     padding: 0; margin: 0;
     display: flex; flex-direction: column;
     user-select: none;
+    background-color: var(--var-color-bg);
 }
 
 header {
@@ -24,24 +26,47 @@ header {
     padding: 1em;
     color: #ffffff;
     font-weight: bold;
+    z-index: 2;
 }
 
 header b {
     color: #7f7f7f;
 }
 
-header span {
+nav span {
+    position: relative;
     cursor: pointer;
+    overflow: visible;
 }
 
-nav,
-#restore {
+nav span ul {
+    position: absolute; top: 0; left: 0;
+    list-style: none;
+    margin: 0; padding: 0.5em;
+    background-color: #1e1f26;
+    transition: top 0.5s;
+    display: none;
+}
+
+nav span:hover ul {
+    top: 100%;
+    display: flex;
+}
+
+nav span li {
+    white-space: nowrap;
+    padding: 0.5em;
+    font-size: 10pt;
+}
+
+nav span>a,
+nav b {
     font: 20px "Font Awesome 5 Free";
 }
 
 nav >span:hover>a {
-    display: inline-block;
-    transform: translateY(-2px);
+    /*display: inline-block;
+    transform: translateY(-2px);*/
 }
 
 nav >span:active>a {
@@ -55,29 +80,14 @@ article {
 }
 
 aside {
-    flex: none; width: 400px;
+    flex: none;
+    position: relative;
+    z-index: 1;
 }
 
 main {
     flex: 1;
     position: relative;
-}
-
-#restore {
-    position: absolute;
-    top: 5px; right: 5px;
-    border-radius: 50%;
-    display: flex; width: 32px; height: 32px;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(0, 132, 255, 0.5);
-    border-color: #0084ff;
-    color: #ffffff;
-    cursor: pointer;
-}
-
-#restore:hover {
-    background-color: #0084ff;
 }
 
 iframe {
@@ -88,42 +98,74 @@ iframe {
 #dialog {
 	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
 	padding: 0; margin: 0;
+    z-index: 3;
+}
+
+#status {
+    width: 400px;
+    transition: transform 0.5s linear;
+}
+
+#tab {
+    position: absolute; top: 40%; right: 0;
+    width: 1em; height: 2em;
+    cursor: pointer;
+}
+
+body.status #tab {
+    border-radius: 1em 0 0 1em;
+    background-color: #dddddd;
+}
+
+body:not(.status) #tab {
+    border-radius: 0 1em 1em 0;
+    background-color: #ff0000;
+    transform: translateX(100%);
+}
+
+body:not(.status) aside {
+    width: 0;
+}
+
+body:not(.status) #status {
+    transform: translateX(-100%);
 }
 
 footer {
-    position: absolute; top: 0; right: 0; left: 0;
+    position: absolute; inset: auto 0 0 auto;
+    display: flex; flex-direction: column;
     padding: 1em;
-    text-align: center;
     font-weight: bold;
     color: #fff;
-    pointer-events: none;
-}
-
-#event {
     cursor: pointer;
-    pointer-events: all;
 }
 
-#event::before,
-#event::after {
-    display: inline-flex; align-items: center; justify-content: center;
-    background-color: #ffa500;
-    border: 1px solid #c46c00;
-    height: 3em;
+footer >div {
+    margin: 0.5em;
+    align-self: flex-end;
+}
+
+footer >div::before,
+footer >div::after {
+    display: inline-block;
     box-sizing: border-box;
 }
 
-#event::before {
-    content: attr(data-count);
-    width: 3em; 
-	border-radius: 50%;
+footer >div::before {
+    content: attr(data-elapse);
+    padding: 5px 1em;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.5);
+    color: #424242;
 }
 
-#event::after {
+footer >div::after {
     content: attr(data-message);
-    padding: 0 1em 0 1em;
-	margin-left: 1em;
-	border-radius: 1.5em 0 0 1.5em;
+    padding: 0.5em 1em;
+    background-color: #ffa500;
+    border: 1px solid #c46c00;
+    border-radius: 1em 0 0 1em;
+    margin-left: 1em;
 }
 
 a:link,
@@ -137,31 +179,119 @@ body:not(.authorized) header {
     color: #7f7f7f;
 }
 
-body:not(.dashboard) #restore,
+/** account **/
+details {
+    position: relative;
+    display: inline-block;
+}
+
+details[open] summary::before {
+    content: "";
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    background-color: transparent;
+}
+
+summary {
+    outline: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+.popup {
+    position: absolute; top: 100%; right: 0;
+    border-radius: 3px;
+    border: 1px solid rgba(27,31,35,.15);
+    box-shadow: 0 1px 15px rgba(27,31,35,.15);
+    width: 160px;
+    padding: 1em 0;
+    margin-top: 8px;
+    background-color: #ffffff;
+    color: #24292e;
+    z-index: 1;
+    list-style: none;
+    padding: 1em; margin: 0;
+}
+
+.popup::after {
+    position: absolute; top: -14px; right: 10px; left: auto;
+    display: inline-block;
+    content: "";
+    border: 7px solid transparent;
+    border-bottom-color: #fff;
+}
+
+.popup li {
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.popup li:hover {
+    background-color: #0366d6;
+    color: #ffffff;
+}
+
+.popup a {
+    display: block;
+}
+/** account **/
+
 body:not(.authorized) aside,
-body:not(.event) #event,
-body:not(.dialog) #dialog {
+body:not(.event) footer,
+body:not(.dialog) #dialog,
+body:not(.root) nav ul {
     display: none;
 }
 
         </style>
         <script>
 
-function signIn(account) {
-    const signout = document.getElementById("signout");
+function Commander() {
+    this.initialize(arguments);
+}
 
+{
+    function getAccount(msg, account) {
+        new BroadcastChannel(msg.channel).postMessage(account);
+    }
+
+    Commander.prototype = {
+        initialize: function (args) {
+            this.account = args[0];
+            this.map = {
+                get: {
+                    account: getAccount
+                }
+            };
+        },
+        execute: function (msg) {
+            this.map[msg.command][msg.target](msg, this.account);
+        }
+    };
+}
+
+function signIn(account) {
     $.request = new Request();
 
     window.account = account;
 
+    if (account.level === 0) {
+        document.body.classList.add("root");
+    }
+
     document.title = $.request.agent;
 
-    signout.textContent = account.username;
-    signout.title = `${account.username}  Sign out`;
-    signout.onclick = onSignOut;
+    document.getElementById("user").textContent = account.id;
+    document.getElementById("signout").onclick = onSignOut;
 
-    window.open("/dc.html");
-    
+    //window.open("/dc.html"); // TODO 데모 끝나면 삭제할것
+    {
+        const commander = new Commander(account);
+
+        new BroadcastChannel("bc_root").onmessage = e => commander.execute(e.data);
+    }
+
     $.request.execute({
         command: "get",
         target: "setting"
@@ -169,8 +299,7 @@ function signIn(account) {
         switch (this.status) {
         case 200:
             const
-                settingData = JSON.parse(this.responseText),
-                bc = new BroadcastChannel("bc_event");
+                settingData = JSON.parse(this.responseText);
             let home = "about:blank";
 
             if (!("mute" in settingData) || settingData.mute === "false") {
@@ -180,7 +309,7 @@ function signIn(account) {
             $.request.listen(e => {
                 onEvent(e);
 
-                bc.postMessage(e);
+                Channel.sendEvent(e);
             });
 
             if ("home" in settingData) {
@@ -204,7 +333,7 @@ function signIn(account) {
                 }
             }
 
-            document.getElementById("cems").src = home;
+            document.getElementById("main").src = home;
             document.getElementById("status").src = "/status.html";
 
             document.body.classList.add("authorized");
@@ -214,6 +343,20 @@ function signIn(account) {
             showMessage(this);
         }
     });
+}
+
+function toElapseString(millis) {
+    const elapse = new Date().getTime() - millis;
+
+    if (elapse < 60 *1000) {
+        return `${Math.round(elapse /1000)}초 전`;
+    } else if (elapse < 60 *60 *1000) {
+        return `${Math.round(elapse /60 /1000)}분 전`;
+    } else if (elapse < 24 *60 *60 *1000) {
+        return `${Math.round(elapse /60 /60 /1000)}시간 전`;
+    } else {
+        return `${Math.round(elapse /24 /60 /60 /1000)}일 전`;
+    }
 }
 
 function onEvent(event) {
@@ -231,15 +374,13 @@ function onEvent(event) {
         return signOut();
     }
 
-    $.event.dataset.count = (count => {
-        if (isNaN(count)) {
-            return "9+";
-        } else {
-            return ++count > 9? "9+": count;
-        }
-    }) (Number($.event.dataset.count));
+    const div = document.createElement("div");
 
-    $.event.dataset.message = `${event.name || event.ip || ""} ${event.message}`;
+    div.dataset.timestamp = new Date().getTime();
+    div.dataset.elapse = "지금";
+    div.dataset.message = `${event.name || event.ip || ""} ${event.message}`;
+
+    document.body.querySelector("footer").appendChild(div);
 
     document.body.classList.add("event");
 
@@ -266,10 +407,12 @@ function onEvent(event) {
     }
 }
 
-function showDialog(src) {
+function showDialog(src, parent) {
     const dialog = document.getElementById("dialog");
 
     dialog.onload = function () {
+        $.parent = parent;
+
 		document.body.classList.add("dialog");
 	};
 
@@ -280,12 +423,16 @@ function closeDialog(reset) {
     document.body.classList.remove("dialog");
     
     if (reset) {
-        resetDialog();
+        resetParent();
     }
+
+    delete $.parent;
 }
 
-function resetDialog() {
-    document.getElementById("cems").contentWindow.location.reload();
+function resetParent() {
+    if ($.parent) {
+        $.parent.location.reload();
+    }
 }
 
 function signOut() {
@@ -353,29 +500,45 @@ function onTest(e) {
 }
         </script>
     </head>
-    <body>
+    <body class="status">
         <header>
             <nav>
                 <b>
                     &#xf7a5;
                 </b>
                 <span title="토폴로지">
-                    <a href="/topology.html" target="cems">
+                    <a href="/topology.html" target="main">
                         &#xf0e8;
                     </a>
+                    <ul>
+                        <li>
+                            <a href="/topology.html" target="main">보기</a>
+                        </li>
+                        <li>
+                            <a href="/topology/editor.html" target="main">편집</a>
+                        </li>
+                    </ul>
                 </span>
                 <span title="지도">
-                    <a href="/branch.html" target="cems">
+                    <a href="/branch.html" target="main">
                         &#xf3c5;
                     </a>
                 </span>
                 <span title="데이터센터">
-                    <a href="/dc.html" target="cems">
+                    <a href="/dc.html" target="main">
                         &#xf64f;
                     </a>
+                    <ul>
+                        <li>
+                            <a href="/dc.html" target="main">보기</a>
+                        </li>
+                        <li>
+                            <a href="/dc/editor.html" target="main">편집</a>
+                        </li>
+                    </ul>
                 </span>
                 <span title="Top Ten">
-                    <a href="/topTen.html" target="cems">
+                    <a href="/topTen.html" target="main">
                         &#xf160;
                     </a>
                 </span>
@@ -383,12 +546,12 @@ function onTest(e) {
                     &#xf7a5;
                 </b>
                 <span title="이벤트">
-                    <a href="/event.html" target="cems">
+                    <a href="/event.html" target="main">
                         &#xf783;
                     </a>
                 </span>
                 <span title="감사">
-                    <a href="/audit.html" target="cems">
+                    <a href="/audit.html" target="main">
                         &#xf1e5;
                     </a>
                 </span>
@@ -396,22 +559,22 @@ function onTest(e) {
                     &#xf7a5;
                 </b>
                 <span title="노드 목록">
-                    <a href="/node.html" target="cems">
+                    <a href="/node.html" target="main">
                         &#xf233;
                     </a>
                 </span>
                 <span title="그룹 목록">
-                    <a href="/group.html" target="cems">
+                    <a href="/group.html" target="main">
                         &#xf5fd;
                     </a>
                 </span>
                 <span title="회선 목록">
-                    <a href="/link.html" target="cems">
+                    <a href="/link.html" target="main">
                         &#xf83e;
                     </a>
                 </span>
                 <span title="사용자 목록">
-                    <a href="/user.html" target="cems">
+                    <a href="/user.html" target="main">
                         &#xf0c0;
                     </a>
                 </span>
@@ -419,52 +582,55 @@ function onTest(e) {
                     &#xf7a5;
                 </b>
                 <span title="임계 관리">
-                    <a href="/critical.html" target="cems">
+                    <a href="/critical.html" target="main">
                         &#xf08d;
                     </a>
                 </span>
                 <span title="아이콘">
-                    <a href="/icon.html" target="cems">
+                    <a href="/icon.html" target="main">
                         &#xf61f;
                     </a>
                 </span>
                 <span title="설정">
-                    <a href="/setting.html" target="cems">
+                    <a href="/setting.html" target="main">
                         &#xf013;
                     </a>
                 </span>
                 <b>
                     &#xf7a5;
                 </b>
-                <span title="새로고침">
+                <span title="Home">
                     <a href="/">
-                        &#xf2f9;
+                        &#xf015;
                     </a>
                 </span>
                 <!--input type="file" onchange="onTest(event)"-->
             </nav>
-            <div title="Signout">
-                <span id="signout"></span>
+            <div class="account">
+                <details>
+                    <summary id="user"></summary>
+                    <ul class="popup">
+                        <li id="password">Password</li>
+                        <li id="signout">Sign out</li>
+                    </ul>
+                </details>
             </div>
         </header>
         <article>
             <aside>
                 <iframe name="status" id="status"></iframe>
+                <div id="tab"></div>
             </aside>
             <main>
-                <span id="restore" title="새 창">
-                    &#xf2d2;
-                </span>
-                <iframe name="cems" id="cems" src="/connect.html"></iframe>
+                <iframe name="main" id="main" src="/connect.html"></iframe>
             </main>
         </article>
-        <footer>
-            <span id="event" data-count="0" data-message="No message."></span>
-        </footer>
-        <iframe id="dialog"></iframe>
+        <footer></footer>
+        <iframe id="dialog" name="dialog"></iframe>
 
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
+        <script src="/js/channel.js"></script>
         <script>
 
 const $ = {
@@ -486,33 +652,35 @@ const $ = {
 
 window.onunload = e => $.popups.forEach(wnd => wnd.close());
 
-$.event.onclick = e => {
-    document.body.classList.remove("event");
-
-    $.event.dataset.count = 0;
+document.getElementById("tab").onclick = function (e) {
+    document.body.classList.toggle("status");
 };
 
-document.getElementById("cems").onload = function (e) {
-    switch (this.contentWindow.location.pathname) {
-    case "/topology.html":
-    case "/branch.html":
-    case "/dc.html":
-    case "/topTen.html":
-        document.body.classList.add("dashboard");
-
-        break;
-    default:
-        document.body.classList.remove("dashboard");
+document.querySelector("footer").onclick = function (e) {
+    for (let event; event = this.firstChild; ) {
+        this.removeChild(event);
     }
-}
-
-document.getElementById("restore").onclick = function (e) {
-    const frame = document.getElementById("cems").contentWindow.location;
-
-    window.open(frame.href);
     
-    frame.replace("about:blank");
+    document.body.classList.remove("event");
+
+    document.getElementById("main").src = "/event.html";
+};
+
+document.getElementById("password").onclick = e => {
+    document.querySelector("div.account details").open = false;
+    
+    showDialog("/dialog/password.html");
 }
+
+function refreshEvent() {
+    Array
+        .from(document.querySelector("footer").children)
+        .forEach(event => (event.dataset.elapse = toElapseString(event.dataset.timestamp)));
+    
+    setTimeout(() => window.requestAnimationFrame(refreshEvent), 1000);
+}
+
+refreshEvent();
 
         </script>
         

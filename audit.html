@@ -14,6 +14,7 @@ body {
     margin: 0; padding: 1em;
 	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
     display: flex; flex-direction: column;
+    background-color: #424242;
 }
 
 main {
@@ -49,6 +50,7 @@ main td {
 
 #list tr {
     border-bottom: 1px solid #ffffff;
+    background-color: #ffffff;
 }
 
 #list tr:nth-child(odd) {
@@ -56,18 +58,9 @@ main td {
 }
 
 header {
-    background-color: #fefefe;
-}
-
-header th {
-    width: 200px;
-    background-color: #f9f9f9;
-}
-
-header th,
-header td {
-    border: 1px solid #999999;
+    /*background-color: #fefefe;*/
     padding: 0.5em;
+    color: #ffffff;
 }
 
 .bg_loading {
@@ -99,7 +92,7 @@ function createItem(event) {
     
     tr.appendChild(document.createElement("td")).textContent = toDateString(event.timestamp);
     tr.appendChild(document.createElement("td")).textContent = toTimeString(event.timestamp);
-    tr.appendChild(document.createElement("td")).textContent = event.username;
+    tr.appendChild(document.createElement("td")).textContent = event.id;
 	tr.appendChild(document.createElement("td")).textContent = event.command;
 	tr.appendChild(document.createElement("td")).textContent = event.target;
     
@@ -127,20 +120,11 @@ function showMessage(xhr) {
 	<body class="loading">
         <header>
             <form>
-                <table>
-                    <tbody>
-                        <tr>
-                            <th>조회기간</th>
-                            <td>
-                                <input type="date" name="from">
-                                <span class="fa">&#xf536;</span>
-                                <input type="date" name="to">
-                                <input type="submit" value="&#xf002; 검색">
-                                <input type="button" id="export" value="&#xf019; 내보내기">
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <input type="date" name="from">
+                <span class="fa">&#xf536;</span>
+                <input type="date" name="to">
+                <input type="submit" value="&#xf002; 검색">
+                <input type="button" id="export" value="&#xf019; 내보내기">
             </form>
         </header>
         <main>
@@ -208,7 +192,7 @@ document.getElementById("export").onclick = function (e) {
             i,
             toDateString(event.timestamp),
             toTimeString(event.timestamp),
-            event.username,
+            event.id,
             event.command,
             event.target
         ].join(","));

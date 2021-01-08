@@ -88,6 +88,7 @@
                 map: texture
             }));
         
+            texture.minFilter = THREE.LinearFilter;
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.set(100, 100);
 

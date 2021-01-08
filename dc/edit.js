@@ -84,7 +84,7 @@
     function onMenu(e) {
         e.preventDefault();
 
-        top.showDialog(`/dc/dialog/rack.html?rack=${this.dataset.id}`);
+        top.showDialog(`/dc/dialog/rack.html?rack=${this.dataset.id}`, this);
     }
 
     /**
@@ -121,7 +121,7 @@
         node.addEventListener("drop", e => {
             e.stopPropagation();
         
-            top.showDialog(`/dc/dialog/location.html?rack=${id}&device=${e.dataTransfer.getData("text")}`);
+            top.showDialog(`/dc/dialog/location.html?rack=${id}&device=${e.dataTransfer.getData("text")}`, this);
 
             node.classList.remove("over");
         });

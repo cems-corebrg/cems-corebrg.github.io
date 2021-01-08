@@ -83,7 +83,7 @@ function Request() {
         // if session 200
         // if !sesssion 401
         // else fail
-        signIn: function (username, password, callback) {
+        signIn: function (id, password, callback) {
             if (!this.agent) {
                 return false;
             }
@@ -111,7 +111,7 @@ function Request() {
 
             xhr.send(JSON.stringify({
                 command: "signin",
-                username: username,
+                id: id,
                 password: password
             }));
 
