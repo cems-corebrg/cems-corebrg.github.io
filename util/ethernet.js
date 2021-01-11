@@ -17,7 +17,7 @@ function Ethernet() {
             }
         }
         
-        return `${value}${UNIT[i]}`;
+        return `${value.toFixed(2)}${UNIT[i]}`;
     }
     
     function Background() {
