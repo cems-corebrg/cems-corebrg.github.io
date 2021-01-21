@@ -460,26 +460,6 @@
             });
         }
 
-        if (labelFrom.length > 0) {
-            const label = document.createElementNS(SVG_NS_URI, "text");
-
-            labelFrom.forEach(tspan => label.appendChild(tspan));
-
-            pathData.labelFrom = label;
-
-            path.appendChild(label);
-        }
-
-        if (labelTo.length > 0) {
-            const label = document.createElementNS(SVG_NS_URI, "text");
-
-            labelTo.forEach(tspan => label.appendChild(tspan));
-
-            pathData.labelTo = label;
-
-            path.appendChild(label);
-        }
-
         if (args.from) {
             let array = pathMap[args.from];
 
@@ -490,6 +470,16 @@
             array.push(pathData);
 
             drawEachPath(pathData);
+
+            if (labelFrom.length > 0) {
+                const label = document.createElementNS(SVG_NS_URI, "text");
+    
+                labelFrom.forEach(tspan => label.appendChild(tspan));
+    
+                pathData.labelFrom = label;
+    
+                path.appendChild(label);
+            }
         }
 
         if (args.to) {
@@ -502,6 +492,16 @@
             array.push(pathData);
 
             drawEachPath(pathData);
+
+            if (labelTo.length > 0) {
+                const label = document.createElementNS(SVG_NS_URI, "text");
+    
+                labelTo.forEach(tspan => label.appendChild(tspan));
+    
+                pathData.labelTo = label;
+    
+                path.appendChild(label);
+            }
         }
 
         layerMap.path.appendChild(path);
