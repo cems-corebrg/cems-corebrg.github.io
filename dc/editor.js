@@ -276,7 +276,7 @@
         if (e.target !== this) {
             const node = e.target.parentNode;
 
-            top.showDialog(`/dc/dialog/location.html?facility=${node.dataset.id}`, this);
+            top.showDialog(`/dc/dialog/location.html?facility=${node.dataset.id}`, window);
         }
     }
 
@@ -361,7 +361,7 @@
         node.addEventListener("drop", e => {
             e.stopPropagation();
             
-            top.showDialog(`/dc/dialog/location.html?facility=${id}&device=${e.dataTransfer.getData("id")}&name=${e.dataTransfer.getData("name")}`, this);
+            top.showDialog(`/dc/dialog/location.html?facility=${id}&device=${e.dataTransfer.getData("id")}&name=${e.dataTransfer.getData("name")}`, window);
 
             node.classList.remove("over");
         });
