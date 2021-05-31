@@ -24,17 +24,6 @@ body.edit input[type=submit] {
 		</style>
 		<script>
 
-function enableElement(element, enable) {
-	if (enable) {
-		element.disabled = false;
-		element.focus();
-	}
-	else {
-		element.value = "";
-		element.disabled = true;
-	}
-}
-
 function getByteLength(s) {
 	var length = 0;
 	
@@ -45,25 +34,30 @@ function getByteLength(s) {
 
 function initialize (profile) {
     if (profile) {
-        $.form.elements["name"].value = profile.name;
         $.form.elements["name"].disabled = true;
-        
-        $.form.elements["port"].value = profile.port;
 
-        document.body.querySelector("[name=version]").value = profile.version;
+        $.form.elements["name"].value = profile.name;
+        $.form.elements["port"].value = profile.port;
+        $.form.elements["version"].value = profile.version;
         
         if (profile.version === 3) {
             $.form.elements["user"].value = profile.security;
-            
-            if ("md5" in profile) {
-                $.form.elements["authentication"].value = profile.authentication;
-                $.form.elements["authentication"].disabled = false;
-                $.form.elements["en_auth"].checked = true;
+            console.log(profile);
+            if ("authProto" in profile) {
+                const authKey = $.form.elements["authKey"];
+
+                $.form.elements["authProto"].value = profile.authProto;
                 
-                if ("des" in profile) {
-                    $.form.elements["privacy"].value = profile.privacy;
-                    $.form.elements["privacy"].disabled = false;
-                    $.form.elements["en_priv"].checked = true;
+                authKey.disabled = false;
+                authKey.value = profile.authKey;
+                
+                if ("privProto" in profile) {
+                    ["privProto", "privKey"].forEach(s => {
+                        const e = $.form.elements[s];
+
+                        e.value = profile[s];
+                        e.disabled = false;
+                    });
                 }
             }
         }
@@ -87,7 +81,7 @@ function initialize (profile) {
 function onSubmit (e) {
     e.preventDefault();
     
-    var
+    let
         name = this.elements["name"].value,
         version = Number(document.body.querySelector("[name=version]").value),
         request = {
@@ -104,17 +98,17 @@ function onSubmit (e) {
         };
     
     if (version === 3) {
-        var element = this.elements["user"],
-            level = 1; // noauth-nopriv
-        
+        let element = this.elements["user"];
+
         if (!element.value) {
             return element.focus();
         }
         
+        request.profile.level++; // noauth-nopriv
         request.profile.security = element.value;
         
-        if (this.elements["en_auth"].checked) {
-            element = this.elements["authentication"];
+        if (this.elements["authProto"].value) {
+            element = this.elements["authKey"];
             
             if (!element.value) {
                 return element.focus();
@@ -125,11 +119,12 @@ function onSubmit (e) {
                 return element.select();
             }
             
-            level++; // auth-nopriv
-            request.profile.md5 = element.value;
+            request.profile.level++; // auth-nopriv
+            request.profile.authProto = this.elements["authProto"].value;
+            request.profile.authKey = element.value;
             
-            if (this.elements["en_priv"].checked) {
-                element = this.elements["privacy"];
+            if (this.elements["privProto"].value) {
+                element = this.elements["privKey"];
                 
                 if (!element.value) {
                     return element.focus();
@@ -139,15 +134,15 @@ function onSubmit (e) {
                     
                     return element.select();
                 }
-                level++; //auth-priv
-                request.profile["des"] = element.value;
+                
+                request.profile.level++; //auth-priv
+                request.profile.privProto = this.elements["privProto"].value;
+                request.profile.privKey = element.value;
             }
         }
-
-        request.profile.level = level;
     }
     else {
-        var element = this.elements["community"];
+        let element = this.elements["community"];
         
         if (!element.value) {
             return element.focus();
@@ -250,7 +245,6 @@ function showMessage(xhr) {
                         <th>snmp version</th>
                         <td>
                             <select name="version">
-                                <option value="0">v1</option>
                                 <option value="1" selected>v2c</option>
                                 <option value="3">v3</option>
                             </select>
@@ -271,21 +265,32 @@ function showMessage(xhr) {
                         </td>
                     </tr>
                     <tr class="version v3">
-                        <th><div>authentication</div>
-                            <label><input type="checkbox" name="en_auth">MD5</label>
+                        <th>
+                            authentication<br>
+                            <select name="authProto">
+                                <option value="" selected>사용안함</option>
+                                <option value="md5">MD5</option>
+                                <option value="sha">SHA</option>
+                            </select>
                         </th>
                         <td>
-                            <input type="password" name="authentication" class="table text"
+                            <input type="password" name="authKey"
                                 placeholder="user password" disabled>
                         </td>
                     </tr>
                     <tr class="version v3">
                         <th>
-                            <div>privacy</div>
-                            <label><input type="checkbox" name="en_priv">DES</label>
+                            privacy<br>
+                            <select name="privProto" disabled>
+                                <option value="" selected>사용안함</option>
+                                <option value="des">DES</option>
+                                <option value="aes128">AES</option>
+                                <option value="aes192">AES(192)</option>
+                                <option value="aes256">AES(256)</option>
+                            </select>
                         </th>
                         <td>
-                            <input type="password" name="privacy" class="table text"
+                            <input type="password" name="privKey"
                                 placeholder="encription password" disabled>
                         </td>
                     </tr>
@@ -332,24 +337,38 @@ document.body.querySelector("[name=version]").onchange = function (e) {
     $.form.className = `v${this.value}`;
 };
 
-$.form.elements["en_auth"].onclick = function (e) {
-    enableElement(this.form.elements["authentication"], this.checked);
-    
-    if (!this.checked) {
-        this.form.elements["en_priv"].checked = this.checked;
+$.form.elements["authProto"].onchange = function (e) {
+    const
+        privProto = $.form.elements["privProto"],
+        authKey = $.form.elements["authKey"];
 
-        enableElement(this.form.elements["privacy"], this.checked);
-    }
-};
+    if (this.value) {
+        authKey.disabled = false;
+        authKey.focus();
 
-$.form.elements["en_priv"].onclick = function (e) {
-    if (this.checked && !this.form.elements["en_auth"].checked) {
-        this.checked = false;
-        
-        return;
+        privProto.disabled = false;
+    } else {
+        [
+            authKey,
+            privProto,
+            $.form.elements["privKey"]
+        ].forEach(key => {
+            key.value = "";
+            key.disabled = true;
+        });
     }
-    
-    enableElement(this.form.elements["privacy"], this.checked);
+}
+
+$.form.elements["privProto"].onchange = function (e) {
+    const privKey = $.form.elements["privKey"];
+
+    if (this.value) {
+        privKey.disabled = false;
+        privKey.focus();
+    } else {
+        privKey.value = "";
+        privKey.disabled = true;
+    }
 };
 
 if ($.name) {

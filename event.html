@@ -146,8 +146,9 @@ summary {
     outline: none;
 }
 
-summary::-webkit-details-marker {
-  display: none;
+summary::marker {
+    content: "";
+    display: none;
 }
 
 .sort::after {

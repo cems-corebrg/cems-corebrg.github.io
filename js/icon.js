@@ -99,7 +99,7 @@ ITAhM.iconData = {
     },
     idc: {
         type: "idc",
-        group: "branch",
+        group: "group",
         src: "/img/svg/idc.svg",
         disabled: "/img/svg/disabled/idc.svg",
         "shutdown": "/img/svg/shutdown/idc.svg"
@@ -118,7 +118,7 @@ ITAhM.iconData = {
     },
     office: {
         type: "office",
-        group: "branch",
+        group: "group",
         src: "/img/svg/office.svg",
         disabled: "/img/svg/disabled/office.svg"
     },
@@ -172,7 +172,7 @@ ITAhM.iconData = {
     },
     group: {
         type: "group",
-        group: "branch",
+        group: "group",
         src: "/img/svg/group.svg",
         disabled: "/img/svg/disabled/group.svg"
     },
