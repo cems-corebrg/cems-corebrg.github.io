@@ -225,7 +225,7 @@ document.getElementById("realtime").onload = function (e) {
             toString: parent.toString
         });
 
-        document.body.dataset.out = `송신: ${parent.toBytesString($.summary.total)}`;
+        document.body.dataset.out = `송신: ${toBytesString($.summary.total)}`;
     };
 
     /**
