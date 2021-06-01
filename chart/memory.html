@@ -554,7 +554,7 @@ function initNode () {
     } else { //TODO warning
         alert ("Error!\n\n노드가 차트를 제공하지 않습니다.");
 
-        top.close();
+        top.showDialog(`/chart.html?id=${$.id}`);
     }
 }
 

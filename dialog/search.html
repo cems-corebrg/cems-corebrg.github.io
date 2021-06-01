@@ -16,6 +16,30 @@ body:not(.monitor) .monitor {
 		</style>
 		<script>
 
+function onSubmit (e) {
+    e.preventDefault();
+    
+    document.body.classList.add("loading");
+    
+    $.request.execute({
+        command: "search",
+        network: $.form.elements["network"].value,
+        mask: parseInt($.form.elements["mask"].options[$.form.elements["mask"].selectedIndex].text),
+        profile: $.form.elements["profile"].value || undefined
+    }, function () {
+        switch (this.status) {
+        case 200:
+            alert("자동 탐지 요청을 처리하고 있습니다.");
+
+            closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
@@ -83,7 +107,7 @@ function showMessage(xhr) {
                 <footer>
                     <input type="submit" value="&#xf002; 탐색">
                 </footer>
-                <div class="bg_loading"></div>
+                <div class="loading mask"></div>
             </form>
         </main>
         
@@ -97,7 +121,7 @@ const $ = {
     };
 
 if (top.account.level === 0) {
-    document.querySelector("input[type=submit]").onsubmit = onSubmit;
+    $.form.onsubmit = onSubmit;
     
     document.body.classList.add("root");
 }
@@ -105,30 +129,6 @@ if (top.account.level === 0) {
 $.form.elements["mask"].onchange = function (e) {
     document.getElementById("mask").textContent = this.value;
 };
-
-function onSubmit (e) {
-    e.preventDefault();
-
-    document.body.classList.add("loading");
-    
-    $.request.execute({
-        command: "search",
-        network: $.form.elements["network"].value,
-        mask: parseInt($.form.elements["mask"].options[$.form.elements["mask"].selectedIndex].text),
-        profile: $.form.elements["profile"].value || undefined
-    }, function () {
-        switch (this.status) {
-        case 200:
-            alert("자동 탐지 요청을 처리하고 있습니다.");
-
-            close();
-
-            break;
-        default:
-            showMessage(this);
-        }
-    });
-}
 
 function initProfile () {
     switch (this.status) {

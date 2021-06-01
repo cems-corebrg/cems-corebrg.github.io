@@ -412,7 +412,7 @@ function initNode() {
     } else {
         alert (ERROR_CHART_NOSUP["kr"]);
 
-        top.close();
+        top.showDialog(`/chart.html?id=${$.id}`);
     }
 }
 

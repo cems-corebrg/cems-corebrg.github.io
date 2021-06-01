@@ -18,7 +18,9 @@ body {
 body::before {
     position: absolute;
     top: 0; left: 0;
-    content: "수신";
+    content: attr(data-in);
+    font-size: 1.2em;
+    font-weight: bold;
     color: #00897b;
 }
 
@@ -207,6 +209,8 @@ document.getElementById("realtime").onload = function (e) {
             color: "#00897b",
             toString: parent.toString
         });
+
+        document.body.dataset.in = `수신: ${parent.toString($.summary.total)}`;
     };
 
     /**

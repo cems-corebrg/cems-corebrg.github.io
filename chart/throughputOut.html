@@ -18,7 +18,9 @@ body {
 body::before {
     position: absolute;
     top: 0; left: 0;
-    content: "송신";
+    content: attr(data-out);
+    font-size: 1.2em;
+    font-weight: bold;
     color: #f25c66;
 }
 
@@ -207,6 +209,8 @@ document.getElementById("realtime").onload = function (e) {
             color: "#f25c66",
             toString: parent.toString
         });
+
+        document.body.dataset.out = `송신: ${parent.toString($.summary.total)}`;
     };
 
     /**
