@@ -102,6 +102,21 @@ function realtime(realtime) {
     }
 }
 
+function toBytesString(value) {
+    var unit = ["Bytes", "KBytes", "MBytes", "GBytes", "TBytes"];
+    
+    for(var i=0, _i=unit.length -1; i<_i; i++) {
+        if (value > 999) {
+            value /= 1024;
+        }
+        else {
+            break;
+        }
+    }
+    
+    return value.toFixed(2) + unit[i];
+}
+
 function postRealtimeRequest(realtimeData) {
     $.request.execute({
         command: "get",
@@ -210,7 +225,7 @@ document.getElementById("realtime").onload = function (e) {
             toString: parent.toString
         });
 
-        document.body.dataset.out = `송신: ${parent.toString($.summary.total)}`;
+        document.body.dataset.out = `송신: ${parent.toBytesString($.summary.total)}`;
     };
 
     /**
