@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <title>test</title>
+		<meta charset="UTF-8">		
+		<style>
+@import "/css/style.css";
+@import "/css/fa.css";
+
+body {
+	position: fixed; inset: 0;
+	margin: 0; padding: 0;
+	user-select: none;
+}
+
+nav button {
+	width: 3em;
+	text-align: center;
+}
+
+button >span {
+	font-family: "Font Awesome 5 Free";
+	display: inline-block;
+	margin: auto 0.5em;
+}
+
+nav {
+	position: absolute;
+	top: 50%; left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 9;
+}
+
+nav form {
+	height: 3em;
+	display: flex; flex-direction: row;
+}
+
+nav :is(button, select) {
+	padding: 3px;
+	height: 100%;
+	box-sizing: border-box;
+	vertical-align: middle;
+}
+
+body:not(:has(.selected)) nav {
+	display: none;
+}
+
+ul {
+	list-style: none;
+	margin: 0; padding: 0;
+	height: 100%;
+	display: flex;
+	flex-direction: row;
+}
+
+ul.column {
+	flex-direction: column;
+}
+
+li {
+	flex: 1;
+	position: relative;
+}
+
+li:first-of-type {
+	/*pointer-events: none;*/
+}
+
+li:first-of-type::before {
+	content: "";
+	display: inline-block;
+	position: absolute;
+	z-index: 1;
+	pointer-events: all;
+	background-color: #ff000050;
+}
+
+ul.row >li:first-of-type::before {
+	inset: 0 0 0 auto;
+	width: 10px; height: 100%;
+	transform: translate(50%, 0);
+	cursor: col-resize;
+}
+
+ul.column >li:first-of-type::before {
+	inset: auto 0 0 0;
+	height: 10px; width: 100%;
+	transform: translate(0, 50%);
+	cursor: row-resize;
+}
+
+li:only-child {
+	height: 100%;
+	width: 100%;
+}
+
+li:not(:has(ul)):hover::after {
+	content: "";
+	position: absolute; inset: 0;
+	background-color: #ffffff50;
+	z-index: -1;
+}
+
+li:first-of-type:not(:only-child) {
+	flex: none;
+}
+
+li.selected {
+	outline: 5px solid #ffff00a0;
+	outline-offset: -5px;
+}
+
+ul.row >li:first-of-type:not(:only-child) {
+	width: 50%;
+}
+
+ul.column >li:first-of-type:not(:only-child) {
+	height: 50%;
+}
+
+iframe {
+	width: 100%; height: 100%;
+	pointer-events: none;
+	border: 0;
+}
+
+:is(li:only-child, ul:has(ul) >li) >nav [name=remove] {
+	display: none;
+}
+
+dialog {
+    width: 300px; height: 50%;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 2px ridge #ffffff;
+}
+
+dialog form {
+	display: flex; flex-direction: column;
+	height: 100%;
+}
+
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+dialog >div {
+	flex: 1;
+	overflow-y: auto;
+}
+
+table {
+	table-layout: fixed;
+	width: 100%;
+}
+
+td {
+	padding: 5px;
+}
+
+tr {
+	background-color: #ffffff;
+	cursor: pointer;
+}
+
+tr:nth-child(odd) {
+	background-color: #ebebeb;
+}
+
+dialog input {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0.5em;
+}
+		</style>
+		<script>
+
+function onMouseEnter (e) {
+	e.stopPropagation();
+
+	this.appendChild (document.body.querySelector("nav"));
+}
+
+function onMouseLeave (e) {
+	e.stopPropagation();
+
+	document.body.appendChild (document.body.querySelector("nav"));
+}
+
+function onCloseDialog (e) {
+    this.close();
+}
+
+class Resizer {
+
+	constructor () {
+		document.body.addEventListener("mousedown", e => {
+			const li = e.target;
+
+			if (li.tagName === "LI") {
+				if (this.isResizer(e, li)) {
+					this.resizer = li;
+
+					this.rect = li.getBoundingClientRect();
+				} else {
+					const selected = document.body.querySelector(".selected");
+
+					if (selected) {
+						selected.classList.remove("selected");
+					}
+
+					li.classList.add("selected");
+				}
+			}
+		});
+
+		document.body.addEventListener("mouseup", e => {
+			if (this.rect) {
+				delete this.rect;
+				delete this.origin;
+			}
+		});
+
+		document.body.addEventListener("mousemove", e => {
+			if (this.rect) {
+				const ul = this.resizer.parentElement;
+
+				if (!this.origin) {
+					this.origin = {
+						x: e.clientX,
+						y: e.clientY
+					}
+				}
+				
+				//drag move
+				if (ul.classList.contains("column")) {
+					const
+						rect = ul.getBoundingClientRect(),
+						y = this.rect.height + (e.clientY - this.origin.y);
+
+					this.resizer.style.height = `${y *100 / rect.height}%`;
+				} else if (ul.classList.contains("row")) {
+					const
+						rect = ul.getBoundingClientRect(),
+						x = this.rect.width + (e.clientX - this.origin.x);
+					
+					this.resizer.style.width = `${x *100 / rect.width}%`;
+				}
+			}
+		});
+	}
+
+	isResizer (e, li) {
+		if (!li.nextElementSibling) {
+			return false;
+		}
+
+		const
+			rect = li.getBoundingClientRect(),
+			ul = li.parentElement;
+
+		if (ul.classList.contains("column")) {
+			if (5 >= Math.abs(e.clientY - rect.top - rect.height)) {
+				return true;
+			}
+		} else if (ul.classList.contains("row")) {
+			if (5 >= Math.abs(e.clientX - rect.left - rect.width)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+}
+
+function cut (dir) {
+	const
+		ul = document.createElement("ul"),
+		selected = document.body.querySelector(".selected"),
+		iframe = selected.querySelector("iframe");
+
+	if (iframe) {
+		ul.appendChild(document.createElement("li")).appendChild(iframe);
+	} else {
+		ul.appendChild(document.createElement("li"));
+	}
+	
+	ul.appendChild(document.createElement("li"));
+	
+	ul.classList.add(dir);
+
+	selected.appendChild(ul);
+
+	selected.classList.remove("selected");
+}
+
+function onHorizontalCut (e) {
+	cut("column");
+}
+
+function onVerticalCut (e) {
+	cut("row");
+}
+
+function onRemove (e) {
+	const
+		selected = document.body.querySelector(".selected"),
+		remained = selected.previousElementSibling || selected.nextElementSibling,
+		ul = selected.parentElement,
+		newLi = ul.parentElement;
+	
+	newLi.removeChild(ul);
+
+	if (remained) {
+		const iframe = remained.querySelector("iframe");
+
+		if (iframe) {
+			newLi.appendChild(iframe);
+		}
+	}
+	
+	selected.classList.remove("selected");
+}
+
+function selectSource (e) {
+}
+
+function onSelectNode (id) {
+	const selected = document.body.querySelector(".selected");
+
+	if (selected) {
+		const iframe = selected.querySelector("iframe");
+
+		if (iframe) {
+			iframe.src = `/chart.html?id=${id}`;
+		} else {
+			selected.appendChild(document.createElement("iframe")).src = `/chart.html?id=${id}`;
+		}
+	}
+
+	document.body.querySelector("dialog").close();
+}
+
+function onSelectSource (e) {
+	switch (this.value) {
+		case "/chart.html":
+			document.body.querySelector("dialog").showModal();
+
+			break;
+		default:
+			const selected = document.body.querySelector(".selected");
+
+			if (selected) {
+				const iframe = selected.querySelector("iframe");
+
+				if (iframe) {
+					iframe.src = this.value;
+				} else {
+					selected.appendChild(document.createElement("iframe")).src = this.value;
+				}
+			}
+	}
+}
+
+function parseLI(li) {
+	const config = {
+			height: li.style.height || undefined,
+			width: li.style.width || undefined
+		};
+
+	iframe = li.querySelector(":scope>iframe");
+
+	if (iframe) {
+		const location = iframe.contentWindow.location;
+
+		config.src = `${location.pathname}${location.search || ""}`;
+	}
+
+	parseUL(li.querySelector("ul"), config);
+	
+	return config;
+}
+
+function parseUL(ul, config) {
+	if (ul) {
+		config.ul = {
+			li: []
+		};
+
+		if (ul.classList.contains("column")) {
+			config.ul.flex = "column";
+		} else if (ul.classList.contains("row")) {
+			config.ul.flex = "row";
+		}
+
+		ul.querySelectorAll(":scope>li").forEach(li => {
+			config.ul.li.push(parseLI(li));
+		});
+	}
+}
+
+function onSave (e) {
+	const config = {};
+
+	parseUL(document.body.querySelector("body>ul"), config);
+
+	localStorage.setItem("dashboard", JSON.stringify(config));
+
+	alert("Information.\n\nDashboard 설정이 저장 되었습니다.")
+}
+
+function onSearchNode (e) {
+	const
+		cache = document.createDocumentFragment(),
+		match = document.createDocumentFragment(),
+		hidden = document.querySelector("tbody[hidden]"),
+		tbody = document.querySelector("tbody"),
+		keyword = this.elements["keyword"].value;
+
+	e.preventDefault();
+	
+	[tbody, hidden].forEach(tbody => {
+		for (let tr; tr=tbody.firstChild;) {
+			cache.appendChild(tr);
+		}
+	});
+
+	if (keyword) {
+		Array.from(cache.children).forEach(tr => {
+			Array.from(tr.children).some(td => {
+				if (td.textContent.includes(keyword)) {
+					match.appendChild(tr);
+
+					return true;
+				}
+			});
+		});
+	
+		hidden.appendChild(cache);
+
+		Array.from(match.children)
+			.sort((tr1, tr2) => Number(tr1.dataset.id) - Number(tr2.dataset.id))
+			.forEach(tr => match.appendChild(tr));;
+
+		tbody.appendChild(match);
+	} else {
+		Array.from(cache.children)
+			.sort((tr1, tr2) => Number(tr1.dataset.id) - Number(tr2.dataset.id))
+			.forEach(tr => cache.appendChild(tr));
+
+		tbody.appendChild(cache);
+	}
+}
+
+function showMessage(xhr) {
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
+
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace();
+    }
+}
+		</script>
+	</head>
+	
+	<body>
+		<nav>
+			<form>
+				<button name="hcut" title="세로 분할"><span>&#xf7a4;</span></button>
+				<button name="vcut" title="가로 분할"><span>&#xf7a5;</span></button>
+				<button name="remove" title="삭제"><span>&#xf1f8;</span></button>
+				<button name="save" title="저장"><span>&#xf0c7;</span></button>
+				<button name="close" title="종료"><span>&#xf00d;</span></button>
+				<select name="source">
+					<option value="about:blank" selected>선택안함</option>
+					<option value="/topology/viewer.html">토폴로지</option>
+					<option value="/dashboard/top.html">성능탑텐</option>
+					<option value="/chart.html">노드정보</option>
+				</select>
+			</form>
+		</nav>
+		<ul>
+			<li class="selected">
+				<iframe src="/topology/viewer.html"></iframe>
+			</li>
+		</ul>
+
+		<dialog>
+			<form>
+				<input type="text" name="keyword">
+				<div>
+					<table>
+						<tbody></tbody>
+						<tbody hidden></tbody>
+					</table>
+				</div>
+			</form>
+		</dialog>
+
+		<script src="/js/constants.js"></script>
+		<script src="/js/request.js"></script>
+		<script>
+new Request().query({
+	command: "get",
+	target: "node"
+}).then(data => {
+	const cache = document.createDocumentFragment();
+
+	function createRow (id, node) {
+		if (!node.protocol) {
+			return;
+		}
+
+		const tr = document.createElement("tr");
+
+		tr.appendChild(document.createElement("td")).textContent = node.name || node.ip;
+
+		tr.onclick = e => onSelectNode(id);
+
+		tr.dataset.id = id;
+
+		cache.appendChild(tr);
+	}
+
+	for (let id in data) {
+		createRow(id, data[id]);
+	}
+
+	Array.from(cache.children)
+		.sort((tr1, tr2) => Number(tr1.dataset.id) - Number(tr2.dataset.id))
+		.forEach(tr => cache.appendChild(tr));
+
+	document.body.querySelector("tbody").appendChild(cache);
+}).then(() => {
+	const form = document.body.querySelector("form");
+
+	form.onsubmit = e => e.preventDefault();
+
+	form.elements["hcut"].onclick = onHorizontalCut;
+	form.elements["vcut"].onclick = onVerticalCut;
+	form.elements["remove"].onclick = onRemove;
+	form.elements["source"].onchange = onSelectSource;
+	form.elements["save"].onclick = onSave;
+}).then(() => {
+	const form = document.body.querySelector("dialog form");
+
+	form.onclick = e => e.stopPropagation();
+	form.onsubmit = onSearchNode;
+}).then(() => {
+	document.body.querySelector("dialog").onclick = onCloseDialog;
+
+	new Resizer();
+}).then(() => {
+	const config = localStorage.getItem("dashboard");
+
+	if (!config) {
+		return;
+	}
+
+	const
+		dom = JSON.parse(config),
+		ul = document.body.querySelector("ul");
+
+	for (let li; li = ul.firstChild; ) {
+		ul.removeChild(li);
+	}
+	
+	(function test (ul, config) {
+		ul.classList.add(config.flex);
+		
+		config.li.forEach(config => {
+			const li = document.createElement("li");
+
+			if (config.height) {
+				li.style.height = config.height;
+			}
+
+			if (config.width) {
+				li.style.width = config.width;
+			}
+
+			if (config.src) {
+				li.appendChild(document.createElement("iframe")).src = config.src;
+			}
+
+			ul.appendChild(li);
+
+			if (config.ul) {
+				test(li.appendChild(document.createElement("ul")), config.ul);
+			}
+		});
+	})(ul, dom.ul);
+}).then(() => {
+})
+.catch(showMessage);
+		</script>	
+
+	</body>
+	
+</html>

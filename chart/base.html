@@ -7,44 +7,54 @@
 		<title>ITAhM</title>
 		
 		<style>
-@import url("/css/itahm.css");
+@import "/css/style.css";
+@import "/css/var.css";
+@import "/css/fa.css";
 
 body {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	position: fixed; inset: 0;
 }
 
-#chart {
-	position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+svg {
+	position: absolute; inset: 0;
 	width: 100%;
 	height: 100%;
 }
 
-#graph >path {
-	stroke-width: 2px;
-	fill-opacity: 0.3;
+#summary path {
+    stroke: #ebecf0;
+	stroke-width: 3px;
+    fill: none;
 	animation: grow_area 1s;
 }
 
-#graph >path.avg {
-	stroke-width: 3px;
-	fill: none;
-	stroke: #fff;
-	animation: grow_avg 1s;
-}
-
-#graph >path.line {
-    stroke-width: 2px;
-	fill: none;
-    stroke: #777;
-    stroke-opacity: 0.8;
-    animation: grow_data 1s;
-}
-
-#graph >circle {
-    stroke: #fff;
-    stroke-width: 0.5px;
-    fill: none;
+#graph circle {
+    fill: #ebecf0;
     animation: grow_pt 1s;
+}
+
+#summary circle {
+    filter: drop-shadow(0 0 1px #ffffff);
+}
+
+#summary circle.avg {
+    filter: drop-shadow(0 0 3px #ffffff);
+}
+
+#graph >circle.max {
+    fill: var(--var-color-shutdown);
+}
+
+#graph >circle.avg {
+    fill: var(--var-color-normal);
+}
+
+#graph >circle.min {
+    fill: var(--var-color-critical);
+}
+
+#summary >circle.avg {
+    fill: #aaff00;
 }
 
 .balloon {
@@ -60,15 +70,15 @@ body {
 }
 
 .balloon.date {
-    background-color: #F4A259;
-    border: 1px solid #ddd;
+    background-color: #dd3a7e;
+    box-shadow: 0 0 3px #ffffff;
     top: -1em;
 }
 
 .balloon::after {
     content: "";
     position: absolute;
-    border: 0.5em solid transparent;
+    border: 8px solid transparent;
 }
 
 .balloon.date::after {
@@ -78,23 +88,25 @@ body {
 }
 
 .balloon.value {
-    background-color: #777/*#F4A259*/;
-    border: 1px solid #ddd;
-	font-size: 12px;
+    background-color: #777;
+    border-radius: 3px;
+    box-shadow: 0 0 3px #ffffff;
+    font-size: 12px;
 }
 
 .balloon.value::after {
     transform: translateY(-50%);
+    border-right-color: #777777;
     top: 50%;
 }
 
 .balloon.avg::after {
-    border-left-color: #777777;
-    left: 100%;
+    transform: translateY(-50%) rotateY(180deg);
+    right: -15px;
 }
 
 .balloon.value:not(.avg)::after {
-    border-right-color: #777777;
+    
     right: 100%;
 }
 
@@ -193,8 +205,13 @@ nav input[type="checkbox"]:checked ~img.lock {
     color: #ccc;
     opacity: 0.5;
     display: block;
-    font-weight: boolder;
+    font-weight: bolder;
     font-size: 10em;
+}
+
+#summary path.avg {
+    stroke: #aaff00;
+    animation: grow_avg 1s;
 }
 
 body.empty .no_data {
@@ -242,6 +259,85 @@ body.empty .no_data {
 	}
 }
 		</style>
+        <script>
+class BezierCurve {
+
+    points = [];
+    container;
+
+    constructor (container) {
+        this.container = container;
+    }
+
+    add (x, y) {
+        this.points.push([x, y]);
+    }
+
+    draw () {
+        const
+            path = document.createElementNS("http://www.w3.org/2000/svg", "path"),
+            moveTo = this.points[0],
+            df = document.createDocumentFragment(),
+            d = this.points.reduce((acc, point, i, a) => {
+                df.appendChild(createPoint(point[0], point[1], "avg"));
+
+                return i === 0? acc: `${acc} ${bezierCommand(point, i, a)}`;
+            }, `M${moveTo[0]} ${moveTo[1]}`);
+        
+        path.setAttributeNS(null, "d", d);
+        
+        //df.appendChild(createPoint(moveTo[0], moveTo[1], "avg"));
+
+        path.classList.add("avg");
+
+        this.container.appendChild(path);
+        this.container.appendChild(df);
+    }
+}
+
+function createPoint (x, y, c) {
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+
+    circle.setAttributeNS(null, "cx", x);
+    circle.setAttributeNS(null, "cy", y);
+    circle.setAttributeNS(null, "r", 5);
+
+    c && circle.classList.add(c);
+
+    return circle;
+}
+
+function bezierCommand (point, i, a) {
+    const
+        [cpsX, cpsY] = controlPoint(a[i - 1], a[i - 2], point),
+        [cpeX, cpeY] = controlPoint(point, a[i - 1], a[i + 1], true);
+
+    return `C ${cpsX},${cpsY} ${cpeX},${cpeY} ${point[0]},${point[1]}`;
+}
+
+function line (p1, p2) {
+    const
+        x = p2[0] - p1[0],
+        y = p2[1] - p1[1];
+
+    return {
+        length: Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)),
+        angle: Math.atan2(y, x)
+    }
+}
+
+function controlPoint (current, previous, next, reverse) {
+    const
+        p = previous || current,
+        n = next || current,
+        o = line(p, n),
+        smoothing = 0.2,
+        angle = o.angle + (reverse ? Math.PI : 0),
+        length = o.length * smoothing;
+    
+    return [current[0] + Math.cos(angle) * length, current[1] + Math.sin(angle) * length];
+}
+        </script>
 		<script>
 	
 function clear(svgElement) {
@@ -309,41 +405,138 @@ function createDateText(x, y, date, pY, pM, pD) {
 	return svgText;
 }
 
-function Area(x, max, min) {
-	this.initialize(x, max, min);
+class MinMax {
+
+    container;
+    points = [];
+
+    constructor (container) {
+        this.container = container;
+    }
+
+    add (x, y1, y2) {
+        this.points.push([x, y1, y2]);
+    }
+
+    draw () {
+        const
+            path = document.createElementNS("http://www.w3.org/2000/svg", "path"),
+            df = document.createDocumentFragment(),
+            d = [];
+            
+        this.points.forEach(pt => {
+            const
+                x = pt[0],
+                min = pt[1],
+
+                max = pt[2];
+            df.appendChild(createPoint(x, min));
+            df.appendChild(createPoint(x, max));
+
+            d.push(`M${x},${min}V${max}`);
+        });
+        
+        path.setAttributeNS(null, "d", d.join(""));
+        
+        this.container.appendChild(path);
+        this.container.appendChild(df);
+    }
 }
 
-Area.prototype = {
-	initialize: function (x, fY, bY) {
-		this.o = [x, fY];
-		this.f = [];
-		this.b = [["V", bY, "H", x].join("")];
-	},
-	add: function (x, fY, bY) {
-		this.f[this.f.length] = ["H", x, "V", fY].join("");
-		this.b[this.b.length] = ["V", bY, "H", x].join("");
-	},
-	draw: function (x, y) {
-		const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-		
-		this.b.reverse();
-		
-		path.setAttribute("d", 
-			["M", this.o.join(" ")].join("")
-			+ this.f.join("")
-			+ ["H", x].join("")
-			+ ["V", y].join("")
-			+ this.b.join("") +"z");
-		
-		if (this.color) {
-			path.setAttribute("fill", this.color);
-			path.setAttribute("stroke", this.color);
-		}
-		
-		return path;
-	}
-};
+class Customizer {
 
+    buffer = [];
+    avgToMinMax = new Map();
+
+    constructor (container, start, tpp, low, step) {
+        this.container = container;
+        this.start = start;
+        this.tpp = tpp;
+        this.low = low;
+        this.step = step;
+        this.timeToValue = new Map();
+
+        this.commit();
+        this.buffer.push(this.timeToValue);
+    }
+
+    add (x, y) {
+        this.timeToValue.set(x, y);
+    }
+
+    commit () {
+        this.timeToValue = new Map();
+
+        this.buffer.push(this.timeToValue);
+    }
+
+    draw (size) {
+        this.customize(size);
+
+        this.buffer.forEach(map => {
+            if (map.size === 0) {
+                return;
+            }
+
+            const
+                avg = new BezierCurve(this.container),
+                minMax = new MinMax(this.container);
+            let x;
+
+            for (let [time, value] of map) {
+                x = (time - this.start) / this.tpp;
+
+                minMax.add(x, (value.min - this.low) * this.step, (value.max - this.low) * this.step);
+                avg.add(x, (value.avg - this.low) * this.step);
+            }
+            
+            minMax.draw();
+            avg.draw();
+        });
+    }
+
+    get size () {
+        return this.buffer.reduce((acc, map) => acc + map.size, 0);
+    }
+
+    customize (size) {
+        if (this.size > size) {
+            const buffer = [];
+
+            this.buffer.forEach(map => {
+                const
+                    timeToValue = new Map(),
+                    iterator = map.entries();
+
+                for (let next = iterator.next(), time1, time2, value1, value2 ; !next.done; next = iterator.next()) {
+                    [time1, value1] = next.value;
+
+                    next = iterator.next();
+
+                    if (next.done) {
+                        timeToValue.set(time1, value1);
+
+                        break;
+                    } else {
+                        [time2, value2] = next.value;
+
+                        timeToValue.set((time1 + time2) /2, {
+                            max: Math.max(value1.max, value2.max),
+                            avg: (value1.avg + value2.avg) /2,
+                            min: Math.min(value1.min, value2.min),
+                        })
+                    }
+                }
+
+                buffer.push(timeToValue);
+            });
+            
+            this.buffer = buffer;
+
+            this.customize(size);
+        }
+    }
+}
 /**
  * private
  */
@@ -480,7 +673,7 @@ function initialize(args) {
             valueAxis.appendChild(createValueText(0, y, args.toString(value === 0? 0: value)));
             
             if (args.max) {
-                rateAxis.appendChild(createValueText(0, y, (value *100 / args.max).toFixed(2) + "%"));
+                rateAxis.appendChild(createValueText(0, y, `${(value *100 / args.max).toFixed(2)}%`));
             }
         }
         
@@ -491,59 +684,23 @@ function initialize(args) {
     // summary 그래프
 	(() => {
         const
-            area = new Area(),
-            strokeAvg = new ITAhM.Path(graph),
+            container = document.getElementById("summary"),
+            customizer = new Customizer(container, $.from, $.tpp, $.low, $.yRatio),
             blocks = summaryData.keys;
         
-        area.color = args.color || "#0084ff";
-        
-        strokeAvg.set("class", "avg");
-        
-        strokeAvg.beginPath();
-        
-        for (let i=0, _i=blocks.length, dateArray, millis, date, x, y, yAvg, yMax, yMin; i<_i; i++) {
-            dateArray = blocks[i];
-        
-            millis = dateArray[0];
-            
-            x = (millis - $.from) / $.tpp;
-            y = args.summary.get(millis);
-        
-            yAvg = (y.avg - $.low) * $.yRatio;
-            yMax = (y.max - $.low) * $.yRatio;
-            yMin = (y.min - $.low) * $.yRatio;
-            
-            area.initialize(x, yMax, yMin);
-                    
-            strokeAvg.moveTo(x, yAvg);
-            
-            for (let j=1,_j=dateArray.length; j<_j; j++) {
+        container.transform.baseVal.getItem(0).setTranslate(1000 *60 *60 / $.tpp /2, 0);
+
+        for (let i=0, dateArray, millis ; i<blocks.length && (dateArray = blocks[i]); i++) {
+            for (let j=0; j<dateArray.length; j++) {
                 millis = dateArray[j];
                 
-                x = (millis - $.from) / $.tpp;
-                y = args.summary.get(millis);
-                
-                strokeAvg.lineTo(x, yAvg);
-                
-                yMax = (y.max - $.low) * $.yRatio;
-                yMin = (y.min - $.low) * $.yRatio;
-                yAvg = (y.avg - $.low) * $.yRatio;
-                
-                strokeAvg.lineTo(x, yAvg);
-                
-                area.add(x, yMax, yMin);
+                customizer.add(millis, args.summary.get(millis));
             }
-            
-            date = new Date(millis);
-        
-            x = (date.setHours(date.getHours() +1) - $.from) / $.tpp;
-            
-            strokeAvg.lineTo(x, yAvg);
-            
-            graph.appendChild(area.draw(x, yMin));
-            
-            strokeAvg.draw();
+
+            customizer.commit();
         }
+
+        customizer.draw(24 * 4);
     })();
 
     document.body.classList.remove("loading");
@@ -619,7 +776,7 @@ function initialize(args) {
 /**
  * public
  */
-function draw(chartData, sort = false) {
+function draw(chartData) {
     const
         df = document.createDocumentFragment(),
         pt = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -628,13 +785,16 @@ function draw(chartData, sort = false) {
 
     var point;
     chartData.forEach((timestamp, value) => {
-        point = pt.cloneNode(true);
+        ["max", "avg", "min"].forEach(name => {
+            point = pt.cloneNode(true);
 
-        point.setAttributeNS(null, "cx", Math.round((timestamp - $.from) / $.tpp));
-        point.setAttributeNS(null, "cy", Math.round((value - $.low) * $.yRatio));
+            point.setAttributeNS(null, "cx", Math.round((timestamp - $.from) / $.tpp));
+            point.setAttributeNS(null, "cy", Math.round((value[name] - $.low) * $.yRatio));
+            point.setAttributeNS(null, "class", name);
 
-        df.appendChild(point);
-    }, sort);
+            df.appendChild(point);
+        });
+    });
 
     document.getElementById("graph").appendChild(df);
 }
@@ -642,11 +802,13 @@ function draw(chartData, sort = false) {
 		</script>
 	</head>
 	
-	<body class="loading">
-		<svg id="chart">
+	<body class="loading container">
+        <svg id="chart">
 			<g transform="translate(0, 0)" id="container">
 		        <g transform="translate(0, 0)" id="axis_date" />
-		        <g transform="translate(0, 0) scale(1 -1)" id="graph" />
+		        <g transform="translate(0, 0) scale(1 -1)" id="graph">
+                    <g transform="translate(0, 0)" id="summary" />
+                </g>
 		        <g transform="translate(0, 0)" id="axis_left" />
 				<g transform="translate(0, 0)" id="axis_right" />
 		        <g transform="translate(0, 0)" id="grid" />
@@ -664,7 +826,9 @@ function draw(chartData, sort = false) {
 		<span id="value_min" class="balloon value min"></span>
 		<span id="value_avg" class="balloon value avg"></span>
 		
-        <div class="bg_loading"></div>
+        <span id="switch" class="icon-button icon-button--round icon-button--blue container--absolute-right icon-button__switch"></span>
+
+        <div class="loading mask"></div>
         <div class="no_data"></div>
 		
 		<script src="/js/ITAhM.js"></script>
@@ -704,6 +868,7 @@ const
 	});
 })(300);
 
+document.getElementById("switch").onclick = e => window.location.replace(`/chart/base2.html?`);
 		</script>
 	
 	</body>

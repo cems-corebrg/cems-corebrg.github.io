@@ -8,58 +8,18 @@
 		<style>
 @import "/css/style.css";
 @import "/css/fa.css";
-
-body {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	margin: 0; padding: 1em;
-    display: flex; flex-direction: column;
-    background-color: #424242;
-}
+@import "/css/var.css";
+@import "/css/list.css";
 
 header {
-    flex: none;
-	padding: 0.5em;
-	display: flex;
-	justify-content: space-between;
-    color: #ffffff;
+    display: flex; justify-content: space-between;
 }
 
-main {
-    flex: 1;
-    overflow-y: auto;
-}
-
-.sort::after {
+header :is(input, select) {
     font-family: "Font Awesome 5 Free";
-    content: "\f0dc";
-	cursor: pointer;
-    position: absolute; right: 3px;
-}
-
-.sort.sorted::after {
-	content: "\f0de";
-}
-
-.sort.ascending::after {
-	content: "\f0dd";
-}
-
-header input,
-header select {
 	padding: .5em;
-}
-
-nav {
-	display: flex;
-	align-items: center;
-}
-
-nav> div {
-	margin-right: 5px;
-}
-
-nav >img {
-	cursor: pointer;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 ul {
@@ -67,97 +27,50 @@ ul {
 	list-style: none;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-}
-
-tbody tr {
-    border-bottom: 1px solid #ffffff;
-    background-color: #ffffff;
-}
-
 tbody tr:hover {
     cursor: pointer;
 }
 
-th {
-    background-color: #34495e;
-    color: #efefef;
-    position: sticky; top: 0;
-}
-
-th:not(:last-of-type) {
-    border-right: 1px solid rgba(52, 73, 94, 0.8);
-}
-
-th,
-td {
-    padding: 1em;
-    box-sizing: border-box;
-	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-thead th:first-child {
+thead th:nth-child(1) {
     overflow: visible;
+    z-index: 1;
 }
 
-td:nth-child(3) {
+td:nth-child(4) {
     padding-left: 3em;
     background: no-repeat left/2em;
 }
 
-td:nth-child(6) {
-    font-family: "Font Awesome 5 Free";
-    font-weight: bold;
-    text-align: center;
-}
-
-td:nth-child(6):hover {
-    transform: scale(1.2);
-    color: #0084ff;
-}
-
-tr:not(:hover) td:nth-child(6) {
-    opacity: 0;
-}
-
-tr:nth-child(odd) {
-	background-color: #ebebeb;
-}
-
-tr >td:first-child {
-    text-align: center;
+td:nth-child(1) {
     color: #efefef;
-    background-color: #28a745;
+    position: relative;
 }
 
-tr >td:first-child::before {
-    content: "정상";
+td:nth-child(1) span {
+    position: absolute; inset: 0.5em;
+    border-radius: 1em 1em 1em 1em;
+    display: inline-flex; justify-content: center; align-items: center;
+    background-color: var(--var-color-normal);
 }
 
-tr[data-shutdown] >td:first-child {
-    background-color: #dc3545;
+tr[data-shutdown] >td:nth-child(1) span {
+    background-color: var(--var-color-shutdown);
 }
 
-tr[data-shutdown] >td:first-child::before {
-    content: "장애";
+tr[data-critical] >td:nth-child(1) span {
+    background-color: var(--var-color-critical);
 }
 
-tr[data-critical] >td:first-child {
-    background-color: #ffc107;
+tr[data-major] >td:nth-child(1) span {
+    background-color: var(--var-color-major);
 }
 
-tr[data-critical] >td:first-child::before {
-    content: "임계";
+tr[data-disabled] >td:nth-child(1) span {
+    background-color: var(--var-color-disabled);
 }
 
-tr[data-disabled] >td:first-child {
-    background-color: #6c757d;
-}
-
-tr[data-disabled] >td:first-child::before {
-    content: "비활성";
+td:nth-child(3) {
+    font-weight: bold;
 }
 
 details {
@@ -178,60 +91,80 @@ summary {
 
 summary::marker {
     content: "";
-    display: none;
-}
-
-#dialog {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	padding: 0; margin: 0;
-}
-
-iframe {
-    width: 100%; height: 100%;
-    border: none;
 }
 
 #selector {
-    position: absolute; top: 100%; left: 50%;
+    position: absolute; inset: 100% auto auto 0;
     font-weight: normal;
-    transform: translateX(-50%);
     margin-top: 1em;
     border: 1px solid rgba(27, 31, 35, 0.15);
     box-shadow: 0 1px 15px rgba(27, 31, 35, 0.15);
     background-color: #ffffff;
     pointer-events: none;
+    padding: 1em;
 }
 
 #selector li {
-    width: 5em;
-    padding: 1em;
-    margin: 1px;
+    width: 3em; height: 3em;
+    border-radius: 50%;
     cursor: pointer;
     pointer-events: all;
+    display: inline-flex; justify-content: center; align-items: center;
 }
 
 .status {
-    background: linear-gradient(to right, #28a745 25%, #ffc107 25%, #ffc107 50%, #dc3545 50%, #dc3545 75%, #6c757d 75%);
+    background: linear-gradient(to right,
+        var(--var-color-normal) 25%,
+        var(--var-color-critical) 25%,
+        var(--var-color-critical) 50%,
+        var(--var-color-shutdown) 50%,
+        var(--var-color-shutdown) 75%,
+        var(--var-color-disabled) 75%);
 }
 
 .status.normal {
-    background: #28a745;
+    background: var(--var-color-normal);
 }
 
 .status.shutdown {
-    background: #dc3545;
+    background: var(--var-color-shutdown);
 }
 
 .status.critical {
-    background: #ffc107;
+    background: var(--var-color-critical);
+}
+
+.status.major {
+    background: var(--var-color-major);
 }
 
 .status.disabled {
-    background: #6c757d;
+    background: var(--var-color-disabled);
 }
 
 tr[data-disabled] {
 	color: #999;
+}
+
+#list tr.selected {
+    background-color: #dd3a7e !important;
+    color: #efefef !important;
+}
+
+#list tr.selected td {
+    background-color: unset;
+}
+
+#list tr[data-snmp].selected td:nth-child(5) {
+    text-decoration: underline;
+}
+
+header .selected {
+    display: inline-block;
+    height: 100%;
+    border-left: 3px solid #dddddd;
+    margin-left: 1em;
+    padding-left: 0.5em;
 }
 
 #count {
@@ -240,25 +173,22 @@ tr[data-disabled] {
 	margin: 0 30px;
 }
 
-.glyph {
-    font: 20px "Font Awesome 5 Free";
-    cursor: pointer;
-}
-
-.glyph:hover {
-    color: #fcba30;
-    transition: color 0.5s linear;
-}
-
 header form input {
     font-family: "Font Awesome 5 Free";
 }
 
-tr.hidden,
-body:not(.dialog) #dialog,
+i {
+    color: #ffffff;
+}
+
 body.keyword #list tr:not(.keyword),
+body:not(.selected) header .selected,
+body:not(.chart) #chart,
+body:not(.monitor) #monitor,
+body:not(.root) .root,
 #list.normal tr:not([data-normal]),
 #list.critical tr:not([data-critical]),
+#list.major tr:not([data-major]),
 #list.shutdown tr:not([data-shutdown]),
 #list.disabled tr:not([data-disabled]) {
 	display: none;
@@ -273,18 +203,24 @@ const REGEXP_IPV4 = new RegExp("^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
 	+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
 	+ "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$");
 
-function IP2Int(s) {
-	const o = REGEXP_IPV4.exec(s);
-	
-	if(o === null || o.length != 5) return 0xffffffff;
-	
-	var n = 0;
-	for(let i=1; i<5; i++) {
-		n <<= 8;
-		n |= o[i];
-	}
-	
-	return n >>> 0;
+function isTCP(s) {
+    if (s.indexOf(":") === -1) {
+        return false;
+    }
+
+    const addrs = s.split(":");
+
+    if (addrs.length !== 2) {
+        return false;
+    }
+
+    if (!REGEXP_IPV4.test(addrs[0])) {
+        return false;
+    }
+
+    const tcp = Number(addrs[1]);
+
+    return !isNaN(tcp) && tcp > 0 && tcp < 65535;
 }
 		</script>
 		
@@ -295,12 +231,116 @@ function reload() {
 	window.location.reload();
 }
 
-function onShowStatus() {
-	window.sessionStorage.setItem("node_id", window.selectedID);
+function onSelectNode (e) {
+    e.stopPropagation();
 
-    window.location.href = "/resource.html";
+    selectNode(this);
 }
 
+function selectNode (tr) {
+    if ($.selected) {
+        $.selected.classList.remove ("selected");
+    }
+
+    $.selected = tr;
+
+    if (tr) {
+        tr.classList.add("selected");
+
+        document.body.classList[tr.dataset.snmp? "add": "remove"]("chart");
+        document.body.classList[tr.dataset.monitor? "add": "remove"]("monitor");
+        document.body.classList.add("selected");
+    } else {
+        document.body.classList.remove("selected");
+    }
+}
+
+function onTest () {
+    if ($.selected && this.parentNode == $.selected) {
+        const oid = window.prompt("수집할 SNMP 정보의 MIB 값을 입력하세요.", "1.3.6.1.4.1");
+
+        if (!oid) {
+            return;
+        }
+
+        document.body.classList.add("loading");
+
+        $.request.query({
+            command: "get",
+            target: "monitor",
+            monitor: {
+                id: Number($.selected.dataset.id)
+            }
+        })
+        .then(data => {
+            if (data.ip) {
+                return $.request.query({
+                    command: "get",
+                    target: "walk",
+                    walk: {
+                        ip: data.ip,
+                        profile: data.profile,
+                        oid: oid
+                    }
+                });
+            }
+        })
+        .then(data => {
+            if (data) {
+                const
+                    df = document.createDocumentFragment(),
+                    keys = Object.keys(data).sort();
+                let tr;
+
+                keys.forEach(oid => {
+                    tr = document.createElement("tr");
+
+                    tr.appendChild(document.createElement("td")).textContent = oid;
+                    tr.appendChild(document.createElement("td")).textContent = data[oid];
+
+                    df.appendChild(tr);
+                });
+
+                (function showResult (popup, message) {
+                    if (popup) {
+                        const table = popup.createElement("table");
+
+                        table.appendChild(popup.createElement("colgroup")).appendChild(popup.createElement("col")).setAttribute("width", 300);
+
+                        popup.title = "SNMP Walk";
+
+                        popup.body.appendChild(table).appendChild(popup.createElement("tbody")).appendChild(df);
+                    } else {
+                        if (message) {
+                            alert(message);
+                        }
+                        
+                        setTimeout(showResult, 1000, open()?.document);
+                    }
+                })(open()?.document, "Error!\n\n먼저 팝업 차단을 해제하세요.");
+            }
+
+            document.body.classList.remove("loading");
+        })
+        .catch(showMessage);
+    }
+}
+
+function onShowChart (e) {
+    $.selected && top.showDialog(`/chart.html?id=${$.selected.dataset.id}`);
+}
+
+function onShowNode (e) {
+    $.selected && top.showDialog(`/dialog/node.html?id=${$.selected.dataset.id}`, window);
+}
+
+function onSetMonitor (e) {
+    $.selected && top.showDialog(`/dialog/monitor.html?id=${$.selected.dataset.id}`, window);
+}
+
+function onConnectNode (e) {
+    $.selected && window.open(`ssh:${$.nodeData[$.selected.dataset.id].ip}:2222`);
+}
 /**
  * @param {string} id
  * @param {Object} node
@@ -308,46 +348,35 @@ function onShowStatus() {
 function createRow(id, node) {
 	const
 		row = document.createElement("tr"),
+        status = row.appendChild(document.createElement("td")).appendChild(document.createElement("span")), // N.1 상태
         icon = $.iconData[node.type || "unknown"] || $.iconData["unknown"];
     let type, labels, label, td;
-    
-    row.appendChild(document.createElement("td")); // N.1 상태
-	row.appendChild(document.createElement("td")).textContent = node.ip || ""; // N.2 IP주소
 
-    type = row.appendChild(document.createElement("td")); // N.3 타입
+    row.appendChild(document.createElement("td")).textContent = node.name; // N.2 이름
+	row.appendChild(document.createElement("td")).textContent = node.ip || ""; // N.3 IP주소
+
+    type = row.appendChild(document.createElement("td")); // N.4 타입
     
     type.textContent = node.type;
 	type.style.backgroundImage = `url(${icon.src})`;
 	
-	row.appendChild(document.createElement("td")).textContent = (protocol => {
+	row.appendChild(td = document.createElement("td")).textContent = (protocol => {
          if (protocol) {
             switch (protocol.toUpperCase()) {
             case "ICMP":
             case "TCP":
                 return protocol.toUpperCase();
             default:
+                row.dataset.snmp = true;
+
+                td.onclick = onTest;
+
                 return "SNMP";
             }
          } else {
              return "";
          }
-    }) (node.protocol); // N.4 모니터
-	
-    row.appendChild(document.createElement("td")).textContent = node.manager || ""; // N.5 관리자
-    
-    td = document.createElement("td"); // N.5 이력 조회
-
-    if (node.manager) {
-        td.textContent = "\uf141";
-
-        td.onclick = e => {
-            e.stopPropagation();
-
-            window.open(`/manager.html?node=${node.id}`, "manager");
-        };
-    }
-
-    row.appendChild(td);
+    }) (node.protocol); // N.5 모니터
 
 	if ($.customArray) {
         const extra = node.extra && JSON.parse(node.extra) || {};
@@ -356,8 +385,8 @@ function createRow(id, node) {
 			row.appendChild(document.createElement("td")).textContent = extra[custom] || "";
 		});
 	};
-	
-	row.appendChild(document.createElement("td")).textContent = node.name; // N.0
+
+	row.appendChild(document.createElement("td")) // 여백
 
 	row.dataset.id = id;
 	
@@ -378,33 +407,40 @@ function createRow(id, node) {
 		$.labelMap[""].push(row);
 	}
     
-    row.onclick = e => {
-        e.preventDefault();
-
-        top.showDialog(`/dialog/node.html?id=${id}`, this);
-    };
+    row.onclick = onSelectNode;
 
 	if (node.protocol) {
 		if ("status" in node && !node.status) {
 			row.dataset.shutdown = true;
+
+            status.textContent = "Shutdown";
 		}
-		else if ("critical" in node && node.critical) {
+		else if ("critical" in node && !node.critical) {
 			row.dataset.critical = true;
+
+            status.textContent = "Critical";
+		}
+		else if (("match" in node && !node.match) || ("snmp" in node && node.snmp !== 0)) {
+			row.dataset.major = true;
+
+            status.textContent = "Major";
 		}
 		else {
 			row.dataset.normal = true;
+
+            status.textContent = "Normal";
         }
-
-        row.oncontextmenu = e => {
-            e.preventDefault();
-
-            top.showDialog(`/chart.html?id=${id}`);
-        };
 	}
 	else {
 		row.dataset.disabled = true;
+
+        status.textContent = "Disabled";
 	}
-    
+
+    if (node.ip && (REGEXP_IPV4.test(node.ip) || isTCP(node.ip))) {
+        row.dataset.monitor = true;
+    }
+
 	return row;
 }
 
@@ -414,6 +450,10 @@ function initLabel() {
 		option = document.createElement("option");
 
 	for (let label in $.labelMap) {
+        if (!label) { // 빈문자
+            continue;
+        }
+
 		option = document.createElement("option");
 		
 		option.text = label;
@@ -425,8 +465,10 @@ function initLabel() {
 }
 
 function selectStatus(status) {
-    $.list.className = status;
-    $.list.classList.remove("status");
+    const list = document.body.querySelector("tbody");
+
+    list.className = status;
+    list.classList.remove("status");
 
     document.querySelector("summary").className = status;
 
@@ -441,57 +483,38 @@ function onSelectStatus (e) {
 
 function onSort (e) {
 	const
-		reverse = !this.classList.toggle("ascending"),
-		df = document.createDocumentFragment();
+        list = document.body.querySelector("tbody"),
+        df = document.createDocumentFragment(),
+        index = [].indexOf.call(this.parentNode.children, this);
 
-    this.classList.add("sorted");
+	let bias;
 
-	[].slice.call($.list.children).sort(reverse?
-		function (a, b) {
-			const
-				ipA = a.children[1].textContent,
-				ipB = b.children[1].textContent;
-			
-			if (ipA && ipB) {
-				return IP2Int(ipB) - IP2Int(ipA);
-			}
-			else if (ipB) {
-				return 1;
-			}
-			else if (ipA) {
-				return -1;
-			}
-			else {
-				return 0;
-			}
-		}:
-		function (a, b) {
-			const
-				ipA = a.children[1].textContent,
-				ipB = b.children[1].textContent;
-			
-			if (ipA && ipB) {
-				return IP2Int(ipA) - IP2Int(ipB);
-			}
-			else if (ipB) {
-				return 1;
-			}
-			else if (ipA) {
-				return -1;
-			}
-			else {
-				return 0;
-			}
-		}).forEach(function (e) {
-			df.appendChild(e);
-		});
+	if (this.classList.contains("descend")) {
+		this.classList.remove("descend");
 
-	$.list.appendChild(df);
+		this.classList.add("ascend");
+
+		bias = 1;
+	} else {
+		this.classList.remove("ascend");
+
+		this.classList.add("descend");
+
+		bias = -1;
+	}
+	
+    [].slice.call(list.children)
+        .sort((a, b) => a.children[index].textContent.localeCompare(b.children[index].textContent) * bias)
+        .forEach(e => df.appendChild(e));
+
+	list.appendChild(df);
 }
 
 function onSearch (e) {
     e.preventDefault();
     
+    const list = document.body.querySelector("tbody");
+
     document.body.classList.add("loading", "keyword");
 
     const keyword = this.elements["keyword"].value.toLowerCase();
@@ -502,7 +525,7 @@ function onSearch (e) {
 
     const df = document.createDocumentFragment();
     
-    for (let row, cols; row = $.list.firstElementChild;) {
+    for (let row, cols; row = list.firstElementChild;) {
         cols = row.children;
 
         df.appendChild(row);
@@ -518,7 +541,7 @@ function onSearch (e) {
         }
     }
     
-    $.list.appendChild(df);
+    list.appendChild(df);
 
     document.body.classList.remove("loading");
 
@@ -526,72 +549,64 @@ function onSearch (e) {
 }
 
 function onReset(e) {
-    const df = document.createDocumentFragment();
+    const
+        list = document.body.querySelector("tbody"),
+        df = document.createDocumentFragment();
 
     document.body.classList.add("loading");
     
-    for (let row; row = $.list.firstElementChild;) {
+    for (let row; row = list.firstElementChild;) {
         df.appendChild(row).classList.remove("keyword");
     }
 
     document.body.classList.remove("keyword");
 
-    $.list.appendChild(df);
+    list.appendChild(df);
 
     document.body.classList.remove("loading");
 
     document.getElementById("count").textContent = count();
 }
-    
-function onSave() {
-    const
-        keys = ["name", "ip", "type", "manager"],
-		rows = [];
-	
-	let node, cols;
 
-	for (let id in $.nodeData) {
-        node = $.nodeData[id];
-        
+function save(name) {
+    const
+        headers = document.body.querySelector("main thead tr").children,
+        trs = document.body.querySelector("main tbody").children,
+        rows = [];
+    let cols = ["상태"];
+
+    document.body.classList.add("loading");
+    
+    for (let i=1; i<headers.length; i++) {
+        cols.push(`"${headers[i].textContent.replace(/\"/g, "'")}"`)
+    }
+
+    rows.push(cols.join(","));
+
+    for (let i=0, tds; i<trs.length; i++) {
+        tds = trs[i].children;
+
         cols = [];
 
-        if (node.protocol) {
-            if ("status" in node && !node.status) {
-                cols.push("장애");
-            }
-            else if ("critical" in node && node.critical) {
-                cols.push("주의");
-            }
-            else {
-                cols.push("정상");
-            }
+        for (let j=0; j<tds.length; j++) {
+            cols.push(`"${tds[j].textContent.replace(/\"/g, "'")}"`);
         }
-        else {
-            cols.push("");
-        }
-    
-        keys.forEach(key => 
-            cols.push(`"${(node[key] || "").replace(/\"/g, "'")}"`)
-        );
-        
-        $.customArray && $.customArray.forEach(key => {
-            const extra = node.extra && JSON.parse(node.extra) || {};
-
-            cols.push(`"${(extra[key] || "").replace(/\"/g, "'")}"`);
-        });
 
         rows.push(cols.join(","));
     }
 
-	ITAhM.util.download(new Blob(["\ufeff", rows.join("\n")] ,{
+    ITAhM.util.download(new Blob(["\ufeff", rows.join("\n")] ,{
 		type: "text/csv;charset=utf-8;"
-	}), "node.csv");
+	}), name);
+
+    document.body.classList.remove("loading");
 }
 
 function count() {
+    const list = document.body.querySelector("tbody");
 	var count = 0;
 
-	[].forEach.call($.list.children, function (row) {
+	[].forEach.call(list.children, function (row) {
 		if (row.offsetHeight > 0) {
 			count++;
 		}
@@ -601,18 +616,24 @@ function count() {
 }
 
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert(NOTICE_SESS_EXPIRE["kr"]);
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace();
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
 		</script>
@@ -621,24 +642,28 @@ function showMessage(xhr) {
 	
 	<body class="loading">
         <header>
-            <nav>
-                <i id="count"></i>
-                <div>
-                    <select id="label">
-                        <optgroup>
-                            <option value="">미분류
-                        </optgroup>
-                        <optgroup>
-                            <option selected>모두 보기
-                        </optgroup>
-                    </select>
-                </div>
-                <span class="glyph" id="export" title="CSV 내보내기">&#xf019;</span>
-            </nav>
+            <div>
+                <select id="label">
+                    <optgroup>
+                        <option value="">미분류
+                    </optgroup>
+                    <optgroup>
+                        <option selected>모두 보기
+                    </optgroup>
+                </select>
+                <input type="button" value="&#xf067; Add" id="add" class="root" title="노드 추가">
+                <input type="button" value="&#xf019; Export" id="export" title="CSV 내보내기">
+                <span class="selected">
+                    <input type="button" value="&#xf1fe; Chart" id="chart" title="성능 정보">
+                    <input type="button" value="&#xf044; Information" id="edit" title="노드 정보">
+                    <input type="button" value="&#xf1e5; Monitor" id="monitor" class="root" title="모니터 설정">
+                </span>
+            </div>
+            <i id="count"></i>
             <form>
                 <input type="text" name="keyword" placeholder="IP, Type, Name">
-                <input type="submit" value="&#xf002; 찾기">
-                <input type="reset" value="&#xf2f9; 초기화">
+                <input type="submit" value="&#xf002; Search">
+                <input type="reset" value="&#xf2f9; Reset">
             </form>
         </header>
         <main>
@@ -647,40 +672,41 @@ function showMessage(xhr) {
                     <col width="100">
                     <col width="200">
                     <col width="180">
-                    <col width="100">
                     <col width="180">
-                    <col width="60">
+                    <col width="180">
                 </colgroup>
                 <thead>
-                    <tr id="header">
+                    <tr>
                         <th>
                             <details title="상태별">
                                 <summary class="status"></summary>
                                 <ul id="selector">
-                                    <li class="status normal">정상</li>
-                                    <li class="status shutdown">장애</li>
-                                    <li class="status critical">주의</il>
-                                    <li class="status disabled">비활성</li>
-                                    <li class="status all">전체</li>
+                                    <li class="status normal">NM</li>
+                                    <li class="status shutdown">SD</li>
+                                    <li class="status critical">CT</li>
+                                    <li class="status major">MJ</li>
+                                    <li class="status disabled">DA</li>
+                                    <li class="status all">AL</li>
                                 </ul>
                             </details>
                         </th>
-                        <th id="sort" class="sort">주소</th>
-                        <th>종류</th>
-                        <th>모니터</th>
-                        <th colspan="2">관리자</th>
-                        <th>이름</th>
+                        <th class="sort">이름</th>
+                        <th class="sort">주소</th>
+                        <th class="sort">종류</th>
+                        <th class="sort">모니터</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody id="list"></tbody>
             </table>
         </main>
-		<iframe id="dialog"></iframe>
-		<div class="bg_loading"></div>
-		
+        
+		<div class="loading mask"></div>
+        
         <script src="/js/ITAhM.js"></script>
         <script src="/js/icon.js"></script>
 		<script src="/js/object.js"></script>
+        <script src="/js/snmp.js"></script>
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
 		<script>
@@ -699,44 +725,26 @@ const
         }
     };
 
-new BroadcastChannel("bc_manager").onmessage = function (e) {
-    const bc = this;
-
-    $.request.execute({
-        "command": "get",
-        "target": "manager",
-        "node": e.data
-    }, function (e) {
-        switch(this.status) {
-        case 200:
-            break;
-        default:
-            throw showMessage(this);
-        }
-
-        bc.postMessage(JSON.parse(this.responseText));
-    });
-};
-
 document.getElementById("label").onchange = function () {
 	const
+        list = document.body.querySelector("tbody"),
 		df = document.createDocumentFragment(),
 		label = this.value;
 	
 	document.body.classList.add("loading");
 	
 	if (this.selectedIndex === this.options.length -1) {
-		for (let row; row = $.list.firstElementChild;) {
+		for (let row; row = list.firstElementChild;) {
 			df.appendChild(row).classList.remove("hidden");
 		}
 	}
 	else {
-		for (let row; row = $.list.firstElementChild;) {
+		for (let row; row = list.firstElementChild;) {
 			df.appendChild(row).classList[$.labelMap[label].indexOf(row) == -1? "add": "remove"]("hidden");
 		}
 	}
 	
-	$.list.appendChild(df);
+	list.appendChild(df);
 
 	document.body.classList.remove("loading");
 
@@ -744,106 +752,100 @@ document.getElementById("label").onchange = function () {
 };
 
 document.getElementById("selector").onclick = onSelectStatus;
+document.getElementById("export").onclick = e => save("node.csv");
+document.getElementById("chart").onclick = onShowChart;
+document.getElementById("edit").onclick = onShowNode;
+document.getElementById("monitor").onclick = onSetMonitor;
 
-document.getElementById("export").onclick = onSave;
-document.getElementById("sort").onclick = onSort;
+document.body.onclick = e => selectNode();
+
+[].forEach.call(document.body.querySelectorAll("th.sort"), th => th.onclick = onSort);
 
 $.form.onsubmit = onSearch;
 $.form.onreset = onReset;
+        </script>
+        <script type="module">
+import Channel from "./js/module/channel.js";
 
-function initialize(e) {
-    switch(this.status) {
-    case 200:
-        break;
-    default:
-        return showMessage(this);
+Channel.request("account", account => {
+    const request = new Request();
+
+    if (account.level === 0) {
+        document.getElementById("add").onclick = e => top.showDialog("/dialog/node.html", window);
+
+        document.body.classList.add("root");
     }
 
-    const settingData = JSON.parse(this.responseText);
-
-    if ("custom" in settingData) {
-		var customs = settingData.custom;
-		
-		if (customs) {
-			let df = document.createDocumentFragment();
-			
-			$.customArray = customs.split(",");
-			
-			$.customArray.forEach(function (custom) {
-				df.appendChild(document.createElement("th")).textContent = custom;
-			});
-			
-			$.header.insertBefore(df, $.header.lastElementChild);
-		}
-    }
-    
-    const df = document.createDocumentFragment();
-    
-    var row;
-
-    for (let id in $.nodeData) {
-        row = createRow(id, $.nodeData[id]);
-
-        if (row) {
-		    df.appendChild(row);
+    request.query({
+        command: "get",
+        target: "config",
+        config: {
+            key: "CUSTOMNODE"
         }
-    }
-	
-	list.appendChild(df);
-    
-    if ($.status) {
-        selectStatus(`status ${$.status}`);
-    }
-    
-	document.body.classList.remove("loading");
+    })
+    .then(configData => {
+        if (configData) {
+            const
+                customs = configData["CUSTOMNODE"],
+                header = document.body.querySelector("thead>tr");
+            let df = document.createDocumentFragment();
+            
+            if (customs) {
+                $.customArray = customs.split(",");
+                
+                $.customArray.forEach(function (custom) {
+                    df.appendChild(document.createElement("th")).textContent = custom;
+                });
+            }
+            
+            header.insertBefore(df, header.lastElementChild);
+        }
 
-	document.getElementById("count").textContent = count();
-
-    initLabel();
-}
-
-function initIcon(e) {
-    switch(this.status) {
-    case 200:        
-        break;
-    default:
-        return showMessage(this);
-    }
-
-    const iconData = JSON.parse(this.responseText);
-
-    for (let type in iconData) {
-        $.iconData[type] = iconData[type];
-    }
-    
-    $.request.execute({
-        "command": "get",
-        "target": "setting"
-    }, initialize);
-}
-
-function initNode(e) {
-    switch(this.status) {
-    case 200:
-        break;
-    default:
-        return showMessage(this);
-    }
-
-    $.nodeData = JSON.parse(this.responseText);
+        return request.query({
+            command: "get",
+            target: "icon"
+        });
+    })
+    .then(iconData => {
+        for (let type in iconData) {
+            $.iconData[type] = iconData[type];
+        }
         
-    $.request.execute({
-        "command": "get",
-        "target": "icon"
-    }, initIcon);
-}
+        return request.query({
+            command: "get",
+            target: "node"
+        });
+    })
+    .then(nodeData => {
+        const df = document.createDocumentFragment();
+        
+        var row;
 
-$.request.execute({
-    "command": "get",
-    "target": "node",
-    "filter": "node"
-}, initNode);
+        for (let id in nodeData) {
+            row = createRow(id, nodeData[id]);
 
+            if (row) {
+                df.appendChild(row);
+            }
+        }
+        
+        list.appendChild(df);
+        
+        $.status && selectStatus(`status ${$.status}`);
+
+        $.nodeData = nodeData;
+
+        return count();
+    })
+    .then(count => {
+        document.getElementById("count").textContent = count;
+
+        initLabel();
+
+        document.body.classList.remove("loading");
+    })
+    .catch(xhr => showMessage(xhr));
+});
         </script>
 	
 	</body>

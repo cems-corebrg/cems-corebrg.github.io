@@ -7,12 +7,42 @@ var ITAhM = ITAhM || {};
 
 ITAhM.snmp = {
     oid: {
-        axgateCPU: "1.3.6.1.4.1.37288.1.1.3.1.1",
-        bandwidth: "1.3.6.1.4.1.49447.3.5",
-        cpmCPUTotal5sec: "1.3.6.1.4.1.9.9.109.1.1.1.1.3",
-        cpmCPUTotal5secRev: "1.3.6.1.4.1.9.9.109.1.1.1.1.6",
-        cpu: "1.3.6.1.4.1.49447.4",
-        dsCpuLoad5s: "1.3.6.1.4.1.6296.9.1.1.1.8",
+        axgate: {
+            hrProcessorLoad: "1.3.6.1.4.1.37288.1.1.3.1.1",
+            powerStatus: "1.3.6.1.4.1.37288.1.1.5.1.2",
+            temperature: "1.3.6.1.4.1.37288.1.1.5.2.2",
+            fanStatus: "1.3.6.1.4.1.37288.1.1.5.3.2",
+        },
+        cisco: {
+            ciscoEnvMonFanState: "1.3.6.1.4.1.9.9.13.1.4.1.3",
+            ciscoEnvmonSupplyState: "1.3.6.1.4.1.9.9.13.1.5.1.3",
+            cpmCPUTotal5secRev: "1.3.6.1.4.1.9.9.109.1.1.1.1.6",
+            ciscoEnvmonTemperatureStatusValue: "1.3.6.1.4.1.9.9.13.1.3.1.3"
+        },
+        corebrg: {
+            bandwidth: "1.3.6.1.4.1.49447.3.5",
+            responseTime: "1.3.6.1.4.1.49447.1.1",
+            max: "1.3.6.1.4.1.49447.2",
+            limit: "1.3.6.1.4.1.49447.3",
+            match: "1.3.6.1.4.1.49447.4"
+        },
+        dasan: {
+            dsCpuLoad5s: "1.3.6.1.4.1.6296.9.1.1.1.8"
+        },
+        juniper: {
+            jnxOperatingStateFan: "1.3.6.1.4.1.2636.3.1.13.1.6.4",
+            jnxOperatingTemp: "1.3.6.1.4.1.2636.3.1.13.1.7",
+            jnxOperatingPower:"1.3.6.1.4.1.2636.3.1.13.1.6.2"
+        },
+        piolink: {
+            CoreTemperature: "1.3.6.1.4.1.10188.5.6.1.1.1.2",
+            hFANStatus:"1.3.6.1.4.1.10188.5.6.1.3.1.3",
+            hPowerStatus: "1.3.6.1.4.1.10188.5.6.1.2.1.3"
+        },
+        fortinet: {
+            fgProcessorUsage5sec: "1.3.6.1.4.1.12356.101.4.4.2.1.3",
+            fgSysMemUsage: "1.3.6.1.4.1.12356.101.4.1.4"
+        },
         hrSystemUptime: "1.3.6.1.2.1.25.1.1",
         hrStorageType: "1.3.6.1.2.1.25.2.3.1.2",
         hrStorageDescr: "1.3.6.1.2.1.25.2.3.1.3",
@@ -39,12 +69,6 @@ ITAhM.snmp = {
         ifHCOutOctets: "1.3.6.1.2.1.31.1.1.1.10",
         ifHighSpeed: "1.3.6.1.2.1.31.1.1.1.15",
         ifAlias: "1.3.6.1.2.1.31.1.1.1.18",
-        inBPS: "1.3.6.1.4.1.49447.3.1",
-        inErrs: "1.3.6.1.4.1.49447.3.3",
-        lastResponse: "1.3.6.1.4.1.49447.2",
-        outBPS: "1.3.6.1.4.1.49447.3.2",
-        outErrs: "1.3.6.1.4.1.49447.3.4",
-        responseTime: "1.3.6.1.4.1.49447.1",
         sysDescr: "1.3.6.1.2.1.1.1",
         sysObjectID: "1.3.6.1.2.1.1.2",
         sysUpTime: "1.3.6.1.2.1.1.3",
@@ -58,31 +82,75 @@ ITAhM.snmp = {
             name: "ciscoSystems",
             logo: "/img/enterprise/cisco.png"
         },
+        11: {
+            name: "Hewlett-Packard",
+            logo: "/img/enterprise/hewlettpackard.gif"
+        },
         311: {
             name: "Microsoft",
             logo: "/img/enterprise/microsoft.png"
         },
+        318: {
+            name: "American Power Conversion Corp.",
+            logo: "/img/enterprise/apc.svg"
+        },
         368: {
             name: "Axis Communications AB"
-        },
-        11: {
-            name: "Hewlett-Packard"
         },
         789: {
             name: "Network Appliance Corporation"
         },
+        1411: {
+            name: "Juniper Networks/Funk Software",
+            logo: "/img/enterprise/juniper.svg"
+        },
         2142: {
             name: "Future Systems, Inc."
         },
-        37288: {
-            name: "AXGATE CO., LTD",
-            logo: "/img/enterprise/axgate2.png"
+        2636: {
+            name: "Juniper Networks, Inc.",
+            logo: "/img/enterprise/juniper.svg"
+        },
+        3417: {
+            name: "CacheFlow Inc."
         },
         6296: {
             name: "DASAN Co.,LTD."
         },
         8072: {
-            name: "net-snmp"
+            name: "net-snmp",
+            logo: "/img/enterprise/net-snmp.jpg"
+        },
+        10188: {
+            name: "Piolink, Inc",
+            logo: "/img/enterprise/piolink.png"
+        },
+        12356: {
+            name: "Fortinet, Inc.",
+            logo: "/img/enterprise/fortinet.svg"
+        },
+        12532: {
+            name: "Neoteris, Inc.",
+            logo: "/img/enterprise/pulsesecure.svg"
+        },
+        18334: {
+            name: "KONICA MINOLTA HOLDINGS, INC.",
+            logo: "/img/enterprise/konicaminolta.png"
+        },
+        21726: {
+            name: "HappyComm"
+        },
+        24681: {
+            name: "QNAP Systems, Inc.",
+            logo: "/img/enterprise/qnap.svg"
+        },
+        37288: {
+            name: "AXGATE CO., LTD",
+            logo: "/img/enterprise/axgate2.png"
+        },
+        55062: {
+            name: "QNAP Systems, Inc.",
+            logo: "/img/enterprise/qnap.svg"
         }
     },
     ifAdminStatus: {
@@ -355,3 +423,21 @@ ITAhM.snmp = {
         241: "dvbRcsTdma"
     }
 };
+
+{
+    const map = new Map();
+
+    function parseOID(value, key) {
+        if (typeof value === typeof "") {
+            map.set(value, key);
+        } else if (typeof value === typeof {}) {
+			for (let key in value) {
+				parseOID(value[key], key);
+			}
+        }
+    }
+
+    parseOID(ITAhM.snmp.oid);
+
+    window.getNameOfOID = oid => map.get(oid);
+}

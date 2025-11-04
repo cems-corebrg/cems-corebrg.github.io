@@ -19,10 +19,16 @@
             path: document.createElementNS(SVG_NS_URI, "g"),
             device: document.createElementNS(SVG_NS_URI, "g")
         },
-        deviceArray = [],
-        deviceMap = {};
+        nodeMap = {},
+        pathMap = {},
+        linkMap = {},
+        upLinkMap = {},
+        shutdown = [],
+        critical = [],
+        major = [];
     let
-        scale = 1,
+        stage,
+        scale = Number(localStorage.getItem("scale") || 1),
         intersect, size, dragOrigin;
 
     document.body.appendChild(root);
@@ -35,12 +41,16 @@
     
     window.addEventListener("resize", onResize);
 
-    root.addEventListener("wheel", onScale);
+    root.addEventListener("wheel", onScale, {
+        passive: false
+    });
     root.addEventListener("mousedown", onMouseDown);
     root.addEventListener("mouseup", onMouseUp);
     root.addEventListener("mousemove", onMouseMove);
     root.addEventListener("contextmenu", e => e.preventDefault());
 
+    transform.scale.setScale(scale, scale);
+    
     onResize();
 
     function onScale (e) {
@@ -119,49 +129,31 @@
     function animation(delta) {
     }
 
-    window.addDevice = function (args) {
+    const createNode = function ({
+        node, position, icon, status, onclick, size = ICON_SIZE
+    }) {
         const
-            node = args.node,
-            icon = args.icon,
-            pos = args.position,
-            svgDevice = document.createElementNS(SVG_NS_URI, "g"),
+            svgNode = document.createElementNS(SVG_NS_URI, "g"),
             svgIcon = document.createElementNS(SVG_NS_URI, "image"),
             svgLabel = document.createElementNS(SVG_NS_URI, "text"),
             svgAddr = document.createElementNS(SVG_NS_URI, "tspan"),
-            svgName = document.createElementNS(SVG_NS_URI, "tspan"),
-            svgBG = document.createElementNS(SVG_NS_URI, "circle"),
-            size = args.size || ICON_SIZE,
-            radius = size * Math.sin(Math.PI /4);
+            svgName = document.createElementNS(SVG_NS_URI, "tspan");
 
         svgIcon.setAttribute("x", -size /2);
         svgIcon.setAttribute("y", -size /2);
         svgIcon.setAttribute("width", size +"px");
         svgIcon.setAttribute("height", size +"px");
         
-        svgDevice.setAttribute("transform", "translate("+ pos.x +","+ pos.y +")");
-        
-        svgBG.setAttribute("r", radius);
-        svgBG.setAttribute("stroke-width", radius);
-        svgBG.setAttribute("cx", 0);
-        svgBG.setAttribute("cy", 0);
+        svgNode.setAttribute("transform", "translate("+ position.x +","+ position.y +")");
 
-        svgDevice.dataset.id = node.id;
+        svgNode.dataset.id = node.id;
 
-        if (icon.group === "group") {
-            svgDevice.classList.add("group");
-        }
-        else if (node.protocol) {
-//            svgDevice.onmouseenter = onMouseOver;
+        if (onclick) {
+            svgIcon.addEventListener("_click", e => onclick(node.id));
+
+            svgIcon.classList.add("onclick");
         }
 
-        if (args.click) {
-            svgIcon.addEventListener("_click", args.click);
-        }
-
-        if (args.hover) {
-            svgIcon.onmouseenter = args.hover;
-        }
-        
         svgName.textContent = node.name || node.ip || "";
         svgAddr.textContent = node.ip || node.name || "";
         
@@ -171,199 +163,219 @@
         svgLabel.setAttribute("x", 0);
         svgLabel.setAttribute("y", size);
         svgLabel.setAttribute("dominant-baseline", "top");
+        
+        svgNode.classList.add("node");
+        
+        layerMap.device.appendChild(svgNode);
+        
+        switch (status) {
+        case "shutdown":
+        case "critical":
+        case "major":
+            const
+                svgBG = document.createElementNS(SVG_NS_URI, "circle"),
+                radius = size * Math.sin(Math.PI /4);
 
-        svgDevice.appendChild(svgBG);
-        svgDevice.appendChild(svgIcon);
-        svgDevice.appendChild(svgLabel);
-        
-        svgDevice.classList.add("node");
-        
-        layerMap.device.appendChild(svgDevice);
-        
-        if ("protocol" in node) {
-            if ("status" in node && !node.status) {
-                svgIcon.setAttributeNS(XLINK_NS_URI, "xlink:href", icon.shutdown || icon.src);
-            } else {
-                svgIcon.setAttributeNS(XLINK_NS_URI, "xlink:href", icon.src);
-            }
-        }
-        else if (icon.group === "group") {
+            svgBG.setAttribute("r", radius);
+            svgBG.setAttribute("stroke-width", radius);
+            svgBG.setAttribute("cx", 0);
+            svgBG.setAttribute("cy", 0);
+
+            svgNode.classList.add(status);
+
+            svgNode.appendChild(svgBG);
+
+            svgIcon.setAttributeNS(XLINK_NS_URI, "xlink:href", icon.shutdown);
+
+            break;
+        case "disabled":
+            svgIcon.setAttributeNS(XLINK_NS_URI, "xlink:href", icon.disabled);
+
+            break;
+        default:
             svgIcon.setAttributeNS(XLINK_NS_URI, "xlink:href", icon.src);
         }
-        else {
-            svgIcon.setAttributeNS(XLINK_NS_URI, "xlink:href", icon.disabled);
-        }
+
+        svgNode.appendChild(svgIcon);
+        svgNode.appendChild(svgLabel);
         
-        deviceArray.push(svgDevice);
-
-        deviceMap[String(node.id)] = svgDevice;
-
-        layerMap.device.appendChild(svgDevice);
-
-        return svgDevice;
+        return svgNode;
     };
 
-    window.addPath = function (args) {
-        const
-            nodeFrom = args.nodeFrom,
-            nodeTo = args.nodeTo,
-            labelFrom = args.labelFrom,
-            labelTo = args.labelTo,
-            option = args.option,
-            svgPath = document.createElementNS(SVG_NS_URI, "g"),
-            svgLine = document.createElementNS(SVG_NS_URI, "polyline");
-        var x, y;
-
-        svgPath.classList.add("path");
-
-        svgLine.setAttribute("stroke", option.color);
-        svgLine.setAttribute("stroke-width", option.size);
-
-        svgPath.appendChild(svgLine);
-
-        if (args.posFrom && args.posTo) {
+    const draw = {
+        clock: (container, from, to) => {
             const
-                x1 = args.posFrom.x,
-                y1 = args.posFrom.y;
-
-            x = args.posTo.x - x1;
-            y = args.posTo.y - y1;
-
-            switch (option.type) {
-            case "clock":
-                svgLine.setAttribute("points", `0,0 ${x},0 ${x},${y}`);
-
-                break;
-            case "counter":
-                svgLine.setAttribute("points", `0,0 0,${y} ${x},${y}`);
-
-                break;
-            default:
-                svgLine.setAttribute("points", `0,0 ${x},${y}`);
-            }
-
-            svgPath.setAttribute("transform", "translate("+ x1 +","+ y1 +")");
-        } else {
-            const
-                pos = args.posFrom || args.posTo,
-                peer = document.createElementNS(SVG_NS_URI, "circle");
+                svgLine = container.querySelector("polyline"),
+                labels = container.querySelectorAll("text"),
+                x1 = from.x,
+                y1 = from.y,
+                x = to.x - x1,
+                y = to.y - y1;
             
-            x = 0;
-            y = -100;
+            svgLine.setAttribute("points", `0,0 ${x},0 ${x},${y}`);
+
+            labels[0].setAttribute("x", x /2);
+            labels[0].setAttribute("y", 0);
+
+            labels[1].setAttribute("x", x);
+            labels[1].setAttribute("y", y /2);
+
+            container.setAttribute("transform", `translate(${x1},${y1})`);
+        },
+        counter: (container, from, to) => {
+            const
+                svgLine = container.querySelector("polyline"),
+                labels = container.querySelectorAll("text"),
+                x1 = from.x,
+                y1 = from.y,
+                x = to.x - x1,
+                y = to.y - y1;
+            
+            svgLine.setAttribute("points", `0,0 0,${y} ${x},${y}`);
+
+            labels[0].setAttribute("x", 0);
+            labels[0].setAttribute("y", y /2);
+
+            labels[1].setAttribute("x", x /2);
+            labels[1].setAttribute("y", y);
+            
+            container.setAttribute("transform", `translate(${x1},${y1})`);
+        },
+        line: (container, from, to) => {
+            const
+                svgLine = container.querySelector("polyline"),
+                labels = container.querySelectorAll("text"),
+                x1 = from.x,
+                y1 = from.y,
+                x = to.x - x1,
+                y = to.y - y1;
 
             svgLine.setAttribute("points", `0,0 ${x},${y}`);
 
-            svgPath.setAttribute("transform", `translate(${pos.x},${pos.y})`);
+            labels[0].setAttribute("x", x /3);
+            labels[0].setAttribute("y", y /3);
+
+            labels[1].setAttribute("x", x *2/3);
+            labels[1].setAttribute("y", y *2/3);
+
+            container.setAttribute("transform", `translate(${x1},${y1})`);
+        },
+        upLink: (container, from, to) => {
+            const
+                svgLine = container.querySelector("polyline"),
+                labels = container.querySelectorAll("text"),
+                peer = document.createElementNS(SVG_NS_URI, "circle"),
+                x = 0,
+                y = -100,
+                pos = from || to;
 
             peer.setAttribute("cx", x);
             peer.setAttribute("cy", y);
             peer.setAttribute("r", 10);
 
-            svgPath.appendChild(peer);
+            svgLine.setAttribute("points", `0,0 ${x},${y}`);
+
+            labels[0].setAttribute("x", x);
+            labels[0].setAttribute("y", y /3);
+
+            labels[1].setAttribute("x", x);
+            labels[1].setAttribute("y", y *2/3);
+
+            container.appendChild(peer);
+
+            container.setAttribute("transform", `translate(${pos.x},${pos.y})`);
         }
+    };
+
+    const setLabel = (container, id, labels = []) => {
+        labels.forEach(label => {
+            if (label.name) {
+                const tspan = document.createElementNS(SVG_NS_URI, "tspan");
+
+                tspan.textContent = " "+ (label.name.length >= TEXT_TRIM?
+                    label.name.substring(0, TEXT_TRIM) +"...":
+                    label.name) +" ";
+    /*
+                if (label.click) {
+                    tspan.onclick = e => label.click(id, label.index);
+                }
+    */
+                container.appendChild(tspan);
+            }
+        });
+    };
+
+    const createPath2 = function (args, func) {
+        const
+            svgPath = document.createElementNS(SVG_NS_URI, "g"),
+            svgLine = document.createElementNS(SVG_NS_URI, "polyline"),
+            labelFrom = document.createElementNS(SVG_NS_URI, "text"),
+            labelTo = document.createElementNS(SVG_NS_URI, "text");
         
-        if (labelFrom) {
-            const text = document.createElementNS(SVG_NS_URI, "text");
-            let tspan;
+        svgPath.classList.add("path");
 
-            svgPath.appendChild(text);
+        svgPath.appendChild(svgLine);
+        svgPath.appendChild(labelFrom);
+        svgPath.appendChild(labelTo);
 
-            switch(option.type) {
-                case "clock":
-                    text.setAttribute("x", x /2);
-                    text.setAttribute("y", 0);
+        svgLine.setAttribute("stroke", args.option.color);
+        svgLine.setAttribute("stroke-width", args.option.size);
+        
+        setLabel(labelFrom, args.from.id, args.from.label);
+        setLabel(labelTo, args.to.id, args.to.label);
 
-                    break;
-                case "counter":
-                    text.setAttribute("x", 0);
-                    text.setAttribute("y", y /2);
-
-                    break;
-                default:
-                    text.setAttribute("x", x /3);
-                    text.setAttribute("y", y /3);
-            }
-
-            labelFrom.forEach(label => {
-                tspan = document.createElementNS(SVG_NS_URI, "tspan");
-
-                tspan.textContent = " "+ (label.name.length >= TEXT_TRIM?
-                    label.name.substring(0, TEXT_TRIM) +"...":
-                    label.name) +" ";
-
-                if (label.click) {
-                    tspan.onclick = e => label.click(nodeFrom, label.index);
-                }
-
-                text.appendChild(tspan);
-            });
-        }
-
-        if (labelTo) {
-            const text = document.createElementNS(SVG_NS_URI, "text");
-            let tspan;
-
-            svgPath.appendChild(text);
-
-            switch(option.type) {
-                case "clock":
-                    text.setAttribute("x", x);
-                    text.setAttribute("y", y /2);
-
-                    break;
-                case "counter":
-                    text.setAttribute("x", x /2);
-                    text.setAttribute("y", y);
-
-                    break;
-                default:
-                    text.setAttribute("x", x *2/3);
-                    text.setAttribute("y", y *2/3);
-            }
-            
-            labelTo.forEach(label => {
-                tspan = document.createElementNS(SVG_NS_URI, "tspan");
-
-                tspan.textContent = " "+ (label.name.length >= TEXT_TRIM?
-                    label.name.substring(0, TEXT_TRIM) +"...":
-                    label.name) +" ";
-                
-                if (label.click) {
-                    tspan.onclick = e => label.click(nodeTo, label.index);
-                }
-
-                text.appendChild(tspan);
-            });
-        }
-
-        layerMap.path.appendChild(svgPath);
-
+        draw[func](svgPath, args.from.pos, args.to.pos);
+        
         return svgPath;
     };
 
-    window.setStatus = function (id, status) {
-        const device = deviceMap[id];
+    const createPath = function (args) {
+        if (args.from.pos && args.to.pos) {
+            return createPath2(args, args.option.type || "line");
+        } else {
+            let id;
 
-        if (device) {
-            if (!device.querySelector("circle")) {
-                const status = document.createElementNS(SVG_NS_URI, "circle");
+            if (!args.from.pos) {
+                const tmp = args.to;
 
-                status.setAttribute("r", window.OFFSET_C);
-	            status.setAttribute("cx", 0);
-                status.setAttribute("cy", 0);
-                
-                device.appendChild();
+                args.to = args.from;
+                args.from = tmp;
             }
 
-            device.classList.add(status);
+            id = String(args.from.id); 
+            
+            if (id in upLinkMap) {
+                const
+                    svgPath = upLinkMap[id],
+                    labels = svgPath.querySelectorAll("text");
+
+                setLabel(labels[0], args.from.id, args.from.label);
+                setLabel(labels[1], args.to.id, args.to.label);
+            } else {
+                return upLinkMap[id] = createPath2(args, "upLink");
+            }
         }
     };
 
-    window.focusDevice = function (id) {
-        const device = deviceMap[id];
+    function findBranchID(id) {
+        id = String(id);
 
-        if (device) {
-            const matrix = device.transform.baseVal.getItem(0).matrix;
+        for (let pos; pos = window.positionData[id]; id = String(pos.parent)) {
+            if (pos.parent === stage) {
+                return id;
+            }
+
+            if (!("parent" in pos)) {
+                break;
+            }
+        }
+    }
+
+    function focusNode (id) {
+        const node = nodeMap[String(id)];
+
+        if (node) {
+            const matrix = node.transform.baseVal.getItem(0).matrix;
 
             transform.translate.setTranslate(-matrix.e, -matrix.f);
 
@@ -392,7 +404,232 @@
         }
     };
 
-    function createTitle () {
-        return document.createElementNS(SVG_NS_URI, "title");
+    function initBranch() {
+        const
+            df = document.createDocumentFragment();
+        let node, pos, args, id;
+        
+        for (let id in window.branchData) {
+            node = window.branchData[id];
+            pos = window.positionData[id];
+            
+            // 동기화 안된 node의 pos 정보가 없음
+            if (!pos) {
+                window.positionData[id] = pos = {
+                    x: 0,
+                    y: 0
+                };
+            }
+            
+            // 상위 그룹이 삭제 되었음
+            if (pos.parent && !(pos.parent in window.branchData)) {
+                pos.parent = undefined;
+            }
+            
+            if (pos.parent !== stage) {
+                continue;
+            }
+            
+            args = {
+                node: node,
+                icon: window.iconData[node.type || "unknown"] || window.iconData["unknown"],
+                position: window.positionData[id],
+                onclick: moveStage,
+                status: shutdown.indexOf(id) !== -1? "shutdown": critical.indexOf(id) !== -1? "critical": major.indexOf(id) !== -1? "major": "normal",
+                size: 60
+            };
+
+            df.appendChild(nodeMap[id] = createNode(args));
+        }
+
+        layerMap.device.appendChild(df);
+    }
+
+    function initNode() {
+        const df = document.createDocumentFragment();
+        let node, pos, branch, args;
+        
+        for (let id in window.nodeData) {
+            node = window.nodeData[id];
+            pos = window.positionData[id];
+            
+            // 동기화 안된 node의 pos 정보가 없음
+            if (!pos) {
+                window.positionData[id] = pos = {
+                    x: 0,
+                    y: 0
+                };
+            }
+            
+            // 상위 그룹이 삭제 되었음
+            if (pos.parent && !(pos.parent in window.branchData)) {
+                pos.parent = undefined;
+            }
+            
+            if (pos.parent === stage) {
+                args = {
+                    node: node,
+                    icon: window.iconData[node.type || "unknown"] || window.iconData["unknown"],
+                    position: window.positionData[id]
+                };
+    
+                if ("protocol" in node) {
+                    args.onclick = e => showChart(id);
+    
+                    if ("status" in node && !node.status) {
+                        args.status = "shutdown";
+                    } else if ("critical" in node && !node.critical) {
+                        args.status = "critical";
+                    } else if (("match" in node && !node.match) || ("snmp" in node && node.snmp !== 0)) {
+                        args.status = "major";
+                    }
+                } else {
+                    args.status = "disabled"
+                }
+    
+                df.appendChild(nodeMap[id] = createNode(args));
+            }
+            else if (pos.parent && (branch = findBranchID(pos.parent))) {
+                // 하위
+                if ("protocol" in node) {
+                    if ("status" in node && !node.status) {
+                        shutdown.push(branch);
+                    } else if ("critical" in node && !node.critical) {
+                        critical.push(branch);
+                    } else if (("match" in node && !node.match) || ("snmp" in node && node.snmp !== 0)) {
+                        major.push(branch);
+                    }
+                }
+            }
+        }
+
+        layerMap.device.appendChild(df);
+    }
+
+    function initLink() {
+        for (let id in window.linkData) {
+            link = window.linkData[id];
+
+            if (!linkMap[link.nodeFrom]) {
+                linkMap[link.nodeFrom] = {};
+            }
+
+            if (!linkMap[link.nodeTo]) {
+                linkMap[link.nodeTo] = {};
+            }
+
+            if (linkMap[link.nodeFrom][link.nodeTo]) {
+                linkMap[link.nodeFrom][link.nodeTo].push(id);
+            } else {
+                linkMap[link.nodeFrom][link.nodeTo] =
+                linkMap[link.nodeTo][link.nodeFrom] = [id];
+            } 
+        }
+    }
+
+    function initPath() {
+        const df = document.createDocumentFragment();
+        let path, from;
+    
+        for (let id in window.pathData) {
+            path = window.pathData[id];
+    
+            from = String(path.from);
+    
+            if (!(from in pathMap)) {
+                pathMap[from] = {};
+            }
+            
+            pathMap[from][String(path.to)] = path;
+        }
+
+        for (let nodeFrom in pathMap) {
+            peerMap = pathMap[nodeFrom];
+    
+            for (let nodeTo in peerMap) {
+                args = {
+                    from: {
+                        id: nodeFrom,
+                        label: []
+                    },
+                    to: {
+                        id: nodeTo,
+                        label: []
+                    },
+                    option: peerMap[nodeTo],
+                };
+                
+                id = findBranchID(nodeFrom);
+    
+                if (id) {
+                    args.from.pos = window.positionData[id];
+                }
+                
+                id = findBranchID(nodeTo);
+    
+                if (id) {
+                    args.to.pos = window.positionData[id];
+                }
+    
+                if ((args.from.pos === args.to.pos)) {
+                    continue;
+                }
+
+                if (!args.from.pos && !args.to.pos) {
+                    continue;
+                }
+
+                if (!args.option.color) {
+                    args.option.color = window.settingData["LINKCOLOR"] || "#ffffff";
+                }
+    
+                if (!args.option.size) {
+                    args.option.size = window.settingData["LINKSIZE"] || 2;
+                }
+    
+                link = linkMap[nodeFrom];
+    
+                if (link) {
+                    link = link[nodeTo];
+    
+                    if (link) {
+                        link.forEach(id => {
+                            const link = window.linkData[id];
+    
+                            if (link.indexFrom) {
+                                args.from.label.push({
+                                    index: link.indexFrom,
+                                    name: link.indexFromName,
+                                    click: showChart
+                                });
+                            }
+                            
+                            if (link.indexTo) {
+                                args.to.label.push({
+                                    index: link.indexTo,
+                                    name: link.indexToName,
+                                    click: showChart
+                                });
+                            }
+                        });
+                    }
+                }
+
+                path = createPath(args);
+
+                path && df.appendChild(path);
+            }
+        }
+
+        layerMap.path.appendChild(df);
+    }
+
+    function initialize(id) {
+        stage = id;
+        
+        initNode();
+        initBranch();
+        initLink();
+        initPath();
     }
 }

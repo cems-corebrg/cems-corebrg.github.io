@@ -8,30 +8,58 @@
 @import "/css/fa.css";
 
 body {
-    font : 10pt "맑은 고딕", Arial, Tahoma;
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    position: fixed; inset: 0 0 0 0;
     padding: 0; margin: 0;
-    background: #fff url("/img/bg_signin.png") no-repeat center center fixed;
-	background-size: cover;
+    background: #2f2f2f url(/img/bg_circuit.png) no-repeat center/cover fixed;
+    display: flex; flex-direction: column;
 }
 
-body::before {
-	content: "";
-	position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-	background-color: rgba(0, 0, 0, 0.5);
-	z-index: -1;
+main {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+aside {
+    position: absolute; inset: 1em 50% auto auto;
+    transform: translateX(50%);
+    width: 620px; height: 80px;
+	padding: 1em;
+	pointer-events: none;
+}
+
+header {
+    position: absolute; inset: 0 0 auto 0;
+    padding: 5px;
+    display: flex; justify-content: space-between;
+    pointer-events: none;
+}
+
+dialog {
+    height: 100%;
+    width: 50%;
+    overflow: hidden;
+    padding: unset;
+    background-color: #ffffff7f;
+}
+
+dialog::after {
+    position: absolute; inset: 0.5em auto auto 0.5em;
+    content: attr(data-name);
+    font-size: 2em;
+    font-weight: bold;
 }
 
 nav {
-    position: absolute; top: 5px; left: 5px;
-    display: flex;
     font: 20px "Font Awesome 5 Free";
     color: #ffffff;
+    display: flex;
 }
 
-nav >span {
+nav span {
     border-radius: 50%;
-    display: flex; width: 32px; height: 32px;
+    display: flex;
+    width: 32px; height: 32px;
     align-items: center;
     justify-content: center;
     background-color: rgba(0, 132, 255, 0.5);
@@ -39,28 +67,62 @@ nav >span {
     cursor: pointer;
 }
 
-nav >span:hover {
+nav span:hover {
     background-color: #0084ff;
+}
+
+header :is(nav, select) {
+    pointer-events: all;
+}
+
+header select {
+    padding: 0.5em;
+}
+
+canvas:focus {
+    outline: none;
 }
 
 .label {
     cursor: pointer;    
-    font-size: 12px;
+    font-size: 1.2em;
     position: absolute;
     transform: translateY(-50%);
-    color: #ffffff;
-    background-color: rgba(0, 0, 0, 0.5);
+    padding: 0.5em;
+    background-image: linear-gradient(#ffffff, #aaaaaa 50%, #aaaaaa);
+}
+
+.label span {
+    display: inline-block;
+    padding: 5px;
+    border: 1px solid #777777;
+    color: #000000;
+    text-shadow: 0 0 1px #000000;
+}
+
+#close {
+    position: absolute; inset: 1em 1em auto auto;
+    font: 20px "Font Awesome 5 Free";
+    border-radius: 50%;
+    display: inline-flex; width: 32px; height: 32px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 132, 255, 0.5);
+    color: #000000;
+    border-color: #0084ff;
+    cursor: pointer;
+}
+
+#close:hover {
+    background-color: #0084ff;
 }
 
 iframe {
-    position: absolute; inset: 0 0 0 0;
     width: 100%; height: 100%;
     border: none;
 }
 
-body:not(.focus) iframe,
-body.play #play,
-body:not(.play) #stop {
+body.empty #edit {
     display: none;
 }
 
@@ -68,7 +130,10 @@ body:not(.play) #stop {
             <script>
 
 function onSelectRack (id) {
-    const iframe = document.querySelector("iframe");
+    const
+        dialog = document.body.querySelector("dialog"),
+        iframe = dialog.querySelector("iframe"),
+        facility = parent.facilityData[id];
 
     iframe.onload = e => {
         const locationData = {};
@@ -84,52 +149,123 @@ function onSelectRack (id) {
 
         iframe.contentWindow.initialize({
             id: id,
-            facility: parent.facilityData[id],
+            facility: facility,
             locationData: locationData,
             nodeData: parent.nodeData,
-            modelData: parent.modelData
+            modelData: $.loader.map
         });
 
-        document.body.classList.add("focus");
+        dialog.showModal();
     };
+
+    dialog.dataset.name = facility.name;
 
     iframe.src = `/dc/dialog/focus.html?id=${id}`;
 }
 
-function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+function loadTexture (url) {
+    return new Promise((resolve, reject) => {
+        new THREE.TextureLoader().load(url,
+            texture => {
+                texture.minFilter = THREE.LinearFilter;
 
-        break;
-    default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+                resolve(texture);
+            },
+            undefined,
+            e => reject(e));
+    });
+}
+
+function onSearch (e) {
+    const keyword = prompt("노드 이름 또는 IP주소를 입력하세요.");
+    
+    if (!keyword) {
+        return;
+    }
+    
+    let node;
+
+    for (let id in parent.nodeData) {
+        node = parent.nodeData[id];
+
+        if (keyword === node.ip || keyword === node.name) {
+            return parent.focusNode(Number(id));
+        }
     }
 
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
+    alert("Information.\n\n검색 결과가 없습니다.");
+}
+
+function showMessage(xhr) {
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
+
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
+    }
 }
 
             </script>
         </head>
         
-        <body class="loading">
-            <iframe></iframe>
-            <div class="bg_loading"></div>
+        <body class="empty loading">
+            <aside>
+                <iframe src="/status.html"></iframe>
+            </aside>
+            <main></main>
+            <dialog>
+                <iframe></iframe>
+                <span id="close" title="닫기">
+                    &#xf00d;
+                </span>
+            </dialog>
+            <header>
+                <nav>
+                    <span title="편집 모드" id="edit">
+                        &#xf013;
+                    </span>
+                    <span title="노드 찾기" id="search">
+                        &#xf002;
+                    </span>
+                </nav>
+                <form>
+                    <select></select>
+                </form>
+            </header>
+            <div class="loading mask"></div>
             <script src="/js/import/three.js"></script>
             <script src="/js/import/OrbitControls.js"></script>
             <script src="/dc/viewer.js"></script>
             <script src="/js/request.js"></script>
+            <script src="/js/constants.js"></script>
             <script src="/dc/model.js"></script>
+            <script src="/util/loader.js"></script>
             <script>
 
 const
     search = new URLSearchParams(window.location.search),
     $ = {
         request: new Request(),
-        focus: Number(search.get("focus")) || undefined
+        branch: search.get("branch"),
+        focus: Number(search.get("focus")) || undefined,
+        loader: new ImageLoader(onLoadImage, loadTexture)
     };
+
+document.getElementById("edit").onclick = e => window.location.replace(`/dc/editor.html?branch=${$.branch}`);
+document.getElementById("close").onclick = e => document.body.querySelector("dialog").close();
+document.getElementById("search").onclick = onSearch;
 
 /**
  * @param {string} id
@@ -143,12 +279,12 @@ function addDevice(id, location) {
 
     try {
         const model = modelData[location.maker][location.model];
-
+        
         if (model) {
             config.model = {
                 unit: model.unit,
-                front: parent.modelData[model.front],
-                rear: parent.modelData[model.rear]
+                front: $.loader.map[model.front],
+                rear: $.loader.map[model.rear]
             };
         }
     } catch (e) {
@@ -169,43 +305,123 @@ function addDevice(id, location) {
     putDevice(location.rack, id, config);
 }
 
-{  
-    let facility, model, pos;
+function onLoadImage() {
+    let ficility, location, model, pos;
 
     for (let id in parent.facilityData) {
         facility = parent.facilityData[id];
-        
-        pos = parent.positionData[id];
 
-        if (!pos) {
-            pos = {
-                x: 0,
-                y: 0,
-                z: 0
-            };
-
-            parent.positionData[id] = pos;
+        if (facility.branch === Number($.branch)) {
+            if (id in $.positionData) {
+                pos = $.positionData[id];
+            } else {
+                $.positionData[id] =
+                pos = {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                }
+            }
+            
+            createFacility(facility, pos);
         }
-        
-        createFacility(facility, pos);
     }
+
+    for (let id in parent.locationData) {
+        location = parent.locationData[id];
+
+        if (String(location.rack) in $.positionData) {
+            addDevice(id, location);
+        }
+    }
+
+    draw();
+
+    if ($.focus) {
+        onSelectRack($.focus);
+    }
+
+    document.body.classList.remove("loading");
 }
 
-for (let id in parent.locationData) {
-    addDevice(id, parent.locationData[id]);
+{
+    const
+        select = document.body.querySelector("form select"),
+        df = document.createDocumentFragment();
+    let option;
+
+    for (let id in parent.branchData) {
+        option = document.createElement("option");
+
+        option.text = parent.branchData[id].name;
+        option.value = id;
+
+        df.appendChild(option);
+    }
+
+    select.appendChild(df);
+
+    if ($.branch) {
+        select.value = $.branch;
+
+        document.body.classList.remove("empty");
+    } else {
+        select.selectedIndex = -1;
+    }
+
+    select.onchange = function (e) {
+        const search = new URLSearchParams();
+
+        search.set("branch", this.value);
+
+        window.location.search = search;
+    };
 }
 
-if (parent.settingData.dc) {
-    setFloor(JSON.parse(parent.settingData.dc));
+if ($.branch) {
+    const models = [];
+    let positionData, location;
+
+    if ($.branch in parent.positionData) {
+        positionData = parent.positionData[$.branch];
+    } else {
+        parent.positionData[$.branch] =
+        positionData = {
+            size: {
+                width: 10000,
+                height: 10000
+            },
+            position: {}
+        };
+    }
+
+    $.positionData = positionData.position;
+
+    setFloor({
+        width: positionData.size.width,
+        height: positionData.size.height
+    });
+
+    for (let id in parent.locationData) {
+        location = parent.locationData[id];
+
+        if (String(location.rack) in $.positionData) {
+            try {
+                const model = modelData[location.maker][location.model];
+
+                if (model) {
+                    models.push(model.front);
+                    models.push(model.rear);
+                }
+            } catch (e) {
+            }
+        }
+    }
+
+    $.loader.load(models);
+} else {
+    document.body.classList.remove("loading");
 }
-
-draw();
-
-if ($.focus) {
-    onSelectRack($.focus);
-}
-
-document.body.classList.remove("loading");
 
         </script>
     </body>

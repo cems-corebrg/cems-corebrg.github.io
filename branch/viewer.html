@@ -6,7 +6,7 @@
 		<title></title>
 		
 		<style>
-@import "/css/itahm.css";
+@import "/css/style.css";
 @import "/css/fa.css";
 
 body {
@@ -71,7 +71,7 @@ nav >span:hover {
     animation: status 2s infinite;
 }
 
-.bg_loading {
+.loading.mask {
     z-index: 9;
 }
 
@@ -103,8 +103,6 @@ function addBranch(id, branch, status) {
         marker = new kakao.maps.Marker({
             position: pos,
             zIndex: 7
-            //clickable: false
-            //,image: new kakao.maps.MarkerImage("/img/svg/idc.svg", new kakao.maps.Size(50, 40))
         }),
         div = document.createElement("div");
 
@@ -227,18 +225,24 @@ function onSearch (e) {
 }
 
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert(NOTICE_SESS_EXPIRE["kr"]);
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
         </script>
@@ -253,9 +257,8 @@ function showMessage(xhr) {
                 &#xf002;
             </span>
         </nav>
-        <div class="bg_loading"></div>
+        <div class="loading mask"></div>
 
-        <script src="/js/channel.js"></script>
         <script src="/js/constants.js"></script>
         <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=2d5f1506a806e98b9b51ecb765853bd7&libraries=services,clusterer,drawing"></script>
         <script>

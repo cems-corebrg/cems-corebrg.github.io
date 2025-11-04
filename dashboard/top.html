@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>CeMS Top N</title>
+		
+		<style>
+@import "/css/style.css";
+@import "/css/var.css";
+@import "/css/fa.css";
+
+body {
+    position: fixed; inset: 0;
+    padding: 0; margin: 0;
+    background-color: #0000005f;
+}
+
+main {
+    height: 100%;
+    user-select: none;
+    display: flex;
+}
+
+canvas {
+    width: 100% !important;
+    background-color: #0000005f;
+}
+
+section header {
+    position: relative;
+	padding: .5em; 
+    text-align: center;
+	border-radius: 0.5em 0.5em 0 0;
+	font-weight: bold;
+	color: #fff;
+	background-color: #000;
+	text-shadow: 0 0 2px #000000;
+    pointer-events: none;
+}
+
+section header::after {
+    font-family: "Font Awesome 5 Free";
+    content: "\f00d";
+	position: absolute; top: 0.5em; right: 0.5em;
+    color: #fff;
+    pointer-events: all;
+    opacity: 0.2;
+}
+
+section header:hover::after {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+section header::before {
+    position: absolute; top: 5px; left: 5px;
+    font: 36px "Font Awesome 5 Free";
+    color: /*#febd14#a62c2b#a9a9a9*/#a62c2b;
+    opacity: 0.8;opacity: 1;
+    text-shadow: 0 2px 3px #000000;
+}
+
+#response header::before {
+    content: "\f2f2";
+}
+
+#load header::before {
+    content: "\f3fd";
+}
+
+#memory header::before {
+    content: "\f7c2";
+}
+
+#storage header::before {
+    content: "\f1c0";
+}
+
+#temperature header::before {
+    content: "\f76b";
+}
+
+:is(#input, #output) header::before {
+    content: "\f796";
+}
+
+:is(#inerror, #outerror) header::before {
+    content: "\f06a";
+}
+
+nav {
+    position: absolute; inset: 0 0 auto 0;
+    padding: 1em;
+    display: flex; justify-content: space-between;
+    user-select: none;
+    pointer-events: none;
+}
+
+nav span {
+    pointer-events: all;
+}
+
+#display::before {
+    content: "\f074";
+}
+
+section:not(:has(canvas)),
+body.name li:nth-child(2),
+body:not(.name) li:nth-child(1) {
+	display: none;
+}
+
+@media screen and (min-aspect-ratio:4/5) and (max-aspect-ratio:5/4) {
+	main {
+		display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+	}
+
+    section {
+        width: 100%; height: 100%;
+    }
+}
+
+@media screen and (max-aspect-ratio:4/5) {
+	main {
+		display: flex;
+        flex-direction: column;
+	}
+
+    section {
+        flex: 1 100px;
+        min-width: 100px;
+    }
+}
+
+@media screen and (min-aspect-ratio:5/4) {
+	main {
+		display: flex;
+        flex-direction: row;
+	}
+
+    section {
+        flex: 1 100px;
+        min-width: 100px;
+    }
+}
+		</style>
+        <script>
+function toErrorString(value) {
+	return value +"cps";
+}
+
+function toMillsString(value) {
+	return value +"ms";
+}
+
+function toPercentageString(value) {
+	return value.toFixed(2) +"%";
+}
+
+function toTemperatureString (value) {
+    return value.toFixed(2) + String.fromCodePoint("0x2103");
+}
+
+function setTop(section, idToValue) {
+    const
+        data = {},
+        chart = section.querySelector("canvas");
+    let base;
+
+    if (chart) {
+        section.removeChild(chart);
+    }
+
+    for (let id in idToValue) {
+        let value = idToValue[id];
+
+        if ("skipzero" in section.dataset && !value) {
+            continue;
+        }
+
+        base = $.nodeData[id];
+
+        if (!base) {
+            alert("Information.\n\n노드 정보가 수정되었습니다.\n페이지를 새로고침 합니다.");
+        
+            window.location.reload();
+
+            break;
+        }
+
+        data[base.name || base.ip || id] = value;
+    }
+
+    if (Object.keys(data).length > 0) {
+        createChart(section, data, window[section.dataset.func]);
+    }
+}
+
+function createChart (container, data, toString) {
+    const
+        colors = [
+            "#66c5ccd0",
+            "#f6cf71d0",
+            "#f89c74d0",
+            "#dcb0f2d0",
+            "#87c55fd0",
+            "#9eb9f3d0",
+            "#fe88b1d0",
+            "#c9db74d0",
+            "#8be0a4d0",
+            "#b497e7d0",
+            "#b3b3b3d0"
+        ],
+        config = {
+            type: 'polarArea',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    r: {
+                        pointLabels: {
+                            display: false,
+                            centerPointLabels: true,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        ticks: {
+                            color: "#ffffffa9",
+                            backdropColor: "rgba(0,0,0,0)",
+                            count: 6,
+                            callback: value => toPercentageString(value)
+                        },
+                        grid: {
+                            color: "#ffffff5f"
+                        },
+                        max: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    datalabels: {
+                        formatter: function(value, context) {
+                            console.log(context);
+
+                            return context.chart.data.labels[context.dataIndex] +"!";
+                        }
+                    }
+                }
+            }
+        };
+    let
+        value,
+        index = 0,
+        max = 100;
+
+    if (toString) {
+        max = 0;
+
+        config.options.scales.r.ticks.callback = value => toString(value);
+    }
+
+    for (let name in data) {
+        value = data[name];
+
+        config.data.labels.push(name);
+        config.data.datasets[0].data.push(value);
+        config.data.datasets[0].backgroundColor.push(colors[index++]);
+
+        max = Math.max(value, max);
+    }
+
+    config.options.scales.r.max = max;
+
+    Chart.defaults.elements.arc.borderColor = "#ffffff50";
+    
+    return new Chart(container.appendChild(document.createElement("canvas")), config);
+}
+
+function showMessage(xhr) {
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
+
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
+    }
+}
+
+		</script>
+		
+	</head>
+	
+	<body class="name loading">
+        <main>
+            <section id="response" data-func="toMillsString" data-chart="/chart/responseTime.html">
+                <header>응답시간</header>
+                <footer></footer>
+            </section>
+            <section id="load" data-chart="/chart/processor.html">
+                <header>프로세서 로드</header>
+                <footer></footer>
+            </section>
+            <section id="memory" data-chart="/chart/storage.html">
+                <header>메모리</header>
+                <footer></footer>
+            </section>
+            <section id="storage" data-chart="/chart/storage.html">
+                <header>저장공간</header>
+                <footer></footer>
+            </section>
+            <section id="input" data-chart="/chart/throughput.html">
+                <header>수신</header>
+                <footer></footer>
+            </section>
+            <section id="output" data-chart="/chart/throughput.html">
+                <header>송신</header>
+                <footer></footer>
+            </section>
+            <section id="inerror" data-func="toErrorString" data-skipzero data-chart="/chart/error.html">
+                <header>수신 오류</header>
+                <footer></footer>
+            </section>
+            <section id="outerror" data-func="toErrorString" data-skipzero data-chart="/chart/error.html">
+                <header>송신 오류</header>
+                <footer></footer>
+            </section>
+            <section id="temperature" data-func="toTemperatureString" data-chart="/chart/storage.html">
+                <header>온도</header>
+                <footer></footer>
+            </section>
+        </main>
+        
+        <div class="loading mask"></div>
+        
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script src="/js/import/chart.4.5.0.js"></script>
+        <script>
+const
+    INTERVAL = 10000,
+    $ = {
+        request: new Request()
+    };            
+        </script>
+		<script type="module">
+import Channel from "../js/module/channel.js";
+
+[].forEach.call(document.body.querySelectorAll("section"), section => {
+    section.draggable = true;
+
+    section.querySelector("header").onclick = e => section.parentNode.removeChild(section);
+
+    section.addEventListener("dragstart", function (e) {
+        e.stopPropagation();
+        
+        $.draggable = this;
+    });
+    
+    section.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        
+        if ($.draggable === this) {
+            return;
+        }
+        
+        switch ($.draggable) {
+        case this.previousElementSibling:
+            this.parentNode.insertBefore(this, $.draggable);
+            
+            break;
+        default:
+            this.parentNode.insertBefore($.draggable, this);
+        }
+    });
+});
+
+$.request.query({
+    command: "get",
+    target: "node"
+}).then(nodeData => {
+    const display = window.localStorage.getItem("display");
+
+    if (display === "address") {
+        document.body.classList.remove("name");
+    }
+
+    $.nodeData = nodeData;
+
+    getTop();
+}).catch(showMessage);
+
+function getTop() {
+    $.request.query({
+        command: "get",
+		target: "top",
+        count: 10
+    }).then(data => {
+        let container;
+
+        for (const template in data) {
+            setTop(document.body.querySelector(`#${template}`), data[template]);
+        }
+        
+        setTimeout(() => requestAnimationFrame(getTop), 5000);
+
+        document.body.classList.remove("loading");
+    }).catch(showMessage);
+}
+		</script>
+	
+	</body>
+	
+</html>

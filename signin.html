@@ -5,28 +5,38 @@
 		<title>CeMS Console</title>
 		
 		<style>
-
+@import "/css/style.css";
 @import "/css/fa.css";
 
 body {
-    font-family: arial, tahoma, "맑은 고딕";
-    font-size: 10pt;
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	position: fixed; inset: 0 0 0 0;
     margin: 0; padding: 0;
-    background: #f9f9f9 url("/img/bg_signin.png") fixed center no-repeat;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #000000 url("/img/bg_signin2.png") fixed center no-repeat;
+    background-size: contain;
+    display: flex; align-items: center; justify-content: center;
+}
+
+body::before {
+    content: "";
+    z-index: -1;
+    position: absolute; inset: 0 0 0 0;
+    background: linear-gradient(#0000007f, #000000);
 }
 
 main {
     width: 320px;
 }
 
+section {
+    padding: 1em;
+    background-color: #1b1c2e;
+    color: #fefefe;
+    /*box-shadow: 0 0 10px #3e54d3;*/
+}
+
 form {
     padding: 20px;
     border: 1px solid #ddd;
-    background-color: #fff;
 }
 
 h1, h2 {
@@ -39,12 +49,23 @@ h1, h2 {
     padding: 1em;
     border: 1px solid #ddd;
     border-radius: 3px;
+    background-color: #fefefe;
 }
 
-.input >span {
+.input::before {
+    font-family: 'Font Awesome 5 Free';
     flex: none;
     display: inline-block;
     margin: 0 0.5em;
+    color: #1b1c2e;
+}
+
+.input.id::before {
+    content: "\f007";
+}
+
+.input.password::before {
+    content: "\f023";
 }
 
 .input >input {
@@ -58,23 +79,31 @@ h1, h2 {
     color: #0084ff;
 }
 
-input[type=submit],
-input[type=reset] {
+[type=submit],
+[type=reset] {
     width: 100%;
 	box-sizing: border-box;
 	padding: 10px;
 	margin-top: 20px;
-	background-image: linear-gradient(#7af, #0084ff 45%,  #0084ff 55%, #7af);
-	border: 1px solid #07f;
 	font-weight: bold;
 	color: #fff;
+}
+
+[type=submit] {
+    background-image: linear-gradient(#5cb85c, #398439 45%,  #398439 55%, #5cb85c);
+	border: 1px solid #398439;
+}
+
+[type=reset] {
+    background-image: linear-gradient(#d9534f, #ac2925 45%,  #ac2925 55%, #d9534f);
+	border: 1px solid #ac2925;
 }
 
 .footer {
     display: flex;
 }
 
-.footer >input {
+.footer >button{
     flex: 1;
     font-family: "Font Awesome 5 Free", "맑은 고딕", Tahoma, Arial;
 }
@@ -97,6 +126,10 @@ function onSignIn() {
             document.getElementById("signin").elements["id"].select();
             
             break;
+        case 410:
+            alert("라이선스가 만료 되었습니다.");
+
+            break;
         default:
             alert(`Error!\n\n오류 코드${this.status}.`);
 
@@ -115,59 +148,80 @@ function onSignIn() {
 		<main>
             <h1>Sign In</h1>
             <h2 id="agent"></h2>
-            <form id="signin" class="account">
-                <p>Username</p>
-                <div class="input">
-                    <span class="glyph">&#xf007;</span>
-                    <input type="text" name="id" required>
-                </div>
-                <p>Password</p>
-                <div class="input">
-                    <span class="glyph">&#xf023;</span>
-                    <input type="password" name="password" required>
-                </div>
-                <div class="footer">
-                    <input type="reset" value="Cancel" class="button" lang="en">
-                    <input type="submit" value="Sign in" class="button" lang="en">
-                    <input type="reset" value="&#xf55a; 취소" class="button">
-                    <input type="submit" value="&#xf2f6; 접속" class="button">
-                </div>
-            </form>
+            <section>
+                <form id="signin" class="account">
+                    <p>Username</p>
+                    <div class="input id">
+                        <input type="text" name="id" required autocomplete="off" value="root">
+                    </div>
+                    <p>Password</p>
+                    <div class="input password">
+                        <input type="password" name="password" required autocomplete="off" value="root">
+                    </div>
+                    <div class="footer">
+                        <button type="reset">&#xf55a; Disconnect</button>
+                        <button type="submit">&#xf2f6; Sign in</button>
+                    </div>
+                </form>
+            </section>
             <h1>
-                <a href="http://www.corebrg.com">
+                <a href="http://www.corebrg.com" hidden>
                     <img width="64" height="64" src="/img/logo.png">
                 </a>
             </h1>
 		</main>
 		
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
         
         <script src="/js/request.js"></script>
         <script src="/js/md5.js"></script>
 		<script>
 
-const $ = {
-    request: new Request()
-};
-
-document.getElementById("agent").textContent = $.request.agent;
+//document.getElementById("agent").textContent = new Request().agent;
 
 document.getElementById("signin").onsubmit = function (e) {
 	e.preventDefault();
     
     document.body.classList.add("loading");
 
-    $.request.signIn(this.elements["id"].value, hex_md5(this.elements["password"].value), onSignIn);
+    new Request().signIn(this.elements["id"].value, hex_md5(this.elements["password"].value), function () {
+        switch(this.status) {
+            case 200:
+                return location.replace("/main.html");
+            case 401:
+                alert("Error!\n\n"+
+                    "계정이 존재하지 않거나 비밀번호가 일치하지 않습니다.");
+                
+                document.getElementById("signin").elements["id"].select();
+                
+                break;
+            case 410:
+                alert("라이선스가 만료 되었습니다.");
+
+                break;
+            default:
+                alert(`Error!\n\n오류 코드${this.status}.`);
+
+                try {
+                    console.log(JSON.parse(this.responseText).error);
+                } catch (e) {}
+        }
+
+        document.body.classList.remove("loading");
+});
 };
 
-document.getElementById("signin").onreset = function (e) {
+document.getElementById("signin").onreset = e => {
 	e.preventDefault();
 	
-	$.request.reset();
+	new Request().reset();
+
+    delete top.acccount;
 
     window.location.replace("/connect.html");
 };
 
+document.body.querySelector("[name=id]").select();
 		</script>
 	
 	</body>

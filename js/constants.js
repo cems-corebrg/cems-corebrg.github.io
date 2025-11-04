@@ -4,6 +4,9 @@ const
     ALERT_NO_PERMISSION = {
         kr: "Warning.\n\n권한 없음."
     },
+    ALERT_NO_PROFILE = {
+        kr: "Warning.\n\n하나 이상의 SNMP 프로파일이 필요합니다."
+    },
     CONFIRM_SIGNOUT = {
         kr: "Confirm.\n\n로그 아웃 하겠습니까?"
     },
@@ -23,6 +26,12 @@ const
     },
     ERROR_CHART_NOSUP = {
         kr: "Error!\n\n차트를 제공하지 않습니다."
+    },
+    ERROR_NOT_SUPPORT = {
+        kr: "Error!\n\n현재 버전에서 제공하지 않는 명령입니다."
+    },
+    ERROR_WRONG_ACCESS = {
+        kr: "Error!\n\n잘못된 접근 입니다."
     },
     ERROR_RES_CODE = code => {
         return {

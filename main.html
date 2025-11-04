@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>CeMS</title>
+		
+		<style>
+
+@import "/css/style.css";
+@import "/css/var.css";
+@import "/css/fa.css";
+
+body {
+    position: fixed; inset: 0;
+    padding: 0; margin: 0;
+    user-select: none;
+    background: #2f2f2f url("/img/bg_circuit.png") no-repeat center/cover fixed;
+}
+
+main {
+    width: 100%; height: 100%;
+    position: relative;
+}
+
+header {
+    position: absolute; inset: 6em auto 0 0;
+    padding: 1em;
+}
+
+iframe {
+    border: none;
+    width: 100%; height: 100%;
+}
+
+nav {
+    height: 100%;
+    flex-direction: column;
+    display: flex; justify-content: space-between;
+}
+
+nav ul {
+    list-style: none;
+    margin: 0; padding: 0em;
+}
+
+nav img {
+    width: 60px;
+    height: 60px;
+}
+
+nav img.hover {    
+    transform: translate(0, -2px);
+    filter: drop-shadow(0px 2px 0px #fff);
+}
+
+nav img:active {
+    transform: none;
+    filter: none;
+}
+
+footer {
+    position: absolute; inset: auto 0 0 auto;
+    display: flex; flex-direction: column;
+    padding: 1em;
+    font-weight: bold;
+    color: #fff;
+    pointer-events: none;
+}
+
+footer div {
+    background-color: var(--var-color-normal);
+    border-radius: 1.5em;
+    align-self: flex-end;
+    color: #fefefe;
+    position: relative;
+    margin: 10px;
+    padding: 1em 2em;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+footer div::before {
+    content: attr(data-elapse);
+    margin-right: 2em;
+    transform: translateY(0.5em);
+    display: inline-block;
+    font-size: 12px;
+}
+
+footer div::after {
+    position: absolute; inset: 0 -6px 0 0;
+    content: "";
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15.515px' height='17.5px' viewBox='0 17.5 15.515 17.5'><g transform='translate(47.999, 0) scale(-1, 1)'><path fill='%23296e01' d='M38.484,17.5c0,8.75,1,13.5-6,17.5C51.484,35,52.484,17.5,38.484,17.5z'/></g></svg>") no-repeat right bottom;
+    border: none;
+}
+
+footer div.shutdown {
+    background-color: var(--var-color-shutdown);
+}
+
+footer div.critical {
+    background-color: var(--var-color-critical);
+}
+
+footer div.major {
+    background-color: var(--var-color-major);
+}
+
+footer div.shutdown::after {
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15.515px' height='17.5px' viewBox='0 17.5 15.515 17.5'><g transform='translate(47.999, 0) scale(-1, 1)'><path fill='%23a62c2b' d='M38.484,17.5c0,8.75,1,13.5-6,17.5C51.484,35,52.484,17.5,38.484,17.5z'/></g></svg>") no-repeat right bottom;
+}
+
+footer div.critical::after {
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15.515px' height='17.5px' viewBox='0 17.5 15.515 17.5'><g transform='translate(47.999, 0) scale(-1, 1)'><path fill='%23da680f' d='M38.484,17.5c0,8.75,1,13.5-6,17.5C51.484,35,52.484,17.5,38.484,17.5z'/></g></svg>") no-repeat right bottom;
+}
+
+footer div.major::after {
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15.515px' height='17.5px' viewBox='0 17.5 15.515 17.5'><g transform='translate(47.999, 0) scale(-1, 1)'><path fill='%23fdcc0d' d='M38.484,17.5c0,8.75,1,13.5-6,17.5C51.484,35,52.484,17.5,38.484,17.5z'/></g></svg>") no-repeat right bottom;
+}
+
+aside {
+    position: absolute; inset: 100px;  right: calc(100% + 200px);
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex; flex-direction: column;
+    background-color: transparent;
+    overflow: hidden;
+    transition: right 0.5s linear;
+}
+
+aside >div:first-child {
+    flex: none;
+    padding: 1em;
+    background-color: #1b3d81;
+    z-index: 9;
+}
+
+aside >div:last-child {
+    flex: 1;
+    transform: translateY(-100%);
+	transform-origin: top;
+}
+
+body.view aside {
+	inset: 100px;
+	transition: background-color 0s linear 0.5s, right 0.5s linear;
+	background-color: #0000009f;
+}
+
+body.view aside>div:last-child {
+	transform: translateY(0);
+	transition: transform 0.5s linear 0.5s;
+}
+
+#close {
+    font-family: 'Font Awesome 5 Free';
+    display: block;
+    float: right;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fefefe;
+}
+
+#close:hover {
+    transform: scale(1.2);
+}
+
+body.restart {
+    border: 10px solid red;
+    animation: restart 1s infinite;
+}
+
+dialog {
+    width: 320px;
+    border: 3px solid #dd3a7e;
+    text-align: center;
+}
+
+dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+dialog button {
+    flex: 1;
+    padding: 0.5em;
+    font: 1em "Font Awesome 5 Free", "맑은 고딕";
+}
+
+@keyframes restart {
+    from {
+        border-color: transparent;
+    }
+    to {
+        border-color: red;
+    }
+}
+
+body.restart::after {
+    font: bold 2em "Font Awesome 5 Free", "맑은 고딕";
+    content: "\f071" "  " "서비스가 비정상 종료 되었습니다. 서비스 정상 종료후 다시 시작 하세요.";
+    position: fixed; inset: 1em 0 auto 0;
+    display: block;
+    padding: 1em;
+    color: red;
+    text-align: center;
+    pointer-events: none;
+}
+        </style>
+        <script>
+
+class Config {
+    config = {
+        short: {
+            load: true,
+            interface: true
+        },
+        sound: {
+            shutdown: true,
+            critical: true,
+            major: true
+        }
+    };
+
+    constructor () {
+        const config = localStorage.getItem("config");
+
+        if (config) {
+            this.config = JSON.parse(config);
+        }
+    }
+
+    update (config) {
+        for (let name in config) {
+            this.config[name] = config[name];
+        }
+
+        localStorage.setItem("config", JSON.stringify(this.config));
+    }
+
+    get dump () {
+        return this.config;
+    }
+}
+
+function signIn(account) {
+    const request = new Request();
+    
+    if (account.level === 0) {
+        document.body.classList.add("root");
+    }
+
+    document.title = request.agent;
+
+    document.getElementById("user").title = account.id;
+    document.getElementById("signout").onclick = e => {
+        if (confirm(CONFIRM_SIGNOUT["kr"])) {
+            document.body.classList.add("loading");
+
+            new Request().execute({
+                command: "order",
+                target: "signout"
+            }, function () {
+                location.replace("/signin.html");
+            });
+        }
+    };
+
+    request.echo((status, millis) => {});
+    
+    request.query({
+        command: "get",
+        target: "config"
+    })
+    .then(configData => {
+        if ("RESTART" in configData && JSON.parse(configData["RESTART"]) === true) {
+            document.body.classList.add("restart");
+        }
+
+        document.getElementById("main").src = "/topology/viewer.html";
+
+        document.body.classList.add("authorized");
+    })
+    .catch(showMessage);
+}
+
+function toElapseString(millis) {
+    const elapse = new Date().getTime() - millis;
+
+    if (elapse < 60 *1000) {
+        return `${Math.round(elapse /1000)}초 전`;
+    } else if (elapse < 60 *60 *1000) {
+        return `${Math.round(elapse /60 /1000)}분 전`;
+    } else if (elapse < 24 *60 *60 *1000) {
+        return `${Math.round(elapse /60 /60 /1000)}시간 전`;
+    } else {
+        return `${Math.round(elapse /24 /60 /60 /1000)}일 전`;
+    }
+}
+
+function onCloseView (e) {
+    document.body.querySelector("iframe[name=view]").src = "about:blank";
+
+    document.body.classList.remove("view");
+};
+
+function showMessage(xhr) {
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
+
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
+    }
+}
+
+        </script>
+    </head>
+    <body class="status event">
+        <main>
+            <iframe name="main" id="main"></iframe>
+        </main>
+        <aside>
+            <div>
+                <span  id="close" title="닫기">&#xf00d;</span>
+            </div>
+            <div>
+                <iframe name="view"></iframe>
+            </div>
+        </aside>
+        <header>
+            <nav>
+                <ul>
+                    <li title="Home">
+                        <a href="/dc.html" target="main">
+                            <img src="/img/menu/home.png">
+                        </a>
+                    </li>
+                    <li title="구성도">
+                        <a href="/topology/viewer.html" target="main">
+                            <img src="/img/menu/topology.png">
+                        </a>
+                    </li>
+                    <li title="성능 Top">
+                        <a href="/top.html" target="main">
+                            <img src="/img/menu/top.png">
+                        </a>
+                    </li>
+                    <li title="이벤트">
+                        <a href="/event.html" target="view">
+                            <img src="/img/menu/event.png">
+                        </a>
+                    </li>
+                    <li title="노드 목록">
+                        <a href="/node.html" target="view">
+                            <img src="/img/menu/node.png">
+                        </a>
+                    </li>
+                    <li title="사용자 목록" class="root">
+                        <a href="/user.html" target="view">
+                            <img src="/img/menu/user.png">
+                        </a>
+                    </li>
+                    <li title="아이콘" class="root">
+                        <a href="/icon.html" target="view">
+                            <img src="/img/menu/icon.png">
+                        </a>
+                    </li>
+                    <li title="설정" class="root">
+                        <a href="/setting.html" target="view">
+                            <img src="/img/menu/setting.png">
+                        </a>
+                    </li>
+                </ul>
+                <ul id="user">
+                    <li id="password">
+                        <img src="/img/menu/key.png">
+                    </li>
+                    <li id="signout" title="세션 종료">
+                        <img src="/img/menu/offline.png">
+                    </li>
+                </ul>
+            </nav>
+        </header>
+        
+        <iframe id="dialog" name="dialog" style="z-index: 1;"></iframe>
+        
+        <dialog>
+            <h3>알림 소리를 재생 합니다.</h3>
+            <button>&#xf025; 재생</button>
+        </dialog>
+
+        <footer></footer>
+
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script src="/js/snmp.js"></script>
+        <script type="module">
+import Channel from "./js/module/channel.js";
+import Message from "./js/module/message.js";
+
+if (!new Request().try(function () {
+    switch (this.status) {
+    case 200:
+        const
+            account = JSON.parse(this.responseText),
+            config = new Config(),
+            sound = new Audio("/siren.mp3");
+        var code = 200;
+
+        signIn(account);
+
+        Channel.listen("account", () => {
+            return account;
+        });
+
+        Channel.listen("config", () => {
+            return config.dump;
+        });
+
+        Channel.receive("update", data => config.update(data));
+
+        new Request().listen((event, status)=> {
+            if (event) {
+                new Request().query({
+                    command: "get",
+                    target: "node",
+                    node: {
+                        id: event.node
+                    }
+                })
+                .then(data => {
+                    const
+                        message = new Message(event),
+                        div = document.createElement("div");
+
+                    if (event.name) {
+                        event.message = `${event.name} ${event.message}`;
+                    }
+
+                    if (event.ip) {
+                        event.message = `${event.ip} ${event.message}`;
+                    }
+
+                    div.dataset.timestamp = new Date().getTime();
+                    div.dataset.elapse = "지금";
+                    div.textContent = event.message;
+
+                    div.classList.add(message.status);
+
+                    if (config.dump.sound[message.status]) {
+                        sound.play();
+                    }
+
+                    document.body.querySelector("footer").appendChild(div);
+
+                    document.body.classList.add("event");
+                });
+
+                Channel.send("event", event);
+            } else if (code !== status) {
+                const div = document.createElement("div");
+
+                div.dataset.timestamp = new Date().getTime();
+                div.dataset.elapse = "지금";
+                div.classList.add("major");
+                
+                if (status === 0) {
+                    div.textContent = "이벤트 리스너 네트워크 오류";
+                } else {
+                    div.textContent = `Error!\n\n이벤트 리스너 오류코드 ${status}`;
+                }
+
+                document.body.querySelector("footer").appendChild(div);
+
+                document.body.classList.add("event");
+            }
+
+            code = status;
+        });
+
+        break;
+    case 410:
+        alert("라이선스가 만료 되었습니다.");
+    case 400:
+    case 401:
+        throw  window.location.replace("/signin.html");
+    default:
+        try {
+            console.log(JSON.parse(this.responseText).error);
+        } catch (e) {}
+
+        throw location.replace("/connect.html");
+    }
+
+})) {
+    throw location.replace("/connect.html");
+}
+
+        </script>
+        <script>
+
+const $ = {
+        event: document.getElementById("event")
+    };
+
+document.querySelector("footer").onclick = function (e) {
+    for (let event; event = this.firstChild; ) {
+        this.removeChild(event);
+    }
+    
+    document.body.classList.remove("event");
+
+//    document.getElementById("view").src = "/event.html";
+};
+
+document.body.querySelector("dialog button").onclick = e => document.body.querySelector("dialog").close();
+
+document.getElementById("password").onclick = e => top.showDialog("/dialog/password.html");
+
+Array.from(document.body.querySelectorAll("[target=view]")).forEach(a => a.addEventListener("click", e => document.body.classList.add("view")));
+
+document.getElementById("close").onclick = onCloseView;
+
+Array.from(document.body.querySelectorAll("nav img")).forEach(img => {
+    img.onmouseenter = e => img.classList.add("hover");
+    img.onmouseleave = e => img.classList.remove("hover");
+});
+
+window.history.pushState(new Map(), document.title, window.location.href);
+
+window.onpopstate = e => document.body.classList.remove("dialog");
+
+(function refreshEvent() {
+    Array
+        .from(document.querySelector("footer").children)
+        .forEach(event => (event.dataset.elapse = toElapseString(event.dataset.timestamp)));
+    
+    setTimeout(() => window.requestAnimationFrame(refreshEvent), 1000);
+}) ();
+
+        </script>
+        
+    </body>
+</html>

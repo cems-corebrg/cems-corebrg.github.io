@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>CeMS Top N</title>
+		
+		<style>
+@import "/css/style.css";
+@import "/css/var.css";
+@import "/css/fa.css";
+
+body {
+    position: fixed; inset: 0;
+    padding: 0; margin: 0;
+    background-color: #0000005f;
+}
+
+main {
+    height: 100%;
+    user-select: none;
+    margin: 1em;
+    display: grid;
+    /*grid-template-columns: repeat(auto-fill, 1fr);*/
+	grid-template-rows: 1fr 1fr;
+	grid-auto-flow: column;
+	gap: 1em;
+}
+
+section {
+	width: 100%;
+	height: 100%;
+}
+
+iframe {
+    width: 100%; height: 100%;
+    padding: 0; margin: 0;
+    border: none;
+}
+
+#dialog {
+	position: fixed; inset: 0 0 0 0;
+    z-index: 1;
+}
+
+section header {
+    position: relative;
+	padding: .5em; 
+    text-align: center;
+	border-radius: 0.5em 0.5em 0 0;
+	font-weight: bold;
+	color: #fff;
+	background-color: #000;
+	text-shadow: 0 0 2px #000000;
+    pointer-events: none;
+}
+
+section header::after {
+    font-family: "Font Awesome 5 Free";
+    content: "\f00d";
+	position: absolute; top: 0.5em; right: 0.5em;
+    color: #fff;
+    pointer-events: all;
+    opacity: 0.2;
+}
+
+section header:hover::after {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+section header::before {
+    position: absolute; top: 5px; left: 5px;
+    font: 36px "Font Awesome 5 Free";
+    color: /*#febd14#a62c2b#a9a9a9*/#a62c2b;
+    opacity: 0.8;opacity: 1;
+    text-shadow: 0 2px 3px #000000;
+}
+
+#response header::before {
+    content: "\f2f2";
+}
+
+#load header::before {
+    content: "\f3fd";
+}
+
+#memory header::before {
+    content: "\f7c2";
+}
+
+#storage header::before {
+    content: "\f1c0";
+}
+
+#temperature header::before {
+    content: "\f76b";
+}
+
+:is(#input, #output) header::before {
+    content: "\f796";
+}
+
+:is(#inerror, #outerror) header::before {
+    content: "\f06a";
+}
+
+ul {
+	list-style: none;
+	padding: 0; margin: 0;
+	font-size: 12px;
+	display: flex;
+	cursor: pointer;
+    padding: 1px;
+}
+
+ul:hover {
+	/*outline: 1px solid #424242;*/
+}
+
+li {
+	flex: 1;
+	box-sizing: border-box;
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    /*display: flex; align-items: center;*/
+    transition: 0.5s linear;
+    line-height: 1.5em;
+    padding: 0.5em;
+    /*text-shadow: 0 0 2px #ffffff;*/
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 5px #ffffff80 inset, 0 -4px 5px #ffffff80 inset;
+}
+
+li:last-child {
+    background: linear-gradient(to right, rgb(0, 137, 123) 70%, rgb(246, 191, 38) 70% 90%, rgb(142, 36, 170) 90%);
+    position: relative;
+    color: #ffffff;
+    box-shadow: 0 4px 5px #00000080 inset, 0 -4px 5px #00000080 inset;
+}
+
+li:last-child::after {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    content: attr(data-value);
+    font-weight: bolder;
+}
+
+li:last-child >div {
+    background-color: #424242;
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    animation: gauge 2s cubic-bezier(0, 1, 1, 1.2);
+}
+
+nav {
+    position: absolute; inset: 0 0 auto 0;
+    padding: 1em;
+    display: flex; justify-content: space-between;
+    user-select: none;
+    pointer-events: none;
+}
+
+nav span {
+    pointer-events: all;
+}
+
+#display::before {
+    content: "\f074";
+}
+
+main {
+    margin: 1em 80px;
+}
+
+body.frame .frame {
+    font-family: "Font Awesome 5 Free";
+}
+
+section:has(footer:empty),
+body.name li:nth-child(2),
+body:not(.name) li:nth-child(1),
+body:not(.frame) .frame,
+body:not(.dialog) #dialog {
+	display: none;
+}
+
+@keyframes gauge {
+    30% {
+		left: 0;
+	}
+}
+		</style>
+        <script>
+function toErrorString(value) {
+	return value +"cps";
+}
+
+function toMillsString(value) {
+	return value +"ms";
+}
+
+function toPercentageString(value) {
+	return value.toFixed(2) +"%";
+}
+
+function toTemperatureString (value) {
+    return value.toFixed(2) + String.fromCodePoint("0x2103");
+}
+
+function showDialog(src, parent) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function () {
+        $.parent = parent;
+
+		document.body.classList.add("dialog");
+	};
+
+    dialog.src = src;
+}
+
+function closeDialog() {
+    document.body.classList.remove("dialog");
+ 
+    delete $.parent;
+}
+
+function setTop(section, idToValue) {
+    const
+        footer = section.querySelector("footer"),
+        sortArray = []
+        toString = toPercentageString;
+    let max = 100;
+
+	for (let item; item = footer.firstChild;) {
+		footer.removeChild(item);
+	}
+
+    for (let id in idToValue) {
+        let value = idToValue[id];
+
+        if ("skipzero" in section.dataset && !value) {
+            continue;
+        }
+
+        sortArray.push([id, value]);
+    }
+
+    if (sortArray.length === 0) {
+        return;
+    }
+
+    sortArray.sort((a, b) => b[1] - a[1]);
+
+    if ("func" in section.dataset) {
+        max = sortArray[0][1];
+
+        toString = window[section.dataset.func]
+    }
+
+    sortArray.forEach(([id, value]) => {
+        footer.appendChild(createTopItem(id, value, max, toString, section.dataset.chart));
+    });
+}
+
+function createTopItem(id, value, max, toString, chart) {
+	var 
+		base = $.nodeData[id],
+		item = document.createElement("ul"),
+		gauge;
+
+    if (base) {
+        item.appendChild(document.createElement("li")).textContent = base.name || base.ip || id;
+        item.appendChild(document.createElement("li")).textContent = base.ip;
+        
+        gauge = item.appendChild(document.createElement("li"));
+        gauge.dataset.value = toString(value);
+                
+        gauge.appendChild(document.createElement("div")).style.left = `${max? (value *100 / max).toFixed(2): 0}%`;
+        
+        item.onclick = e => top.showDialog(`/chart.html?id=${id}`);
+        
+        return item;
+    } else {
+        alert("Information.\n\n자원 정보가 수정되었습니다.\n페이지를 새로고침 합니다.");
+        
+        window.location.reload();
+    }
+}
+
+function showMessage(xhr) {
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
+
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
+    }
+}
+
+		</script>
+		
+	</head>
+	
+	<body class="name loading">
+        <main>
+            <section id="response" data-func="toMillsString" data-chart="/chart/responseTime.html">
+                <header>응답시간</header>
+                <footer></footer>
+            </section>
+            <section id="load" data-chart="/chart/processor.html">
+                <header>프로세서 로드</header>
+                <footer></footer>
+            </section>
+            <section id="memory" data-chart="/chart/storage.html">
+                <header>메모리</header>
+                <footer></footer>
+            </section>
+            <section id="storage" data-chart="/chart/storage.html">
+                <header>저장공간</header>
+                <footer></footer>
+            </section>
+            <section id="input" data-chart="/chart/throughput.html">
+                <header>수신</header>
+                <footer></footer>
+            </section>
+            <section id="output" data-chart="/chart/throughput.html">
+                <header>송신</header>
+                <footer></footer>
+            </section>
+            <section id="inerror" data-func="toErrorString" data-skipzero data-chart="/chart/error.html">
+                <header>수신 오류</header>
+                <footer></footer>
+            </section>
+            <section id="outerror" data-func="toErrorString" data-skipzero data-chart="/chart/error.html">
+                <header>송신 오류</header>
+                <footer></footer>
+            </section>
+            <section id="temperature" data-func="toTemperatureString" data-chart="/chart/storage.html">
+                <header>온도</header>
+                <footer></footer>
+            </section>
+        </main>
+        <nav>
+            <div>
+                <span title="라벨 표시" id="display" class="icon-button icon-button--round icon-button--blue"></span>
+            </div>
+            <div class="frame">
+            </div>
+        </nav>
+        <iframe id="dialog" name="dialog"></iframe>
+        <div class="loading mask"></div>
+        
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+const
+    INTERVAL = 10000,
+    $ = {
+        request: new Request()
+    };            
+        </script>
+		<script type="module">
+import Channel from "./js/module/channel.js";
+
+document.getElementById("display").onclick = e => document.body.classList.toggle("name");
+
+[].forEach.call(document.body.querySelectorAll("section"), section => {
+    section.draggable = true;
+
+    section.querySelector("header").onclick = e => section.parentNode.removeChild(section);
+
+    section.addEventListener("dragstart", function (e) {
+        e.stopPropagation();
+        
+        $.draggable = this;
+    });
+    
+    section.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        
+        if ($.draggable === this) {
+            return;
+        }
+        
+        switch ($.draggable) {
+        case this.previousElementSibling:
+            this.parentNode.insertBefore(this, $.draggable);
+            
+            break;
+        default:
+            this.parentNode.insertBefore($.draggable, this);
+        }
+    });
+});
+
+$.request.query({
+    command: "get",
+    target: "node"
+}).then(nodeData => {
+    const display = window.localStorage.getItem("display");
+
+    if (display === "address") {
+        document.body.classList.remove("name");
+    }
+
+    $.nodeData = nodeData;
+
+    getTop();
+}).catch(showMessage);
+
+function getTop() {
+    $.request.query({
+        command: "get",
+		target: "top",
+        count: 10
+    }).then(data => {
+        let container;
+
+        for (const template in data) {
+            setTop(document.body.querySelector(`#${template}`), data[template]);
+        }
+        
+        setTimeout(() => requestAnimationFrame(getTop), INTERVAL);
+
+        document.body.classList.remove("loading");
+    }).catch(showMessage);
+}
+		</script>
+	
+	</body>
+	
+</html>

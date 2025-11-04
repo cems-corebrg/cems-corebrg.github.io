@@ -26,7 +26,8 @@ function Ethernet() {
 
     Ethernet.STATUS_NORMAL = 0;
     Ethernet.STATUS_CRITICAL = 1;
-    Ethernet.STATUS_SHUTDOWN = 2;
+    Ethernet.STATUS_MAJOR = 2;
+    Ethernet.STATUS_SHUTDOWN = 3;
     Ethernet.STATUS_DISABLED = 9;
     Ethernet.fontColor = "#000000";
 
@@ -54,6 +55,10 @@ function Ethernet() {
 
                 break;
             case Ethernet.STATUS_CRITICAL:
+                this.context.fillStyle = "#fe6a50";
+
+                break;
+            case Ethernet.STATUS_MAJOR:
                 this.context.fillStyle = "#f6bf26";
 
                 break;
@@ -142,6 +147,8 @@ function Ethernet() {
             this.background = new Background(this.config);
             this.gauge = new Gauge(this.config);
 
+            this.config.label && this.label(this.config.label);
+            
             this.update();
 
             this.container.appendChild(this.canvas);
@@ -155,7 +162,7 @@ function Ethernet() {
             this.context.drawImage(this.gauge.canvas, 0, 0);
         },
         set: function (input, output) {
-            if (arguments.length === 2) {
+            if (arguments.length === 2 && this.config.bandwidth > 0) {
                 this.input = input;
                 this.output = output;
 

@@ -1,190 +1,248 @@
 @charset "utf-8";
 
-body  {
-	font-family: arial, tahoma, "맑은 고딕";
-	font-size: 10pt;
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	padding: 0; margin: 0;
-	background-color: #4d525a;
-}
-
-body >article {
-	position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-	display: flex;
-}
-
-article.itahm {
-	display: flex;
+body {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+    user-select: none;
+    /*background-color: var(--var-color-bg);*/
 }
 
 header {
-	color: #fff;
-	flex: none;
-	position: relative;
-	display: flex; justify-content: center;
+    position: absolute; inset: 6em auto 0 0;
+    display: flex; flex-direction: column; align-items: stretch;
+    padding: 1em;
+    color: #ffffff;
+    font-weight: bold;
+    /*z-index: 2;*/
 }
 
-header >div {
-	height: 100%; width: 80px;
-	display: flex; flex-direction: column;
-	overflow: hidden;
+body.dialog header {
+    display: none;
 }
 
-header ul {
-	align-self: center;
-	flex: none;
-	list-style: none;
-	width: 60px;
-	padding: 0; margin: 0;
+article {
+    flex: 1;
+    display: flex;
 }
 
-header img {
-	display: block;
-	width: 50px; height: 50px;
-}
-
-header ul.logo {
-	background-color: #fcba30;
-	height: 60px;
-	margin: 10px 0;
-	display: flex; align-items: center; justify-content: center;
-}
-
-header ul.logo li {
-	padding: 5px;
-}
-
-header ul.icon {
-	display: flex; flex-direction: column;
-}
-
-header ul.icon li {
-	align-self: center;
-	text-align: center;
-	font-size: 0.8em;
-	text-shadow: 1px 1px 1px #000;
-}
-
-header ul.icon a {
-	display: block;
-	cursor: pointer;
-	border-radius: 3px;
-	padding: 5px;
-}
-
-header ul.icon a:visited,
-header ul.icon a:link {
-	color: inherit;
-	text-decoration: none;
-}
-
-header ul.icon a:hover {
-	color: #4d525a;
-	text-shadow: none;
-	background-color: rgba(255, 255, 255, 0.7);
-}
-
-header ul.icon a:active {
-	background-color: rgba(255, 255, 255, 0.4);
-}
-
-header ul.icon a.selected {
-	background-color: rgba(255, 255, 255, 1);
-	color: #000;
-	text-shadow: 1px 1px 1px #aaa;
-}
-
-header ul.status {
-	flex: 1;
-	margin: 10px 0;
-	display: flex; flex-direction: column;
-}
-
-header ul.status >li {
-	flex: 1;
-	margin: 1px;
-	border: 1px solid #ddd; border-radius: 3px;
-	display: flex; align-items: center; justify-content: center;
-}
-
-header ul.status >li.normal {
-	background-color: #0f0;
-	color: #097829;
-}
-
-header ul.status >li.status {
-	background-color: #ffa500;
-	color: #ba4800;
-}
-
-header ul.status >li.shutdown {
-	background-color: #666;
-	color: #272727;
-}
-
-header ul.status >li:empty {
-	display: none;
-}
-
-iframe {
-    width: 100%; height: 100%;
-	border: none;
+aside {
+    flex: none;
+    position: relative;
 }
 
 main {
-	flex: 1;
+    flex: 1;
+    position: relative;
 }
 
-#frame {
-	background-color: #4d525a;
+iframe {
+    border: none;
+    width: 100%; height: 100%;
 }
 
 #dialog {
 	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	padding: 0;
-	margin: 0;
-	width: 100%;
-	height: 100%;
+	padding: 0; margin: 0;
+    /*z-index: 3;*/
 }
 
-div.log {
-	position: fixed; right: 10px; top: 10px;
-	z-index: 2;
-	cursor: pointer;
+#status {
+    width: 400px;
+    opacity: 1;
+    transition: all 0.5s linear;
 }
 
-div.log span {
-	display: inline-block;
-	font-weight: bold;
-	background-color: #ffa500;
-	color: #fff;
+#tab {
+    position: absolute; top: 40%; right: 0;
+    width: 1em; height: 2em;
+    cursor: pointer;
 }
 
-#count {
-	width: 2em; height: 2em;
-	box-sizing: border-box;
-	padding: .5em;
-	border-radius: 1em;
-	text-align: center;
+body.status #tab {
+    border-radius: 1em 0 0 1em;
+    background-color: #dddddd;
 }
 
-#log {
-	padding: .5em .5em .5em 1em;
-	margin-left: 1em;
-	border-radius: 1em 0 0 1em;
+body:not(.status) #tab {
+    border-radius: 0 1em 1em 0;
+    background-color: #ff0000;
+    transform: translateX(100%);
 }
 
-.bg_loading {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	background: #4d525a url("/img/loading.gif") no-repeat center;
-	background-size: 32px 32px;
-	opacity: .5;
+body:not(.status) aside {
+    width: 0;
 }
 
-body.authorized article.signin,
-body:not(.authorized) article.itahm,
-body:not(.loading) .bg_loading,
-body:not(.log) div.log,
-body:not(.dialog) #dialog {
-	display: none;
+body:not(.status) #status {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+footer {
+    position: absolute; inset: auto 0 0 auto;
+    display: flex; flex-direction: column;
+    padding: 1em;
+    font-weight: bold;
+    color: #fff;
+    pointer-events: none;
+}
+
+footer div {
+    background-color: #ffa500;
+    border-radius: 1.5em;
+    align-self: flex-end;
+    color: #fefefe;
+    position: relative;
+    margin: 10px;
+    padding: 1em 2em;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+footer div::before {
+    content: attr(data-elapse);
+    margin-right: 2em;
+    transform: translateY(0.5em);
+    display: inline-block;
+    font-size: 12px;
+}
+
+footer div::after {
+    position: absolute; inset: 0 -6px 0 0;
+    content: "";
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15.515px' height='17.5px' viewBox='0 17.5 15.515 17.5'><g transform='translate(47.999, 0) scale(-1, 1)'><path fill='%23ffa500' d='M38.484,17.5c0,8.75,1,13.5-6,17.5C51.484,35,52.484,17.5,38.484,17.5z'/></g></svg>") no-repeat right bottom;
+    border: none;
+}
+
+a:link,
+a:visited {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+/** 기본스킨 **/
+nav {
+    display: flex; justify-content: space-between;
+    flex: 1;
+}
+
+nav b {
+    color: #7f7f7f;
+}
+
+nav >ul {
+    display: flex;
+}
+
+nav >ul >li >a,
+nav b::before {
+    content: "\f7a5";
+    font: 20px "Font Awesome 5 Free";
+}
+
+nav ul {
+    list-style: none;
+    margin: 0; padding: 0em;
+}
+
+nav >ul >li {
+    position: relative;
+    cursor: pointer;
+    overflow: visible;
+    display: flex;
+}
+
+nav >ul ul {
+    position: absolute;
+    display: none;
+    padding: 0.5em 0;
+    background-color: #efefef;
+    border: 1px solid #dddddd;
+    color: #0f0f0f;
+}
+
+nav >ul >li:hover ul {
+    display: block;
+}
+
+nav >ul ul >li {
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+nav >ul ul >li:hover {
+    background-color: #0084ff;
+    color: #fefefe;
+}
+
+nav >ul ul >li >a {
+    padding: 0.5em 1em;
+    display: block;
+}
+
+nav >ul >li >a,
+nav b::before {
+    padding: 0.5em;
+    display: inline-block;
+}
+
+nav >ul >li >a {
+    padding: 5px;
+    font-size: 30px;
+    font-weight: bold;
+    width: 100%;
+    border: 2px solid #fefefe;
+    box-sizing: border-box;
+    color: var(--var-color-disabled);
+    background-color: rgba(0, 0, 0, 0.3);
+    border-image: linear-gradient(to bottom, var(--var-color-disabled), rgba(255, 255, 255, 0.3));
+    border-image-slice: 1;
+}
+
+nav >ul >li >a:hover {
+    color: #ffffff;
+    border-image: linear-gradient(to bottom, #ffffff, rgba(255, 255, 255, 0.3));
+    border-image-slice: 1;
+}
+
+nav >ul >li >a:active {
+    transform: translateY(2px);
+    /*color: var(--var-color-pink);*/
+}
+
+nav >ul >li >a >div {
+    display: none;
+}
+
+nav >ul ul {
+    inset: 100% auto auto 0;
+    font-family: "Font Awesome 5 Free", "맑은 고딕", Arial, Tahoma;
+}
+
+nav >ul:last-child ul {
+    inset: 100% 0 auto auto;
+}
+
+nav >ul ul::after {
+    content: "";
+    position: absolute;
+    border: 5px solid transparent;
+}
+
+nav >ul ul::after {
+    inset: auto auto 100% 5px;
+    border-bottom-color: #efefef;
+}
+
+nav >ul:last-child ul::after {
+    inset: auto 5px 100% auto;
+}
+
+body:not(.authorized) header,
+body:not(.authorized) aside,
+body:not(.event) footer,
+body:not(.dialog) #dialog,
+body:not(.root) .root {
+    display: none;
 }

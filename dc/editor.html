@@ -2,14 +2,16 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <title>CeMS 3D editor</title>
         <style>
+            
+@import "/css/style.css";
 @import "/css/fa.css";
 
 body {
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    position: fixed; inset: 0 0 0 0;
     padding: 0; margin: 0;
-    font-family: "맑은 고딕", Arial, Tahoma;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: #1b1c2e;
 }
 
 body::before,
@@ -31,30 +33,35 @@ body::after {
 }
 
 nav {
-    position: absolute; top: 5px; left: 5px;
-    /*display: flex;*/
+    position: absolute; inset: 5px 5px auto 5px;
+    display: flex; justify-content: space-between;
     font: 20px "Font Awesome 5 Free";
     color: #ffffff;
     user-select: none;
+    pointer-events: none;
 }
 
-nav >span {
+nav >div {
+    display: flex;
+}
+
+nav span {
     border-radius: 50%;
-    display: inline-flex; width: 32px; height: 32px;
+    display: flex; width: 32px; height: 32px;
     align-items: center;
     justify-content: center;
     background-color: rgba(0, 132, 255, 0.5);
     border-color: #0084ff;
     cursor: pointer;
+    pointer-events: all;
 }
 
-nav >span:hover {
+nav span:hover {
     background-color: #0084ff;
 }
 
 aside {
     position: absolute; top:0; right: 0; bottom: 0;
-    background-color: #ffffff;
     width: 0;
 }
 
@@ -66,7 +73,7 @@ iframe {
 body.list aside {
     width: 500px;
     border-left: 1px solid #777;
-    transition: width 1s;
+    transition: width 0.5s;
 }
 
 #tab {
@@ -82,7 +89,7 @@ body.list aside {
 /* */
 #size {
     font-family: "Font Awesome 5 Free";
-    margin: 1em 0;
+    pointer-events: all;
 }
 
 #size input {
@@ -92,6 +99,8 @@ body.list aside {
 
 #size input[type=submit] {
     font-family: "Font Awesome 5 Free";
+    padding: 0.5em 1em;
+    width: auto;
 }
 
 /* GRID */
@@ -152,13 +161,14 @@ g.node text {
 }
 
 #select g.node rect {
-    fill: #d2322d;
+    fill: rgba(210, 50, 45, 0.5);
 }
 
-g.node.selected rect {
+#select g.node.selected rect {
     stroke: #ffffff;
     stroke-width: 20px;
     stroke-dasharray: 20px;
+    fill: #d2322d;
 }
 
 g.node.over rect,
@@ -170,86 +180,33 @@ g.node.over rect,
 }
 
 #grid input[type=submit],
-body:not(.grid) #grid {
+body:not(.selected) #grid,
+body:not(.selected) .edit {
     display: none;
 }
 
         </style>
         <script>
 
-function getSettingData (resolve, reject) {
-    $.request.execute({
-        command: "get",
-        target: "setting",
-        key: "dc"
-    }, function (e) {
-        window.settingData = {};
-
-        switch(this.status) {
-        case 200:
-            window.settingData = JSON.parse(this.responseText);
-        case 204:
-            break;
-        default:
-            return reject(this);
-        }
-
-        resolve();
-    });
-}
-
-function getFacilityData (resolve, reject) {
-    $.request.execute({
-        command: "get",
-        target: "facility"
-    }, function (e) {
-        switch(this.status) {
-        case 200:
-            break;
-        default:
-            return reject(this);
-        }
-        
-        window.facilityData = JSON.parse(this.responseText);
-
-        resolve();
-    });
-}
-
-function getPositionData (resolve, reject) {
-    $.request.execute({
-        command: "get",
-        target: "position",
-        name: "facility"
-    }, function (e) {
-        window.positionData = {};
-
-        switch(this.status) {
-        case 200:
-            window.positionData = JSON.parse(this.responseText);
-        case 204:
-            break;
-        default:
-            return reject(this);
-        }
-        
-        resolve();
-    });
-}
-
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
             
         </script>        
@@ -257,21 +214,34 @@ function showMessage(xhr) {
         
     <body>
         <nav>
-            <span title="Rack 추가" id="add">&#xf067;</span>
-            <span title="위치 저장" id="save">&#xf0c7;</span>
-            <span title="
+            <div>
+                <span title="편집 종료" id="close">
+                    &#xf00d;
+                </span>
+                <span title="Rack 추가" id="add">
+                    &#xf067;
+                </span>
+                <span title="위치 저장" id="save">
+                    &#xf0c7;
+                </span>
+                <div class="edit">
+                    <span title="선택 편집" id="edit">
+                        &#xf044;
+                    </span>
+                    <span title="선택 마운트" id="mount">
+                        &#xf124;
+                    </span>
+                </div>
+                <span title="
 ==============================
 
 ● Click: Rack 선택 
 ● Rack 선택 후 Drag: Rack 이동
-● Right Click: Rack 편집
 ● 목록에서 Drag & Drop: Rack 장착
 ● Rack 위치 변동시 저장 필수
 
-==============================
-            ">
-                &#xf128;
-            </span>
+==============================">&#xf128;</span>
+            </div>
             <form id="size">
                 <input type="number" name="width">
                 &#xf00d;
@@ -312,15 +282,17 @@ function showMessage(xhr) {
 
         <script src="/dc/editor.js"></script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
         <script>
-const $ = {
-        request: new Request()
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        branch: search.get("branch")
     };
 
-document.getElementById("add").onclick = e => {
-    top.showDialog("/dc/dialog/location.html", window);
-};
-
+document.getElementById("close").onclick = e => parent.reload($.branch);
+document.getElementById("add").onclick = e => top.showDialog(`/dc/dialog/facility.html?branch=${$.branch}`, window);
 document.getElementById("tab").onclick = function (e) {
     const frame = document.getElementById("list");
 
@@ -345,8 +317,10 @@ document.getElementById("save").onclick = function (e) {
     $.request.execute({
         command: "set",
         target: "position",
-        name: "facility",
-        position: top.getData().position
+        position: {
+            name: "dc",
+            position: parent.positionData
+        }
     }, function () {
         switch (this.status) {
         case 200:
@@ -360,6 +334,18 @@ document.getElementById("save").onclick = function (e) {
 
         document.body.classList.remove("loading");
     });
+};
+
+document.getElementById("edit").onclick = function (e) {
+    const selected = document.getElementById("select").querySelector("g.selected");
+
+    selected && top.showDialog(`/dc/dialog/facility.html?branch=${$.branch}&facility=${selected.dataset.id}`, window);
+};
+
+document.getElementById("mount").onclick = function (e) {
+    const selected = document.getElementById("select").querySelector("g.selected");
+
+    selected && top.showDialog(`/dialog/mount.html?facility=${selected.dataset.id}`, window);
 };
 
 document.getElementById("size").onsubmit = function (e) {
@@ -367,14 +353,18 @@ document.getElementById("size").onsubmit = function (e) {
 
     document.body.classList.add("loading");
 
+    $.positionData.size = {
+        width: Number(this.elements["width"].value),
+        height: Number(this.elements["height"].value)
+    };
+
     $.request.execute({
         command: "set",
-        target: "setting",
-        key: "dc",
-        value: JSON.stringify({
-            width: Number(this.elements["width"].value),
-            height: Number(this.elements["height"].value)
-        })
+        target: "position",
+        position: {
+            name: "dc",
+            position: parent.positionData
+        }
     }, function () {
         switch (this.status) {
         case 200:
@@ -384,43 +374,61 @@ document.getElementById("size").onsubmit = function (e) {
             throw showMessage(this);
         }
 
-        alert("Information.\n\n저장 성공.");
+        alert("Information.\n\n저장 완료.");
         
         document.body.classList.remove("loading");
     });
 };
 
-{
-    const arr = [];
-
-    arr.push(new Promise(getSettingData));
-    arr.push(new Promise(getFacilityData));
-    arr.push(new Promise(getPositionData));
-
-    Promise
-        .all(arr)
-        .then(() => {
-            if (window.settingData.dc) {
-                const
-                    form = document.getElementById("size"),
-                    size = JSON.parse(settingData.dc);
-
-                form.elements["width"].value = size.width;
-                form.elements["height"].value = size.height;
-            }
-
-            initialize(window.positionData);
-
-            for (let id in window.facilityData) {
-                addFacility(id, window.facilityData[id]);
-            }
-
-            document.body.classList.remove("loading");
-        })
-        .catch(xhr => {
-            showMessage(xhr);
-        });
+function initFacility (e) {
+    
+    
 }
+
+if ($.branch) {
+    $.request.query({
+        command: "get",
+        target: "facility"
+    })
+    .then(facilityData => {
+        if ($.branch in parent.positionData) {
+            $.positionData = parent.positionData[$.branch];
+        } else {
+            parent.positionData[$.branch] =
+            $.positionData = {
+                size: {
+                    width: 10000,
+                    height: 10000
+                },
+                position: {
+
+                }
+            };
+        }
+
+        const
+            form = document.getElementById("size"),
+            size = $.positionData.size;
+        let facility;
+
+        form.elements["width"].value = size.width;
+        form.elements["height"].value = size.height;
+
+        initialize($.positionData.position);
+        
+        for (let id in facilityData) {
+            facility = facilityData[id];
+
+            if (facility.branch === Number($.branch)) {
+                addFacility(id, facility);
+            }
+        }
+
+        document.body.classList.remove("loading");
+    })
+    .catch(showMessage);
+}
+
         </script>
     </body>
 </html>

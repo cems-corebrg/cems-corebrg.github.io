@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <title>test</title>
+		<meta charset="UTF-8">		
+		<style>
+
+@import "/css/style.css";
+@import "/css/list.css";
+@import "/css/var.css";
+@import "/css/fa.css";
+
+header {
+    color: #ffffff;
+    user-select: none;
+}
+
+header {
+	line-height: 3em;
+}
+
+header :is(button, select) {
+	height: 100%;
+	padding: 0 0.5em;
+}
+
+summary {
+	
+	background-color: rgb(235, 235, 235);
+	background-color: rgba(235, 235, 235, 0.9);
+}
+
+details {
+	border: 1px solid #ffffff;
+	margin-bottom: 1px;
+}
+
+details div {
+	
+	background-color: rgb(255, 255, 255);
+	background-color: rgba(255, 255, 255, 0.9);
+}
+
+details span:first-of-type::before {
+	font-family: "Font Awesome 5 Free";
+	content: "\f044";
+	color: #7f7f7f;
+	display: inline-block;
+	width: 3em;
+}
+
+:is(details div, summary) {
+	display: flex;
+}
+
+:is(details div, summary) span:last-of-type {
+	flex: 1;
+	text-align: right;
+}
+
+:is(details div, summary)[data-id]:hover {
+	cursor: pointer;
+	background-color: #ffffff;
+}
+
+:is(details div, summary)[data-id] span:first-of-type::before {
+	color: var(--var-color-normal);
+}
+
+:is(details div, summary) {
+	padding: 0.5em;
+}
+
+details span {
+	display: inline-block;
+	padding: 0.5em;
+	position: relative;
+}
+
+:is(details div, summary).running span:last-of-type::before {
+	font-family: "Font Awesome 5 Free";
+	content: "\f00c";
+	content: "\f1ce";
+	color: #32cd32;
+}
+
+details div span:nth-of-type(2) {
+	margin-left: 3em;
+	border-left: 3px ridge rgba(235, 235, 235, 0.8);
+	color: #ffa500;
+	font-weight: bold;
+}
+
+summary span:nth-of-type(4):empty {
+	display: none;
+}
+
+summary span:nth-of-type(4):not(:empty)::before {
+	font-family: "Font Awesome 5 Free";
+	content: "\3d";
+	content: "\f005";
+	display: inline-block;
+	width: 2em;
+	text-align: center;
+}
+
+summary span:nth-of-type(5) {
+	width: 7em;
+}
+
+summary span.template {
+    background-color: #ffa500;
+	border-radius: 1em 1em 1em 1em;
+	padding: 0.5em 2em;
+}
+
+summary span.template::before {
+	font-family: "Font Awesome 5 Free";
+	display: inline-block;
+	width: 2em;
+	text-align: center;
+}
+
+summary button {
+	position: absolute; inset: 0 1em;
+}
+
+summary::marker {
+	content: "";
+}
+
+summary.template.power span.template::before {
+	content: "\f1e6";
+}
+
+summary.template.fan span.template::before {
+	content: "\f863";
+}
+
+summary.template.temperature span.template::before {
+	content: "\f2c7";
+}
+
+summary.template.load span.template::before {
+	content: "\f3fd";
+}
+
+summary.template.memory span.template::before {
+	content: "\f538";
+}
+
+summary:is(:not([data-id]), :not(:hover)) button {
+	display: none;
+}
+
+#dialog {
+	position: fixed; inset: 0 0 0 0;
+	padding: 0; margin: 0;
+}
+
+iframe {
+	width: 100%; height: 100%;
+	border: none;
+}
+
+button.icon::before {
+	font-family: "Font Awesome 5 Free";
+	display: inline-block; margin: auto 0.5em;
+}
+
+#sync::before {
+	content: "\f362";
+}
+
+#reload::before {
+	content: "\f2f1";
+}
+
+#add::before {
+	content: "\f067";
+}
+
+body:not(.dialog) #dialog {
+	display: none;
+}
+
+		</style>
+		<script>
+const ENTERPRISE = "1.3.6.1.4.1.";
+
+class Parser {
+    static enterprise = new Map();
+
+    static add (mib) {
+        const {target} = mib;
+
+        if (target.indexOf(ENTERPRISE) === 0) {
+            const pen = target.split(ENTERPRISE)[1].split(".")[0];
+
+            if (Number(pen) > 0) {
+                let mibs = this.enterprise.get(pen);
+
+                if (!mibs) {
+                    mibs = [];
+
+                    this.enterprise.set(pen, mibs);
+                }
+
+                mibs.push(mib);
+            }
+        }
+    }
+}
+		</script>
+		<script>
+function showDialog(src) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function () {
+        dialog.contentWindow.focus();
+
+		document.body.classList.add("dialog");
+	};
+
+    dialog.src = src;
+}
+
+function closeDialog(reset) {
+    const dialog = document.getElementById("dialog");
+
+    document.body.classList.remove("dialog");
+
+    dialog.onload = undefined;
+    
+    dialog.src = "about:blank";
+
+	if (reset) {
+		window.location.reload();
+	}
+}
+
+function onSetStatus (e) {
+	e.stopPropagation();
+}
+
+function isOID (oid) {
+    const array = oid?.split(".");
+	
+    return Boolean(array && array.length > 2 && !array.some(n => isNaN(n)));
+}
+
+function onSelectTargetItem (e) {
+	e.preventDefault();
+
+	if (e.target instanceof HTMLButtonElement) {
+		showDialog(`/dialog/template.html?template=${this.dataset.template}&target=${this.dataset.oid}`);
+	} else {
+		if (this.dataset.id) {
+			showDialog(`/dialog/template.html?id=${this.dataset.id}${this.nextSibling? "": "&remove=true"}`);
+		}
+	}
+}
+
+function onSelectItem (e) {
+	if (this.dataset.id) {
+		showDialog(`/dialog/template.html?id=${this.dataset.id}`);
+	}
+}
+
+function createTargetItem(mib) {
+	const
+		details = document.createElement("details"),
+		summary = document.createElement("summary"),
+		template = document.createElement("span");
+
+	summary.appendChild(document.createElement("span"));
+	summary.appendChild(template).textContent = mib.template;
+	summary.appendChild(document.createElement("span")).textContent = mib.target;
+	summary.appendChild(document.createElement("span")).textContent = mib.target == mib.value? "": mib.value;
+	summary.appendChild(document.createElement("span")).appendChild(document.createElement("button")).textContent = "Add";
+	summary.appendChild(document.createElement("span"));
+
+	summary.classList.add("template", mib.template);
+
+	summary.dataset.oid = mib.target;
+	summary.dataset.template = mib.template;
+
+	if (mib.id.indexOf("script") === -1) {
+		summary.dataset.id = mib.id;
+	}
+
+	summary.onclick = onSelectTargetItem;
+
+	template.className = "template";
+
+	details.dataset.oid = mib.target;
+
+	details.setAttribute("open", "");
+
+	details.appendChild(summary);
+
+	return details;
+}
+
+function createSubItem(mib) {
+	const
+		div = document.createElement("div");
+
+	div.appendChild(document.createElement("span"));
+	div.appendChild(document.createElement("span")).textContent = mib.type;
+	div.appendChild(document.createElement("span")).textContent = mib.value;
+	div.appendChild(document.createElement("span"));
+
+	div.dataset.target = mib.target;
+
+	if (isOID(mib.value)) {
+		div.dataset.oid = mib.value;
+	}
+
+	if (mib.id.indexOf("script") === -1) {
+		div.dataset.id = mib.id;
+	}
+
+	div.onclick = onSelectItem;
+
+	return div;
+}
+
+function onSync() {
+	if (!confirm(`Confirm.\n\nMIB 정보 동기화를 실행합니까?`)) {
+		return;
+	}
+
+	document.body.classList.add("loading");
+
+	$.request.query({
+		command: "set",
+		target: "mib",
+		mib: {
+			node: $.node,
+			pen: $.pen
+		}
+	})
+	.then(() => {
+		alert ("Information.\n\n동기화 결과는 요청 주기에 따라 수초 후 반영될 수 있습니다.");
+
+		window.location.reload();
+	})
+	.catch(showMessage);
+}
+
+function selectPEN(className) {
+	const main = document.body.querySelector("main");
+	let	section = main.querySelector("section");
+
+	if (section) {
+		$.cache.appendChild(section);
+	}
+	
+	section = $.cache.querySelector(`.${className}`);
+
+	if (section) {
+		main.appendChild(section);
+	}
+}
+
+function onSelectPEN () {
+	selectPEN(this.value);
+}
+
+function showMessage (xhr) {
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+		case 401:
+			alert(ERROR_NOT_SUPPORT["kr"]);
+
+			break;	
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
+
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace();
+    }
+}
+		</script>
+	</head>
+	
+	<body class="loading">
+		<header>
+			<div>
+				<button type="button" id="add" class="icon" title="MIB 추가">New Template</button>
+				<span>Select PEN</span>
+				<select id="pen"></select>
+				<button type="button" id="reload" class="icon" title="새로고침">Reload</button>
+			</div>
+			<div>
+				<button type="button" id="sync" class="icon" title="동기화">Syncronize</button>
+			</div>
+		</header>
+		<main></main>
+		<iframe id="dialog" name="dialog"></iframe>
+		
+		<div class="loading mask"></div>
+
+		<script src="/js/request.js"></script>
+		<!--script src="/js/query.js"></script-->
+		<script src="/js/constants.js"></script>
+		<script>
+const
+	search = new URLSearchParams(window.location.search),
+	$ = {
+		request: new Request(),
+		node: Number(search.get("node")),
+		pen: search.get("pen"),
+		cache: document.createDocumentFragment()
+	};
+
+document.getElementById("reload").onclick = e => window.location.reload();
+document.getElementById("sync").onclick = onSync;
+document.getElementById("add").onclick = e => showDialog(`/dialog/template.html?type=value`);
+
+		</script>			
+		<script type="module">
+const
+	select = document.getElementById("pen"),
+	df = document.createDocumentFragment();
+let option;
+
+$.request.query({
+    command: "get",
+    target: "mib"
+}).then(data => {
+	const
+		getClassNameByPEN = pen => `pen--${pen}`,
+		main = document.body.querySelector("main");
+	let mib, section, option;
+
+	for (const id in data) {
+		mib = data[id];
+
+		mib.id = id;
+
+		Parser.add(mib);
+	}
+
+	if (!Parser.enterprise.has($.pen)) {
+		Parser.add({
+			target: $.pen
+		});
+	}
+
+	for (const pen of Parser.enterprise.keys()) {
+		option = document.createElement("option");
+
+		df.appendChild(option).text = pen;
+
+		section = document.createElement("section");
+		
+		option.value = section.className = getClassNameByPEN(pen);
+
+		for (const mib of Parser.enterprise.get(pen)) {
+			if (mib.type === "value") {
+				section.appendChild(createTargetItem(mib));
+			} else {
+				$.cache.appendChild(createSubItem(mib));
+			}
+		}
+
+		$.cache.appendChild(section);
+	}
+	{
+		const targetToNull = new Map();
+
+		Array.from($.cache.querySelectorAll("div")).forEach(div => {
+			const container = $.cache.querySelector(`details[data-oid="${div.dataset.target}"]`);
+
+			if (container) {
+				container.appendChild(div);
+			} else {
+				targetToNull.set(div.dataset.target, null);
+			}
+		});
+
+		if (targetToNull.size > 0) {
+			let message = "Warning! 다음 OID를 목적으로 하는 Template이 누락되었습니다.\n\n";
+
+			for (const target of targetToNull.keys()) {
+				message = `${message}${target}\n`;
+			}
+
+			alert (message);
+		}
+	}
+
+	if (!Parser.enterprise.has($.pen)) {
+		option = document.createElement("option");
+
+		df.appendChild(option).text = $.pen;
+
+		section = document.createElement("section");
+		
+		option.value = section.className = getClassNameByPEN($.pen);
+
+		$.cache.appendChild(section);
+	}
+
+	select.appendChild(df);
+
+	select.value = getClassNameByPEN($.pen);
+	select.onchange = onSelectPEN;
+
+	selectPEN(getClassNameByPEN($.pen));
+
+	return $.request.query({
+		command: "get",
+		target: "mib",
+		mib: {
+			node: $.node
+		}
+	});
+}).then(data => {
+	const
+		section = document.body.querySelector("section"),
+		oids = Object.keys(data);
+		
+	Array.from(section.children).forEach(
+		details => {
+			Array.from(details.children).forEach(
+				e => {
+					const oid = e.dataset.oid;
+
+					if (oid && isOID(oid) && oids.includes(oid)) {
+						e.classList.add("running");
+					}
+				});
+		});
+	
+	document.body.classList.remove("loading");
+})
+.catch(showMessage);
+
+		</script>
+	</body>
+	
+</html>

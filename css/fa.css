@@ -11,3 +11,31 @@
       url("/fonts/fa-solid-900.ttf") format("truetype"),
       url("/fonts/fa-solid-900.svg#fontawesome") format("svg");
 }
+
+label.switch {
+  position: absolute; top: 10px; right: 10px;
+  user-select: none;
+}
+
+label.switch input {
+  display: none;
+}
+
+label.switch .switch__toggle {
+  font: 2em 'Font Awesome 5 Free';
+}
+
+label.switch .switch__toggle::before {
+  color: #ffffff;
+  content: "\f205";
+}
+
+label.switch .switch__toggle::after {
+  color: #aaaaaa;
+  content: "\f204";
+}
+
+label.switch input:checked ~.switch__toggle::after,
+label.switch input:not(:checked) ~.switch__toggle::before {
+display: none;
+}

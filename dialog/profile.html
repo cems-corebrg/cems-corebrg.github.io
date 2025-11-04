@@ -32,52 +32,6 @@ function getByteLength(s) {
 	return length;
 }
 
-function initialize (profile) {
-    if (profile) {
-        $.form.elements["name"].disabled = true;
-
-        $.form.elements["name"].value = profile.name;
-        $.form.elements["port"].value = profile.port;
-        $.form.elements["version"].value = profile.version;
-        
-        if (profile.version === 3) {
-            $.form.elements["user"].value = profile.security;
-            console.log(profile);
-            if ("authProto" in profile) {
-                const authKey = $.form.elements["authKey"];
-
-                $.form.elements["authProto"].value = profile.authProto;
-                
-                authKey.disabled = false;
-                authKey.value = profile.authKey;
-                
-                if ("privProto" in profile) {
-                    ["privProto", "privKey"].forEach(s => {
-                        const e = $.form.elements[s];
-
-                        e.value = profile[s];
-                        e.disabled = false;
-                    });
-                }
-            }
-        }
-        else {
-            $.form.elements["community"].value = profile.security;
-        }
-        
-        $.form.className = `v${profile.version}`;
-        
-        document.body.classList.add("edit");
-        
-        document.querySelector("input[type=submit]").disabled = true;
-    }
-    else {
-        $.form.elements["name"].focus();
-    }
-
-    document.body.classList.remove("loading");
-}
-    
 function onSubmit (e) {
     e.preventDefault();
     
@@ -87,7 +41,6 @@ function onSubmit (e) {
         request = {
             target: "profile",
             command: "add",
-            name: name,
             profile: {
                 name: name,
                 protocol: "udp",
@@ -130,7 +83,7 @@ function onSubmit (e) {
                     return element.focus();
                 }
                 else if (getByteLength(element.value) < 8) {
-                    alert("USM 규격에 따라 privacy는 passphrase는 8자 이상입니다.");
+                    alert("Error.\n\nUSM 규격에 따라 privacy passphrase는 8자 이상입니다.");
                     
                     return element.select();
                 }
@@ -146,6 +99,10 @@ function onSubmit (e) {
         
         if (!element.value) {
             return element.focus();
+        } else if (element.value.toUpperCase === "SNMP") {
+            alert("Error.\n\ncommunity 문자열은 SNMP 를 사용할수 없습니다.");
+
+            return element.select();
         }
         
         request.profile.security = this.elements["community"].value;
@@ -181,7 +138,9 @@ function onReset (e) {
     $.request.execute({
         command: "remove",
         target: "profile",
-        name: $.name
+        profile: {
+            name: $.name
+        }
     }, function () {
         switch (this.status) {
         case 200:
@@ -201,18 +160,24 @@ function onReset (e) {
 }
     
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
 		</script>
@@ -230,14 +195,13 @@ function showMessage(xhr) {
                     <tr>
                         <th>profile name</th>
                         <td>
-                            <input type="text" name="name" class="table text"
-                                placeholder="snmp profile name" required autofocus>
+                            <input type="text" name="name" placeholder="snmp profile name" required>
                         </td>
                     </tr>
                     <tr>
                         <th>udp port</th>
                         <td>
-                            <input type="number" min="1" step="1" value="161" name="port" class="table text"
+                            <input type="number" min="1" step="1" value="161" name="port"
                                 placeholder="snmp udp port" pattern="\d*" required>
                         </td>
                     </tr>
@@ -253,15 +217,13 @@ function showMessage(xhr) {
                     <tr class="version">
                         <th>community</th> 
                         <td>
-                            <input type="text" name="community" class="table text"
-                                placeholder="snmp community string">
+                            <input type="text" name="community" placeholder="snmp community string">
                         </td>
                     </tr>
                     <tr class="version v3">
                         <th>user</th>
                         <td>
-                            <input type="text" name="user" class="table text"
-                                placeholder="user name">
+                            <input type="text" name="user" placeholder="user name">
                         </td>
                     </tr>
                     <tr class="version v3">
@@ -300,11 +262,13 @@ function showMessage(xhr) {
                     <input type="reset" value="&#xf1f8; Remove">
                     <input type="submit" value="&#xf0c7; Save">
                 </footer>
-                <div class="bg_loading"></div>
+                <div class="loading mask"></div>
             </form>
         </main>
         
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script src="/js/dialog.js"></script>
 		<script>
 
 const
@@ -314,24 +278,6 @@ const
         form: document.querySelector("form"),
         name: search.get("name") || undefined
     };
-
-if (top.account.level === 0) {
-    document.body.classList.add("root");
-    
-    $.form.onreset = onReset;
-    $.form.onsubmit = onSubmit;
-}
-
-document.addEventListener("keydown", function (e) {
-	switch (e.keyCode) {
-	case 27:
-        top.closeDialog();
-		
-		break;
-	}
-});
-
-document.getElementById("close").onclick = e => top.closeDialog();
 
 document.body.querySelector("[name=version]").onchange = function (e) {
     $.form.className = `v${this.value}`;
@@ -371,24 +317,74 @@ $.form.elements["privProto"].onchange = function (e) {
     }
 };
 
-if ($.name) {
-    $.request.execute({
-        command: "get",
-        target: "profile",
-        name: $.name
-    }, function () {
-        switch (this.status) {
-        case 200:
-            initialize(JSON.parse(this.responseText));
+        </script>
+        <script type="module">
+import Channel from "../js/module/channel.js";
 
-            break;
-        default:
-            showMessage(this);
-        }
-    });
-} else {
-    initialize();
+Channel.request("account", account => {
+    if (account.level === 0) {
+        document.body.classList.add("root");
+    
+        $.form.onreset = onReset;
+        $.form.onsubmit = onSubmit;
+    }
+
+    if ($.name) {
+        $.request.query({
+            command: "get",
+            target: "profile",
+            profile: {
+                name: $.name
+            }
+        })
+        .then(profile => {
+            $.form.elements["name"].disabled = true;
+
+            $.form.elements["name"].value = profile.name;
+            $.form.elements["port"].value = profile.port;
+            $.form.elements["version"].value = profile.version;
+
+            if (profile.version === 3) {
+                $.form.elements["user"].value = profile.security;
+                console.log(profile);
+                if ("authProto" in profile) {
+                    const authKey = $.form.elements["authKey"];
+
+                    $.form.elements["authProto"].value = profile.authProto;
+                    
+                    authKey.disabled = false;
+                    authKey.value = profile.authKey;
+                    
+                    if ("privProto" in profile) {
+                        ["privProto", "privKey"].forEach(s => {
+                            const e = $.form.elements[s];
+
+                            e.value = profile[s];
+                            e.disabled = false;
+                        });
+                    }
+                }
+            }
+            else {
+                $.form.elements["community"].value = profile.security;
+            }
+
+            $.form.className = `v${profile.version}`;
+
+            document.body.classList.add("edit");
+
+            document.querySelector("input[type=submit]").disabled = true;
+
+            document.body.classList.remove("loading");
+        })
+        .catch(showMessage);
+        
+    } else {
+        $.form.elements["name"].focus();
+
+        document.body.classList.remove("loading");
 }
+});
 		</script>
 	
 	</body>

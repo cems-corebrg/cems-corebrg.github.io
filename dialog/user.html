@@ -19,13 +19,8 @@ body {
 	background-color: rgba(0, 0, 0, .8);
 }
 
-iframe {
-    border: none;
-    width: 100%; height: 100%;
-    position: fixed; inset: 0 0 0 0;
-}
-
 dialog {
+    width: 320px;
     border: 1px solid #dddddd;
 }
 
@@ -47,33 +42,15 @@ dialog .footer {
 dialog .footer input {
     flex: 1;
     padding: 0.5em;
-    font: 1em "Font Awesome 5 Free", "맑은 고딕", Tahoma, Arial;
+    font: 1em "Font Awesome 5 Free", "맑은 고딕";
 }
 
-body:not(.edit) tr.edit,
-body:not(.dialog) iframe {
+body:not(.edit) tr.edit {
     display: none;
 }
 
 		</style>
         <script>
-
-function initialize (user) {
-    if (user) {
-        $.form.elements["id"].value = user.id;
-        $.form.elements["id"].disabled = true;
-
-        $.form.elements["name"].value = user.name || "";
-        $.form.elements["sms"].value = user.sms || "";
-        $.form.elements["email"].value = user.email || "";
-
-        $.form.elements["level"].value = user.level;
-
-        document.body.classList.add("edit");
-    }
-
-    document.body.classList.remove("loading");
-}
 
 function onReset (e) {
     if(!confirm("User 정보를 삭제하겠습니까?")) {
@@ -87,7 +64,9 @@ function onReset (e) {
     $.request.execute({
         command: "remove",
         target: "user",
-        id: $.form.elements["id"].value
+        user: {
+            id: $.form.elements["id"].value
+        }
     }, function () {
         switch (this.status) {
         case 200:				
@@ -112,7 +91,6 @@ function onSubmit(e) {
     const
         request = {
             target: "user",
-            id: $.form.elements["id"].value,
             user: {
                 id: $.form.elements["id"].value
             }
@@ -159,7 +137,8 @@ function onChangeLevel (e) {
     }
 
     $.auth = {
-        level: this.value
+        level: this.value,
+        id: $.id
     };
 
     if ($.level > 1) {
@@ -185,8 +164,7 @@ function setAuth() {
     $.request.execute({
         target: "user",
         command: "set",
-        id: $.id,
-        auth: $.auth
+        user: $.auth
     }, function () {
         switch (this.status) {
         case 200:
@@ -197,25 +175,31 @@ function setAuth() {
 
         alert("Information.\n\n권한 설정을 완료 하였습니다.");
 
-        top.resetParent();
+        top.reloadOpener();
 
         document.body.classList.remove("loading");
     });
 }
 
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert(NOTICE_SESS_EXPIRE["kr"]);
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
         </script>
@@ -231,6 +215,7 @@ function showMessage(xhr) {
                 <table>
                     <colgroup>
                         <col width="120">
+                        <col>
                     </colgroup>
                     <tbody>
                         <tr>
@@ -263,6 +248,12 @@ function showMessage(xhr) {
                             </td>
                         </tr>
                         <tr class="edit">
+                            <th>접근제어</th>
+                            <td>
+                                <input type="text">
+                            </td>
+                        </tr>
+                        <tr class="edit">
                             <th>권한</th>
                             <td>
                                 <select name="level">
@@ -278,7 +269,7 @@ function showMessage(xhr) {
                     <input type="reset" value="&#xf1f8; Remove">
                     <input type="submit" value="&#xf0c7; Save">
                 </footer>
-                <div class="bg_loading"></div>
+                <div class="loading mask"></div>
             </form>
         </main>
         <dialog>
@@ -306,7 +297,7 @@ function showMessage(xhr) {
                     <input type="reset" value="&#xf00d; Cancel">
                     <input type="submit" value="&#xf00c; Apply">
                 </div>
-                <div class="bg_loading"></div>
+                <div class="loading mask"></div>
             </form>
         </dialog>
 
@@ -323,15 +314,6 @@ const
         form: document.querySelector("form"),
         dialog: document.body.querySelector("dialog")
     };
-
-if (top.account.level === 0) {
-    $.form.onsubmit = onSubmit;
-    $.form.onreset = onReset;
-    $.form.elements["level"].onchange = onChangeLevel;
-    document.getElementById("dialog").onsubmit = onSubmitLevel;
-
-    document.body.classList.add("root");
-}
 
 document.addEventListener("keydown", function (e) {
 	switch (e.keyCode) {
@@ -353,26 +335,49 @@ document.getElementById("dialog").onreset = function (e) {
 
     $.dialog.close();
 };
+        </script>
+        <script type="module">
+import Channel from "../js/module/channel.js";
 
-if ($.id) {
-    $.request.execute({
-        command: "get",
-        target: "user",
-        id: $.id
-    }, function () {
-        switch (this.status) {
-        case 200:
-            initialize(JSON.parse(this.responseText));
+Channel.request("account", account => {
+    if (account.level === 0) {
+        $.form.onsubmit = onSubmit;
+        $.form.onreset = onReset;
+        
+        $.form.elements["level"].onchange = onChangeLevel;
+        document.getElementById("dialog").onsubmit = onSubmitLevel;
 
-            break;
-        default:
-            showMessage(this);
-        }
-    });
-} else {
-    initialize();
-}
+        document.body.classList.add("root");
+    }
 
+    if ($.id) {
+        new Request().query({
+            command: "get",
+            target: "user",
+            user: {
+                id: $.id
+            }
+        })
+        .then(user => {
+            $.form.elements["id"].value = user.id;
+            $.form.elements["id"].disabled = true;
+
+            $.form.elements["name"].value = user.name || "";
+            $.form.elements["sms"].value = user.sms || "";
+            $.form.elements["email"].value = user.email || "";
+
+            $.form.elements["level"].value = user.level;
+
+            document.body.classList.add("edit");
+
+            document.body.classList.remove("loading");
+        })
+        .catch(showMessage);
+    } else {
+        document.body.classList.remove("loading");
+    }
+
+});
 		</script>
 	
 	</body>

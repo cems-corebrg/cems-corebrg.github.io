@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+   <head>
+	<meta charset="UTF-8">
+   </head>
+   <body>
+	<button>닫기</button>
+   </body>
+   <script>
+      window.open("about:blank","제목","width=200,height=200")
+         .document.write("<ol><li></li><li></li><li></li><li></li><li></li></ol>");
+
+      window.close();
+
+	  document.body.querySelector("button").onclick = e => window.close();
+   </script>
+</html>

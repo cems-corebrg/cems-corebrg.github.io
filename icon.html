@@ -20,8 +20,12 @@ header {
 	display: flex;
     justify-content: space-between;
     color: #ffffff;
-    font: 20px "Font Awesome 5 Free", "맑은 고딕", Tahoma, Arial;
     user-select: none;
+}
+
+input[type=button] {
+	font-family: "Font Awesome 5 Free", "맑은 고딕", Tahoma, Arial;
+	padding: 0.5em;
 }
 
 main {
@@ -53,6 +57,8 @@ h1 {
 .icon> div {
 	width: 64px; height: 64px;
 	overflow: hidden;
+	background: transparent center no-repeat;
+	background-size: contain;
 }
 
 .icon> span {
@@ -92,21 +98,6 @@ h1 {
 	color: #000;
 }
 
-.button {
-	display:inline-block;
-    cursor: pointer;
-}
-
-.button:active{
-    color: #0084ff;
-    transform: translateY(0);
-}
-
-.button:hover {
-    display: inline-block;
-    transform: translateY(-2px);
-}
-
 body:not(.root) .root,
 .layout {
     display: none;
@@ -130,8 +121,8 @@ function createGroup(name) {
 function createIcon(src, label) {
 	var icon = $.icon.cloneNode(true);
 	
-	icon.querySelector("img").src = src;
-	icon.children[1].textContent = label;
+	icon.querySelector("div").style.backgroundImage = `url(${src})`;
+	icon.querySelector("span").textContent = label;
 	
 	return icon;
 }
@@ -164,18 +155,24 @@ function initIcon(iconData) {
 }
 
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace();
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
         </script>
@@ -183,7 +180,9 @@ function showMessage(xhr) {
 	
 	<body class="loading">
         <header>
-            <span id="add" title="아이콘 추가" class="root button">&#xf055;</span>
+			<form>
+				<input id="add" class="root" type="button" value="&#xf067; Add">
+			</form>
         </header>
         <main>
             <ul id="list"></ul>
@@ -193,18 +192,17 @@ function showMessage(xhr) {
 				<li class="group">
 					<h1></h1>
 				<li class="icon">
-					<div>
-						<img width="64" height="64">
-					</div>
+					<div></div>
 					<span></span>
 			</ul>
 		</div>
 
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
         
         <script src="/js/ITAhM.js"></script>
         <script src="/js/icon.js"></script>
         <script src="/js/request.js"></script>
+		<script src="/js/constants.js"></script>
 		<script>
 
 const $ = {
@@ -214,37 +212,33 @@ const $ = {
         iconData: ITAhM.iconData
     };
 
-if (top.account.level === 0) {
-    document.body.classList.add("root");
-}
+		</script>
+		<script type="module">
+import Channel from "../js/module/channel.js";
 
-document.getElementById("add").onclick = e => {
-    top.showDialog("/dialog/icon.html", this);
-};
+Channel.request("account", account => {
+	if (account.level === 0) {
+		document.body.classList.add("root");
 
-$.request.execute({
-    command: "get",
-    target: "icon"
-}, function () {
-    switch(this.status) {
-    case 200:
-        const iconData = JSON.parse(this.responseText);
+		document.getElementById("add").onclick = e => {
+			top.showDialog("/dialog/icon.html", window);
+		};
+	}
 
-        for (let type in iconData) {
-            $.iconData[type] = iconData[type];
-        }
+	new Request().query({
+		command: "get",
+		target: "icon"		
+	}).then(data => {
+		for (let type in data) {
+			$.iconData[type] = data[type];
+		}
 
-    case 204:
-        document.getElementById("list").appendChild(initIcon($.iconData));
+		document.getElementById("list").appendChild(initIcon($.iconData));
 
-        document.body.classList.remove("loading");
-
-        break;
-    default:
-        showMessage(this);
-    }
+		document.body.classList.remove("loading");
+	})
+	.catch(showMessage);
 });
-
 		</script>
 	
 	</body>

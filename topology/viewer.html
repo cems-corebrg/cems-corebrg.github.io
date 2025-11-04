@@ -2,47 +2,56 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <title>CeMS Topology</title>
         <style>
 
 @import "/css/style.css";
 @import "/css/fa.css";
 
 body {
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    position: fixed; inset: 0 0 0 0;
     padding: 0; margin: 0;
-    background: #ffffff url("/img/bg_signin.png") no-repeat center center fixed;
-	background-size: cover;
+    background-color: #0000005f;
 }
 
-body:not(.background)::before {
-	content: "";
-	position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-	background-color: rgba(0, 0, 0, 0.8);
-	z-index: -1;
+aside {
+    position: absolute; inset: 1em 1em auto auto;
+    width: 620px; height: 80px;
+	padding: 1em;
+	pointer-events: none;
+}
+
+iframe {
+    width: 100%; height: 100%;
+    border: none;
+    padding: 0; margin: 0;
 }
 
 nav {
-    position: absolute; inset: 0 0 auto 0;
+    position: absolute; inset: 0 auto auto 0;
     padding: 5px;
     display: flex; justify-content: space-between;
     font: 20px "Font Awesome 5 Free";
     color: #ffffff;
     user-select: none;
+    display: flex;
 }
 
-nav span {
-    border-radius: 50%;
-    display: inline-flex;
-    width: 32px; height: 32px;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(0, 132, 255, 0.5);
-    border-color: #0084ff;
+nav img {
+	width: 30px; height: 30px;
+	display: inline-block;
+	border-radius: 5px;
+    border: 1px solid #e3b778;
+	background-color:#ffffed;
+	box-shadow: 0 4px 0 #dddddd;
+	transform: translate3d(0px, -4px, 0px);
     cursor: pointer;
 }
 
-nav span:hover {
-    background-color: #0084ff;
+nav img:active {
+	box-shadow: none;
+	transform: translate3d(0px, 0px, 0px);
+	transition: 0.1s ease-in-out;
 }
 
 svg {
@@ -62,15 +71,21 @@ svg {
 	fill: none;
 }
 
+.node.major circle {
+	stroke: #fdcc0d4d;
+    fill: #fdcc0d; /*99;*/
+	animation: status 2s infinite;
+}
+
 .node.critical circle {
 	stroke: rgba(255, 170, 0, 0.3);
-    fill: rgba(255, 170, 0, 0.6);
+    fill: #da680f; /*rgba(255, 170, 0, 0.6);*/
 	animation: status 2s infinite;
 }
 
 .node.shutdown circle {
 	stroke: rgba(255, 0, 0, 0.3);
-    fill: rgba(255, 0, 0, 0.6);
+    fill: #a62c2b; /*rgba(255, 0, 0, 0.6);*/
 	animation: status 2s infinite;
 }
 
@@ -85,7 +100,7 @@ polyline {
 }
 
 .path text {
-    cursor: pointer;
+    pointer-events: none;
     fill: #fcba30;
 }
 
@@ -94,13 +109,17 @@ iframe {
     width: 100%; height: 100%;
 }
 
+image.onclick {
+    cursor: pointer;
+}
+
 #dialog {
 	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
 	padding: 0; margin: 0;
     z-index: 3;
 }
 
-.bg_loading {
+.loading.mask {
     z-index: 9;
 }
 
@@ -125,17 +144,23 @@ text {
     fill: #ffffff;
 }
 
+
+.loading.mask {
+    z-index: 9;
+}
+
+
 body:not(.label) .node tspan,
 body.name .node tspan:last-child,
 body:not(.name) .node tspan:first-child,
 body:not(.exit) #exit,
-body:not(.dialog) #dialog,
-body:not(.frame) .frame {
+body:not(.root) .root,
+body:not(.loading) .loading.mask {
 	display: none;
 }
+
             </style>
             <script>
-
 function Display () {
     document.body.classList.add("label", "name");
     
@@ -154,32 +179,25 @@ function Display () {
         action[i++ %3]();
     }
 }
+            </script>
+            <script>
+function onEvent(e) {
+    const event = e.data;
 
-function showDialog(src, parent) {
-    const dialog = document.getElementById("dialog");
-
-    dialog.onload = function () {
-        $.parent = parent;
-
-		document.body.classList.add("dialog");
-	};
-
-    dialog.src = src;
-}
-
-function closeDialog(reset) {
-    document.body.classList.remove("dialog");
-    
-    if (reset) {
-        resetParent();
+    if (!event || event.level < 0) {
+        return;
     }
+    
+    if (event.node) {
+        if ($.timer) {
+            clearTimeout($.timer);
+        }
 
-    delete $.parent;
-}
-
-function resetParent() {
-    if ($.parent) {
-        $.parent.location.reload();
+        $.timer = setTimeout(() => requestAnimationFrame(t => {
+            const pos = window.positionData[String(event.node)];
+            
+            pos && moveStage(pos.parent, event.node);
+        }), 1000);
     }
 }
 
@@ -196,354 +214,101 @@ function showChart(id, index) {
     }
 }
 
-function createNodeTitle(node) {
-    const title = [];
-    
-    //title.push("ID : "+ node.id);
-    
-    if (node.ip) {
-		title.push("IP 주소 : "+ node.ip);
-	}
-
-	if (node.name) {
-		title.push("노드명 : "+ node.name);
-	}
-
-    if("status" in node) {
-        title.push("상태 : "+ (node.status? "정상": "응답 없음"));
-    }
-
-    if("status" in node && node.status && "resource" in node) {
-        let
-            oidData,
-            cpu = [];
-            
-        for (let index in node.resource) {
-            oidData = node.resource[index];
-
-            //응답 속도
-            (function(rtt) {
-                if (rtt) {
-                    title.push(`응답속도 : ${rtt.value} ms`);
-                }
-
-            })(oidData[ITAhM.snmp.oid.responseTime]);
-            //물리 메모리
-            (function(type, used, size, units) {
-                if (type && type == ITAhM.snmp.oid.hrStorageRam && used && size && units) {
-                    title.push("물리 메모리 : "+ Math.round(100* Number(used.value) / Number(size.value)) +" %");
-                }
-
-            })(oidData[ITAhM.snmp.oid.hrStorageType]
-                , oidData[ITAhM.snmp.oid.hrStorageUsed]
-                , oidData[ITAhM.snmp.oid.hrStorageSize]
-                , oidData[ITAhM.snmp.oid.hrStorageAllocationUnits]);
-            
-            //CPU
-            (function(load) {
-                if (load) {
-                    cpu.push(Number(load.value));
-                }
-            })(oidData[ITAhM.snmp.oid.hrProcessorLoad]);
-        }
-
-        if (cpu.length > 0) {
-            let sum = cpu.reduce((a, b) => Number(a)+ Number(b));
-
-            title.push("프로세서 로드 : "+  Math.min.apply(undefined, cpu).toFixed(2) +", "+ (sum / cpu.length).toFixed(2) +" ,"+ Math.max.apply(undefined, cpu).toFixed(2));
-        }
-    }
-
-	return title.join("\n");
-}
-
 function onSearch (e) {
     const keyword = prompt("노드 이름 또는 IP주소를 입력하세요.");
     
     if (!keyword) {
         return;
     }
-
+    
     var
         found = false,
         node;
 
-    for (let id in parent.nodeData) {
-        node = parent.nodeData[id];
+    for (let id in window.branchData) {
+        node = window.branchData[id];
 
         if (keyword === node.ip || keyword === node.name) {
-            parent.moveStage(parent.positionData[id].parent, id);
+            moveStage(window.positionData[id].parent, id);
             
-            found = true;
-
-            break;
+            return;
         }
     }
 
     if (!found) {
-        alert("Information.\n\n검색 결과가 없습니다.");
+        for (let id in window.nodeData) {
+            node = window.nodeData[id];
+
+            if (keyword === node.ip || keyword === node.name) {
+                moveStage(window.positionData[id].parent, id);
+
+                return;
+            }
+        }
     }
+
+    alert("Information.\n\n검색 결과가 없습니다.");
 }
 
-function initialize() {
-    const
-        linkMap = {};
-    let node, pos, group, link, peerMap, args, id;
-    
-    for (let id in parent.nodeData) {
-        node = parent.nodeData[id];
-        pos = parent.positionData[id];
-        
-        // 동기화 안된 node의 pos 정보가 없음
-        if (!pos) {
-            parent.positionData[id] = pos = {
-                x: 0,
-                y: 0
-            };
-        }
-        
-        // 상위 그룹이 삭제 되었음
-        if (pos.parent && !(pos.parent in parent.nodeData)) {
-            pos.parent = undefined;
-        }
-        
-        if (pos.parent === $.group) {
-            args = {
-                node: node,
-                icon: parent.iconData[node.type || "unknown"] || parent.iconData["unknown"],
-                position: parent.positionData[id]
-            };
+function moveStage (group, id) {
+    const search = new URLSearchParams();
 
-            if (args.icon.group === "group") {
-                args.click = e => parent.moveStage(id);
+    group && search.set("group", group);
+    id && search.set("focus", id);
 
-                args.size = 60;
-            } else if ("protocol" in node) {
-                args.click = e => showChart(id);
-                
-                args.hover = function (e) {
-                    showSummary(id, this);
-                };
-
-                if ("status" in node && !node.status) {
-                    $.shutdownList.push(id);
-                }
-                else if ("critical" in node && node.critical) {
-                    $.criticalList.push(id);
-                }
-            }
-
-            $.deviceMap[id] = addDevice(args);
-        }
-        else if (pos.parent && (group = findPosFromStage(pos.parent, parent.positionData))) {
-            // 하위
-            if ("protocol" in node) {
-                if ("status" in node && !node.status) {
-                    $.shutdownList.push(group);
-                }
-                else if ("critical" in node && node.critical) {
-                    $.criticalList.push(group);
-                }
-            }
-        }
-    }
-
-    $.criticalList.forEach(id => setStatus(id, "critical"));
-
-    $.shutdownList.forEach(id => setStatus(id, "shutdown"));
-    
-    for (let id in parent.linkData) {
-        link = parent.linkData[id];
-
-        if (!linkMap[link.nodeFrom]) {
-            linkMap[link.nodeFrom] = {};
-        }
-
-        if (!linkMap[link.nodeTo]) {
-            linkMap[link.nodeTo] = {};
-        }
-
-        if (linkMap[link.nodeFrom][link.nodeTo]) {
-            linkMap[link.nodeFrom][link.nodeTo].push(id);
-        } else {
-            linkMap[link.nodeFrom][link.nodeTo] =
-            linkMap[link.nodeTo][link.nodeFrom] = [id];
-        } 
-    }
-
-    for (let nodeFrom in $.pathMap) {
-        peerMap = $.pathMap[nodeFrom];
-
-        for (let nodeTo in peerMap) {
-            args = {
-                nodeFrom: nodeFrom,
-                nodeTo: nodeTo,
-                option: peerMap[nodeTo],
-                labelFrom: [],
-                labelTo: []
-            };
-            
-            id = findPosFromStage(nodeFrom);
-
-            if (id) {
-                args.posFrom = parent.positionData[id];
-            }
-            
-            id = findPosFromStage(nodeTo);
-
-            if (id) {
-                args.posTo = parent.positionData[id];
-            }
-
-            if (!args.posFrom && !args.posTo || (args.posFrom === args.posTo)) {
-                continue;
-            }
-
-            if (!args.option.color) {
-                args.option.color = parent.settingData.linkColor || "#ffffff";
-            }
-
-            if (!args.option.size) {
-                args.option.size = parent.settingData.linkSize || 1;
-            }
-
-            link = linkMap[nodeFrom];
-
-            if (link) {
-                link = link[nodeTo];
-
-                if (link) {
-                    link.forEach(id => {
-                        const link = parent.linkData[id];
-
-                        if (link.indexFrom) {
-                            args.labelFrom.push({
-                                index: link.indexFrom,
-                                name: link.indexFromName,
-                                click: showChart
-                            });
-                        }
-                        
-                        if (link.indexTo) {
-                            args.labelTo.push({
-                                index: link.indexTo,
-                                name: link.indexToName,
-                                click: showChart
-                            });
-                        }
-                    });
-                }
-            }
-
-            addPath(args);
-        }
-    }
-
-    if ($.group) {
-        document.getElementById("exit").onclick = e => parent.moveStage(parent.positionData[$.group].parent);
-
-        document.body.classList.add("exit");
-    }
-
-    document.body.classList.remove("loading");
-
-    if ($.focus) {
-        focusDevice($.focus);
-    }
-}
-
-function showSummary(id, device) {
-	$.request.execute({
-        command: "get",
-        target: "node",
-		id: id,
-		resource: true
-	}, function () {
-		switch (this.status) {
-		case 200:
-			const title = createNodeTitle(JSON.parse(this.responseText));
-
-			if (title) {
-                $.title.textContent = title;
-                
-                device.appendChild($.title);
-            }
-
-			break;
-		default:
-			showMessage(this);
-		}
-	});
-}
-
-function findPosFromStage(id, stage = $.deviceMap) {
-    for (let pos; pos = parent.positionData[id]; id = String(pos.parent)) {
-        if (id in stage) {
-            return id;
-        }
-
-        if (!("parent" in pos)) {
-            return;
-        }
-    }
+    window.location.search = search;
 }
 
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert(NOTICE_SESS_EXPIRE["kr"]);
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace();
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
             </script>
         </head>
         
-        <body class="label name loading">
+        <body class="loading">
             <nav>
-                <div>
-                    <span title="라벨 표시" id="display">
-                        &#xf074;
-                    </span>
-                    <span title="노드 찾기" id="search">
-                        &#xf002;
-                    </span>
-                    <span title="상위 이동" id="exit">
-                        &#xf2f5;
-                    </span>
-                </div>
-                <div class="frame">
-                    <span id="popup" title="새 창">&#xf2d2;</span>
-                </div>
+                <img src="/img/button/setting.png" title="편집 모드" id="edit" class="root">
+                <img src="/img/button/translate.png" title="라벨 전환" id="display">
+                <img src="/img/button/search.png" title="노드 찾기" id="search">
+                <img src="/img/button/exit.png" title="나가기 [상위 이동]" id="exit">
             </nav>
-            <iframe id="dialog" name="dialog"></iframe>
-            <div class="bg_loading"></div>
+            <aside>
+                <iframe src="/status.html"></iframe>
+            </aside>
+            
+            <div class="loading mask"></div>
 
             <script src="/js/ITAhM.js"></script>
-            <script src="/js/snmp.js"></script>
-            <script src="/js/icon.js"></script>
-            <script src="/topology/viewer.js"></script>
             <script src="/js/request.js"></script>
+            <script src="/js/icon.js"></script>
             <script src="/js/constants.js"></script>
+            <script src="/js/snmp.js"></script>
+            <script src="/topology/viewer.js"></script>
             <script>
 const
     search = new URLSearchParams(window.location.search),
     $ = {
-        request: new Request(),
-        iconData: ITAhM.iconData,
-        group: Number(search.get("group")) || undefined,
+        branch: Number(search.get("group")) || undefined,
         focus: Number(search.get("focus")) || undefined,
         display: new Display(),
-        shutdownList: [],
-        criticalList: [],
-        title: createTitle(),
         pathMap: {},
         deviceMap: {}
     };
@@ -551,27 +316,119 @@ const
 document.getElementById("display").onclick = e => $.display.update();
 document.getElementById("search").onclick = onSearch;
 
-if ("display" in parent.settingData && parent.settingData.display === "address") {
-    document.body.classList.remove("name");
+
+if ($.branch) {
+    document.getElementById("exit").onclick = e => moveStage(window.positionData[$.branch].parent);
+
+    document.body.classList.add("exit");
 }
+            </script>
+            <script type="module">
+import Channel from "../js/module/channel.js";
 
-{
-    let path, from;
+const request = new Request();
 
-    for (let id in parent.pathData) {
-        path = parent.pathData[id];
+Channel.request("account", account => {
+    if (account.level === 0) {
+        document.getElementById("edit").onclick = e => location.replace("/topology/editor.html");
 
-        from = String(path.from);
+        document.body.classList.add("root");
+    }
 
-        if (!(from in $.pathMap)) {
-            $.pathMap[from] = {};
+    request.query({
+        command: "get",
+        target: "position",
+        position: {
+            name: "position"
+        }
+    })
+    .then(data => {
+        window.positionData = data || {};
+
+        return request.query({
+            command: "get",
+            target: "node"
+        });
+    })
+    .then(data => {
+        window.nodeData = data;
+
+        return request.query({
+            command: "get",
+            target: "branch"
+        });
+    })
+    .then(data => {
+        window.branchData = data;
+
+        return request.query({
+            command: "get",
+            target: "link"
+        });
+    })
+    .then(data => {
+        window.linkData = data;
+
+        return request.query({
+            command: "get",
+            target: "path"
+        });
+    })
+    .then(data => {
+        window.pathData = data;
+
+        return request.query({
+            command: "get",
+            target: "config"
+        });
+    })
+    .then(data => {
+        window.settingData = {};
+
+        for (let key in data) {
+            window.settingData[key.toUpperCase()] = data[key];
         }
         
-        $.pathMap[from][String(path.to)] = path;
-    }
-}
+        if ("DISPLAY" in settingData && settingData["DISPLAY"] === "address") {
+            document.body.classList.remove("name");
+        }
 
-initialize();
+        return request.query({
+            command: "get",
+            target: "icon"
+        });
+    })
+    .then(data => {
+        var timer;
+
+        window.iconData = ITAhM.iconData;
+
+        for (let type in data) {
+            window.iconData[type] = data[type];
+        }
+
+        initialize($.branch);
+
+        $.focus && focusNode($.focus);
+
+        Channel.receive("event", event => {
+            if ("node" in event) {
+                if (timer) {
+                    clearTimeout(timer);
+                }
+
+                timer = setTimeout(() => requestAnimationFrame(t => {
+                    const pos = window.positionData[String(event.node)];
+                    
+                    pos && moveStage(pos.parent, event.node);
+                }), 1000);
+            }
+        });
+        
+        document.body.classList.remove("loading");
+    })
+    .catch(showMessage);
+});
 
         </script>
     </body>

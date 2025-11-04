@@ -11,10 +11,7 @@
 @import "/css/fa.css";
 
 body {
-	font-family: arial, tahoma, "맑은 고딕";
-	font-size: 10pt;
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-    background-color: rgba(0, 0, 0, 0.8);
+	position: fixed; inset: 0 0 0 0;
 	margin: 0; padding: 0;
 }
 
@@ -27,38 +24,17 @@ svg {
 	width: 100%; height: 100%;
 }
 /* control */
-.control {
-    position: absolute; top: 5px; left: 5px;
-    list-style: none;
-    margin: 0; padding: 0;
-    display: flex;
-    align-items: flex-start;
-    user-select: none;
-}
-
-.control span {
-    font: 20px 'Font Awesome 5 Free';
+nav {
+    position: absolute; inset: 5px 5px auto 5px;
+    display: flex; justify-content: space-between;
+    font: 20px "Font Awesome 5 Free";
     color: #ffffff;
-    cursor: pointer;
-    display: inline-flex; width: 32px; height: 32px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: rgba(0, 132, 255, 0.5);
+    user-select: none;
+    pointer-events: none;
 }
 
-.control span:hover {
-    background-color: #0084ff;
-}
-
-/* popup */
-.popup_container {
-    position: relative;
-}
-
-.popup {
-    position: absolute;
-    top: 100%; left: 0;
+nav >div {
+    display: flex;
 }
 
 body::before,
@@ -85,6 +61,25 @@ body::after {
 	fill-opacity: 0.5;
 	transform-origin: left top;
 }
+:is(nav, aside)
+img {
+	width: 30px; height: 30px;
+	display: inline-block;
+	border-radius: 5px;
+    border: 1px solid #e3b778;
+	background-color:#ffffed;
+	box-shadow: 0 4px 0 #dddddd;
+	transform: translate3d(0px, -4px, 0px);
+    cursor: pointer;
+    pointer-events: all;
+}
+
+:is(nav, aside)
+img:active {
+	box-shadow: none;
+	transform: translate3d(0px, 0px, 0px);
+	transition: 0.1s ease-in-out;
+}
 
 /* svg*/
 text::selection {
@@ -92,7 +87,7 @@ text::selection {
 }
 
 text {
-	font: 10px "맑은 고딕", Tahoma, Arial;
+	font: 12px "맑은 고딕";
 	fill: #fff;
 	text-anchor: middle;
 }
@@ -145,8 +140,12 @@ circle {
 }
 
 #select circle {
-	stroke: #dddddd;
-	stroke-dasharray: 2, 2;
+    fill: rgba(255, 255, 255, 0.5);
+}
+
+g.selected circle {
+    stroke: #ffffff;
+    stroke-width: 6;
 }
 
 #up:hover circle,
@@ -156,6 +155,14 @@ body.drag g.group:hover circle {
 
 body.link {
     cursor: url(/img/cur/anchor.cur) 8 8,auto;
+}
+
+dialog table {
+    width: 500px;
+}
+
+dialog table :is(col:nth-of-type(1), col:nth-of-type(2)) {
+    width: 100px;
 }
 
 :not(#select) >#anchor,
@@ -168,17 +175,15 @@ body:not(.name) #node tspan:first-child,
 body:not(.name) #select tspan:first-child,
 body:not(.exit) #exit,
 body:not(.exit) #up,
-body:not(.drag) #up {
+body:not(.drag) #up,
+body:not(.selected) #edit,
+body:not(.group) #enter{
 	display: none;
 }
 
 		</style>
 		
 		<script>
-
-function onSelect(id, group) {
-    top.showDialog(`/dialog/${group? "group": "node"}.html?id=${id}`, this);
-}
 
 function onEnter(id) {
     const search = new URLSearchParams();
@@ -193,7 +198,7 @@ function onLink(from, to) {
 }
 
 function findPosFromStage(id) {
-    for (let pos; pos = $.positionData[id]; id = String(pos.parent)) {
+    for (let pos; pos = parent.positionData[id]; id = String(pos.parent)) {
         if (id in $.deviceMap) {
             return id;
         }
@@ -204,25 +209,25 @@ function findPosFromStage(id) {
     }
 }
 
-function uuidv4() {
-    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-    );
-}
-
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert(NOTICE_SESS_EXPIRE["kr"]);
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace();
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
 		</script>
@@ -248,63 +253,71 @@ function showMessage(xhr) {
 				<rect x="0" y="0" width="1" height="1"></rect>
 			</g>
 		</svg>
-		<ul class="control root">
-            <li>
-                <span title="IP주소 보기" id="display">
-                    &#xf074;
-                </span>
-            </li>
-            <li>
-                <span id="save" title="편집 내용 저장">
-                    &#xf0c7;
-                </span>
-            </li>
-            <li>
-                <span id="refresh" title="새로 고침">
-                    &#xf2f9;
-                </span>
-            </li>
-            <li class="popup_container">
-                <span title="추가">
-                    &#xf067;
-                </span>
-                <div class="popup">
-                    <span id="add_node" title="노드 추가">
-                        &#xf233;
-                    </span>
-                    <span id="add_group" title="그룹 추가">
-                        &#xf5fd;
-                    </span>
-                    <span id="search" title="스마트 탐지">
-                        &#xf002;
-                    </span>
-                </div>
-            </li>
-            <li>
-                <span id="exit" title="상위 이동">
-                    &#xf2f5;
-                </span>
-            </li>
-            <li>
-                <span title="
-==============================
-
-● Click: 선택
-● Shift + Click: 선택 추가
-● Ctrl + Click: 선택 반전
-● Shift + Drag: 영역 선택 추가
-● Crl + Drag: 영역 선택 반전
-● Alt + Click: 링크
-● Click 유지: 그룹 이동 
-● Right Click: 편집
-
-==============================
-                ">
-                    &#xf128;
-                </span>
-            </li>
-		</ul>
-		<div class="bg_loading"></div>
+		<nav class="control root">
+            <div>
+                <img src="/img/button/translate.png" title="라벨 전환" id="display">
+                <img src="/img/button/save.png" id="save" title="편집 내용 저장">
+                <img src="/img/button/refresh.png" id="refresh" title="새로 고침">
+                <img src="/img/menu/node.png" id="add_node" title="노드 추가">
+                <img src="/img/button/branch.png" id="add_group" title="브랜치 추가">
+                <img src="/img/button/search.png" id="search" title="스마트 탐지">
+                <img src="/img/button/question.png" id="support" title="도움말">
+            </div>
+            <div class="nav__selected">
+                <img src="/img/button/edit.png" id="edit" title="선택 편집">
+                <img src="/img/button/exit.png" id="exit" title="나가기 [상위 이동]">
+                <img src="/img/button/enter.png" id="enter" title="들어가기 [하위 이동]">
+            </div>
+            <div></div>
+		</nav>
+        <dialog>
+            <table>
+                <colgroup>
+                    <col>
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Key</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Click</th>
+                        <td></td>
+                        <td>선택</td>
+                    </tr>
+                    <tr>
+                        <th>Click</th>
+                        <td>Shift</td>
+                        <td>선택 추가</td>
+                    </tr>
+                    <tr>
+                        <th>Click</th>
+                        <td>Ctrl</td>
+                        <td>선택 반전</td>
+                    </tr>
+                    <tr>
+                        <th>Click</th>
+                        <td>Alt</td>
+                        <td>링크</td>
+                    </tr>
+                    <tr>
+                        <th>Drag</th>
+                        <td>Shift</td>
+                        <td>선택 영역 추가</td>
+                    </tr>
+                    <tr>
+                        <th>Drag</th>
+                        <td>Ctrl</td>
+                        <td>선택 영역 반전</td>
+                    </tr>
+                </tbody>
+            </table>
+        </dialog>
+		<div class="loading mask"></div>
 
         <script src="/js/ITAhM.js"></script>
         <script src="/js/icon.js"></script>
@@ -319,24 +332,27 @@ const
         request: new Request(),
         iconData: ITAhM.iconData,
         deviceMap: {},
-        positionData: parent.getPositionData(),
         upper: Number(search.get("group")) || undefined,
         pathData: {}
     };
 
-document.getElementById("save").onclick = function () {	
+document.getElementById("save").onclick = function () {
 	document.body.classList.add("loading");
 
     $.request.execute({
         command: "set",
         target: "position",
-        name: "position",
-        position: $.positionData
+        position: {
+            name: "position",
+            position: parent.positionData
+        }
     }, function (e) {
         switch (this.status) {
         case 200:
             alert("Information.\n\n구성의 변경사항을 저장하였습니다.");
 
+            setScale();
+            
             document.body.classList.remove("loading");
 
             break;
@@ -344,6 +360,12 @@ document.getElementById("save").onclick = function () {
             showMessage(this);
         }
     });
+};
+
+document.getElementById("support").onclick = e => document.body.querySelector("dialog").showModal();
+
+document.body.querySelector("dialog").onclick = function () {
+    this.close();
 };
 
 document.getElementById("display").onclick = e => document.body.classList.toggle("name");
@@ -354,32 +376,82 @@ document.getElementById("refresh").onclick = function () {
 
 document.getElementById("search").onclick = e => top.showDialog("/dialog/search.html", this);
 document.getElementById("add_node").onclick = e => top.showDialog("/dialog/node.html", this);
-document.getElementById("add_group").onclick = e => top.showDialog("/dialog/group.html", this);
+document.getElementById("add_group").onclick = e => top.showDialog("/dialog/branch.html", this);
 
-function initialize() {
-    let node, pos, icon, link, linkMap = {}, nodeToMap, args;
+document.getElementById("edit").onclick = function (e) {
+    const selected = document.getElementById("select").querySelector("g.selected");
 
-    if ($.upper) {
-        const
-            upper = $.positionData[String($.upper)].parent;
+    selected &&
+        top.showDialog(`/dialog/${selected.classList.contains("group")? "branch": "node"}.html?id=${selected.dataset.id}`, window);
+};
 
-        if (upper) {
-            const search = new URLSearchParams();
-            
-            search.set("group", upper);            
+document.getElementById("enter").onclick = function (e) {
+    const selected = document.getElementById("select").querySelector("g.selected");
 
-            document.getElementById("up").dataset.id = upper;
+    selected && onEnter(selected.dataset.id);
+};
 
-            document.getElementById("exit").onclick = e => window.location.search = search;
-        } else {
-            document.getElementById("exit").onclick = e => window.location.replace("/topology/tool.html");
-        }
-
-        document.body.classList.add("exit");
+$.request.query({
+    command: "get",
+    target: "icon",
+})
+.then(iconData => {
+    for (let type in iconData) {
+        $.iconData[type] = iconData[type];
     }
 
-    for (let id in $.nodeData) {
-        pos = $.positionData[id];
+    return $.request.query({
+        command: "get",
+        target: "branch"
+    });
+})
+.then(branchData => {
+    let node, pos, icon
+    $.branchData = branchData;
+    
+    for (let id in branchData) {
+        pos = parent.positionData[id];
+        
+        if (!pos) {
+            pos = {
+                x: 0,
+                y: 0,
+                parent: $.upper
+            };
+
+            parent.positionData[id] = pos;
+        } else if (pos.parent && !(pos.parent in branchData)) {
+            pos.parent = $.upper;
+        }
+
+        if (pos.parent !== $.upper) {
+            continue;
+        }
+
+        node = branchData[id];
+        icon = $.iconData[node.type || "unknown"] || $.iconData["unknown"];
+
+        $.deviceMap[id] = createDevice({
+            id: id,
+            scale: 1.5,
+            icon: icon.src,
+            name: node.name,
+            ip: node.name,
+            pos: pos,
+            group: true
+        });
+    }
+
+    return $.request.query({
+        command: "get",
+        target: "node"
+    });
+})
+.then(nodeData => {
+    let node, pos, icon;
+    
+    for (let id in nodeData) {
+        pos = parent.positionData[id];
 
         if (!pos) {
             pos = {
@@ -388,8 +460,8 @@ function initialize() {
                 parent: $.upper
             };
 
-            $.positionData[id] = pos;
-        } else if (pos.parent && !(pos.parent in $.nodeData)) {
+            parent.positionData[id] = pos;
+        } else if (pos.parent && !(pos.parent in $.branchData)) {
             pos.parent = $.upper;
         }
 
@@ -397,22 +469,49 @@ function initialize() {
             continue;
         }
 
-        node = $.nodeData[id];
+        node = nodeData[id];
         icon = $.iconData[node.type || "unknown"] || $.iconData["unknown"];
 
         $.deviceMap[id] = createDevice({
             id: id,
-            scale: icon.group === "group"? 1.5: undefined,
             icon: "protocol" in node? icon.src: icon.disabled,
             name: node.name || node.ip,
             ip: node.ip || node.name,
-            pos: pos,
-            group: icon.group === "group"
+            pos: pos
         });
     }
 
-    for (let id in $.linkData) {
-        link = $.linkData[id];
+    return $.request.query({
+        command: "get",
+        target: "path"
+    });
+})
+.then(pathData => {
+    let path, from;
+
+    for (let id in pathData) {
+        path = pathData[id];
+
+        from = String(path.from);
+
+        if (!(from in $.pathData)) {
+            $.pathData[from] = {};
+        }
+        
+        $.pathData[from][String(path.to)] = path;
+    }
+
+    return $.request.query({
+        command: "get",
+        target: "link"
+    });
+})
+.then(linkData => {
+    const linkMap = {};
+    let link, nodeToMap, args;
+
+    for (let id in linkData) {
+        link = linkData[id];
 
         if (!linkMap[link.nodeFrom]) {
             linkMap[link.nodeFrom] = {};
@@ -429,7 +528,7 @@ function initialize() {
             linkMap[link.nodeTo][link.nodeFrom] = [link];
         } 
     }
-
+    
     for (let nodeFrom in $.pathData) {
         nodeToMap = $.pathData[nodeFrom];
 
@@ -447,118 +546,46 @@ function initialize() {
         }
     }
 
-    document.body.classList.remove("loading");
-}
+    movePath();
 
-function initNode(e) {
-    switch(this.status) {
-        case 200:
-            $.nodeData = JSON.parse(this.responseText);
-
-            $.request.execute({
-                command: "get",
-                target: "path"
-            }, initPath);
-            
-            break;
-        default:
-            showMessage(this);
-    }
-}
-
-function initPath(e) {
-    switch(this.status) {
-        case 200: break;
-        default:
-            return showMessage(this);
-    }
-
-    const pathData = JSON.parse(this.responseText);
-    var path, from;
-
-    for (let id in pathData) {
-        path = pathData[id];
-
-        from = String(path.from);
-
-        if (!(from in $.pathData)) {
-            $.pathData[from] = {};
-        }
-        
-        $.pathData[from][String(path.to)] = path;
-    }
-
-    $.request.execute({
+    return $.request.query({
         command: "get",
-        target: "link"
-    }, initLink);
-}
-
-function initLink(e) {
-    switch(this.status) {
-        case 200:
-            $.linkData = JSON.parse(this.responseText);
-            
-            $.request.execute({
-                command: "get",
-                target: "icon"
-            }, initIcon);
-        
-            break;
-        default:
-            showMessage(this);
+        target: "config"
+    });
+})
+.then(settingData => {
+    if ("display" in settingData) {
+        document.body.classList["display" in settingData && settingData.display === "name"? "add": "remove"]("name");
     }
-}
-
-function initIcon(e) {
-    switch(this.status) {
-        case 200:
-            const iconData = JSON.parse(this.responseText);
-
-            for (let type in iconData) {
-                $.iconData[type] = iconData[type];
-            }
-
-            $.request.execute({
-                command: "get",
-                target: "setting"
-            }, initSetting);
-
-            break;
-        default:
-            showMessage(this);
+    
+    if ("linkColor" in settingData) {
+        //Path.COLOR = settingData.linkColor;
     }
-}
 
-function initSetting(e) {
-    switch(this.status) {
-        case 200:
-            const settingData = JSON.parse(this.responseText);
-
-            if ("display" in settingData) {
-                document.body.classList["display" in settingData && settingData.display === "name"? "add": "remove"]("name");
-            }
-            
-            if ("linkColor" in settingData) {
-                //Path.COLOR = settingData.linkColor;
-            }
-
-            if ("linkSize" in settingData) {
-                //Path.WIDTH = settingData.linkSize;
-            }
-            
-            initialize();
-            
-            break;
-        default:
-            showMessage(this);
+    if ("linkSize" in settingData) {
+        //Path.WIDTH = settingData.linkSize;
     }
-}
+})
+.then(() => {
+    if ($.upper) {
+        const
+            upper = parent.positionData[String($.upper)].parent,
+            search = new URLSearchParams();
 
-$.request.execute({
-    command: "get",
-    target: "node",
-}, initNode);
+        if (upper) {
+            search.set("group", upper);            
+
+            document.getElementById("up").dataset.id = upper;    
+        }
+
+        document.getElementById("exit").onclick = e => window.location.search = search;
+
+        document.body.classList.add("exit");
+    }
+
+    document.body.classList.remove("loading");
+})
+.catch(showMessage);
 
 		</script>
 	

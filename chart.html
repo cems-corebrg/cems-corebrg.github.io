@@ -7,21 +7,33 @@
 		<title>CeMS Chart</title>
 
 		<style>
+@import "/css/style.css";
 @import "/css/fa.css";
 
 body {
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    position: fixed; inset: 0;
     padding: 0; margin: 0;
-    background-color: #4d525a;
+    background-color: #0000005f;
     display: flex; flex-direction: column;
 }
 
 nav {
-    font: bold 20px 'Font Awesome 5 Free';
+    font-size: 20px;
+    font-weight: bold;
+    background-color: #424242;
     color: #aaaaaa;
     flex: none;
     padding: 0.5em;
     display: flex; justify-content: space-between;
+}
+
+nav :is(div:first-of-type, div:last-of-type) {
+    font-family: 'Font Awesome 5 Free';
+}
+
+#node {
+    color: #fefefe;
+    text-shadow: 0 2px 3px #000;
 }
 
 main {
@@ -55,18 +67,24 @@ body:not(.frame) .frame {
 		<script>
 
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert(NOTICE_SESS_EXPIRE["kr"]);
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(ERROR_RES_CODE(xhr.status)["kr"]);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace();
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
 		</script>
@@ -78,8 +96,8 @@ function showMessage(xhr) {
                 <span id="close" class="frame summary" title="이전으로">&#xf536;</span>
                 <span id="back" class="chart" title="이전으로">&#xf536;</span>
             </div>
-            <div class="frame">
-                <span id="popup" title="새 창">&#xf2d2;</span>
+            <div id="node"></div>
+            <div>
             </div>
         </nav>
         <main>
@@ -87,7 +105,6 @@ function showMessage(xhr) {
         </main>
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
-        <script src="/js/channel.js"></script>
 		<script>
 
 const search = new URLSearchParams(window.location.search),
@@ -111,6 +128,8 @@ function initNode () {
             
     document.title = node.name || node.ip || "Chart";
     
+    document.getElementById("node").textContent = node.name? `${node.name}[${node.ip}]`: node.ip;
+
     if ($.chart && $.index) {
         const date = new Date();
 
@@ -124,7 +143,11 @@ function initNode () {
     }
 }
 
-Channel.getAccount(account => {
+        </script>
+        <script type="module">
+import Channel from "./js/module/channel.js";
+
+Channel.request("account", account => {
     if (window === top) {
         window.account = account;
 
@@ -135,16 +158,6 @@ Channel.getAccount(account => {
         $.id = Number(search.get("id"));
         $.chart = search.get("chart");
         $.index = search.get("index");
-
-        document.getElementById("popup").onclick = e => {
-            const popup = window.open();
-
-            popup.sessionStorage.setItem("id", $.id);
-
-            popup.location.replace("/chart.html");
-
-            top.closeDialog();
-        };
 
         document.getElementById("close").onclick = e => top.closeDialog();
 
@@ -158,11 +171,11 @@ Channel.getAccount(account => {
         $.request.execute({
             command: "get",
             target: "node",
-            id: $.id,
-            resource: true
+            node: {
+                id: $.id,
+                resource: true
+            }
         }, initNode);
-    } else {
-        window.location.replace("/warning.html");
     }
 });
 

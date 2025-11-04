@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Dialog[Template]</title>
+        <style>
+@import "/css/style.css";
+@import "/css/dialog.css";
+@import "/css/fa.css";
+
+form.hidden--type .hidden--type,
+form.hidden--value .hidden--value {
+    display: none;
+}
+        </style>
+        <script>
+
+function onSubmit (e) {
+    e.preventDefault();
+
+    const
+        form = document.body.querySelector("form"),
+        template = form.elements["template"].value,
+        oid = form.elements["target"].value,
+        type = form.elements["type"].value;
+    
+    if (!template) {
+        return form.elements["template"].focus();
+    }
+
+    if (oid && oid.split(".").some(n => isNaN(n))) {
+		return alert("Error.\n\n 값이 OID 형식에 맞지 않습니다.");
+	}
+
+    document.body.classList.add("loading");
+
+    $.request.query({
+        target: "mib",
+        command: "set",
+        mib: {
+            id: search.get("id") || undefined,
+            template: form.elements["template"].value,
+            target: oid,
+            type: type,
+            value: type === "value"? oid: form.elements["value"].value
+        }
+    }).then(data => {
+        parent.closeDialog(true);
+    }).catch(showMessage);
+}
+
+function onReset (e) {
+    if (!search.has("remove")) {
+        e.preventDefault();
+
+        return alert("Information.\n\n 추가 정보를 갖는 Template은 삭제할 수 없습니다.");
+    };
+
+    document.body.classList.add("loading");
+
+    $.request.query({
+		command: "remove",
+		target: "mib",
+		mib : {
+			id: search.get("id")
+		}
+	})
+	.then(enterprise => {
+		parent.closeDialog(true);
+	})
+	.catch(showMessage);
+}
+
+function onChangeType (e) {
+    const type = this.value;
+
+    if (!type) {
+        return;
+    }
+
+    this.querySelector(`[value=""]`).setAttribute("hidden", "");
+    
+    //selectType(type);
+}
+/*
+function selectType (type) {
+    const
+        form = document.body.querySelector("form"),
+        value = form.elements["value"];
+
+    if (type === "value") {
+        switch (template = form.elements["template"].value) {
+            case "fan":
+            case "power":
+                value.disabled = false;
+                value.select();
+
+                break;
+            case "load":
+            case "memory":
+            case "storage":
+            case "temperature":
+                value.value = form.elements["target"].value;
+                value.disabled = true;
+
+                break;
+        }
+    } else {
+        value.disabled = false;
+        value.select();
+    }
+}
+*/
+function onChangeTemplate (e) {
+    const template = this.value;
+    
+    if (!template) {
+        return;
+    }
+        
+    const
+        form = document.body.querySelector("form"),
+        option = this.querySelector(`[value=""]`);
+
+    switch (template) {
+    case "fan":
+    case "power":
+        form.classList.remove("hidden--value");
+
+        break;
+    case "load":
+    case "memory":
+    case "storage":
+    case "temperature":
+        form.classList.add("hidden--value");
+
+        break;
+    }
+
+    option.setAttribute("hidden", "");
+}
+
+function showMessage (xhr) {
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
+
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace();
+    }
+}
+
+		</script>
+    </head>
+    <body class="loading">
+        <main>
+            <h2>
+                <span id="close" title="대화창 닫기">&#xf00d;</span>
+                Template
+            </h2>
+            <form>
+                <table>
+                    <thead>
+                        <colgroup>
+                            <col width="100">
+                        </colgroup>
+                    </thead>
+                    <tbody>
+                        <tr class="type--">
+                            <th title="템플릿">Template</th>
+                            <td>
+                                <select name="template" required>
+                                    <option value="load">Processor load</option>
+                                    <option value="memory">Memory</option>
+                                    <option value="storage">Storage</option>
+                                    <option value="temperature" class="value">Temperature</option>
+                                    <option value="power">Power</option>
+                                    <option value="fan">Fan</option>
+                                    <option value="" selected>Select template</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th title="목적 OID">Target</th>
+                            <td>
+                                <input type="text" name="target" required>
+                            </td>
+                        </tr>
+                        <tr class="hidden--type">
+                            <th title="종류">Type</th>
+                            <td>
+                                <select name="type" required>
+                                    <option title="값" value="value" hidden>Value</option>
+                                    <option title="최대값" value="max">Max</option>
+                                    <option title="단위" value="unit">Unit</option>
+                                    <option title="이름" value="name">Name</option>
+                                    <option value="" selected>Select type</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="hidden--value">
+                            <th title="값 또는 OID">Value or OID</th>
+                            <td>
+                                <input type="text" name="value" autocomplete="off">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <footer>
+                    <input type="reset" value="&#xf1f8; Remove">
+                    <input type="submit" value="&#xf00c; Apply">
+                </footer>
+
+                <div class="loading mask"></div>
+            </form>
+        </main>
+
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script src="/js/dialog.js"></script>
+        <script>
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+    };
+
+document.getElementById("close").onclick = e => parent.closeDialog();
+
+const form = document.body.querySelector("form");
+
+form.elements["type"].onchange = onChangeType;
+form.elements["template"].onchange = onChangeTemplate;
+
+        </script>
+        <script type="module">
+import Channel from "../js/module/channel.js";
+
+Channel.request("account", account => {
+    if (account.level === 0) {
+        const form = document.body.querySelector("form");
+
+        form.onsubmit = onSubmit;
+        form.onreset = onReset;
+        
+        document.body.classList.add("root");
+    }
+    
+    if (search.has("id")) { // Edit
+        $.request.query({
+            target: "mib",
+            command: "get",
+            mib: {
+                id: Number(search.get("id"))
+            }
+        }).then(data => {
+            const
+                template = form.elements["template"],
+                target = form.elements["target"],
+                type = form.elements["type"];
+
+            template.value = data.template;
+            template.disabled = true;
+
+            target.value = data.target;
+            target.disabled = true;
+
+            type.value = data.type;
+            type.querySelector(`[value=""]`).setAttribute("hidden", "");
+
+            form.elements["value"].value = data.value;
+
+            switch (data.type) {
+            case "value":
+                form.classList.add("hidden--type");
+
+                switch (data.template) {
+                case "fan":
+                case "power":
+                    break;
+                default:
+                    form.classList.add("hidden--value");
+                }
+
+                break;
+            default:
+            }
+
+            document.body.classList.add("edit");
+
+            document.body.classList.remove("loading");
+        }).catch(showMessage);
+    } else if (search.has("type")) { // New target
+        form.elements["type"].value = search.get("type");
+        
+        form.classList.add("hidden--type");
+        form.classList.add("hidden--value");
+
+        document.body.classList.remove("loading");
+    } else if (search.has("template") && search.has("target")) { // New Sub
+        const
+            template = form.elements["template"],
+            target = form.elements["target"];
+
+        template.value = search.get("template");
+        template.disabled = true;
+
+        target.value = search.get("target");
+        target.disabled = true;
+
+        document.body.classList.remove("loading");
+    } else {
+        throw alert(ERROR_WRONG_ACCESS["kr"]);
+    }
+});
+
+        </script>
+    </body>
+
+</html>

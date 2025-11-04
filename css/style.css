@@ -1,8 +1,11 @@
 @charset "utf-8";
 
-body  {
-	font-family: arial, tahoma, "맑은 고딕";
-	font-size: 10pt;
+body,
+input,
+button,
+textarea,
+select  {
+	font: 10pt "맑은 고딕", arial, tahoma;
 }
 
 .btn_close {
@@ -56,19 +59,8 @@ body  {
 	margin-top: -0.2em;
 }
 
-body:not(.loading) .bg_loading,
 body:not(.loading) .loading.mask {
 	display: none;
-}
-
-.bg_loading {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	background: #4d525a url("/img/loading.gif") no-repeat center;
-	background-size: 32px 32px;
-}
-
-.bg_loading.w {
-    background-color: rgba(255, 255, 255, 0.7);
 }
 
 /** New loading**/
@@ -142,9 +134,6 @@ body .loading::after {
 .switch {
     position: relative;
     display: inline-block;
-    width: 2em;
-    height: 1em;
-    font-size: 20px;
 }
 
 .switch >input {
@@ -193,4 +182,37 @@ input:checked + .slider:before {
 
 .switch >.slider.round:before {
     border-radius: 50%;
+}
+
+/** button **/
+.icon-button {
+    cursor: pointer;
+}
+
+.icon-button::before {
+    font: 1em "Font Awesome 5 Free";
+}
+
+.icon-button__switch::before {
+    content: "\f337";
+}
+
+.icon-button--round {
+    display: inline-flex; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+}
+
+.icon-button--blue {
+    background-color: #0084ff7f;
+    border: 1px solid #0084ff;
+    color: #ffffff;
+}
+
+.icon-button--blue:hover {
+    background-color: #0084ff;
+}
+
+.container--absolute-right {
+    position: absolute; top: 0; right: 0;
 }

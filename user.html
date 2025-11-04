@@ -8,90 +8,19 @@
 
 @import "/css/style.css";
 @import "/css/fa.css";
+@import "/css/list.css";
 
-body {
-    font: 10pt "맑은 고딕", Arial, Tahoma;
-    margin: 0; padding: 1em;
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-    display: flex; flex-direction: column;
-}
-
-main {
-    flex: 1;
-    overflow-y: auto;
-}
-
-input[type=date],
-input[type=text],
-input[type=button],
-input[type=submit],
-.fa {
-	font-family: "Font Awesome 5 Free", "맑은 고딕", arial, tahoma;
+input[type=button] {
+	font-family: "Font Awesome 5 Free", "맑은 고딕";
 	padding: 0.5em;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-    z-index: -1;
-}
-
 thead th {
-    font-family: "Font Awesome 5 Free", "맑은 고딕", arial, tahoma;
-}
-
-main th {
-    background-color: #34495e;
-    color: #efefef;
-    position: sticky; top: 0;
-}
-
-main th,
-main td {
-    padding: 1em;
+    font-family: "Font Awesome 5 Free", "맑은 고딕";
 }
 
 #list tr {
-    border-bottom: 1px solid #ffffff;
     cursor: pointer;
-    background-color: #ffffff;
-}
-
-#list tr:nth-child(odd) {
-	background-color: #ebebeb;
-}
-
-header {
-    padding: 0.5em;
-    color: #ffffff;
-    user-select: none;
-}
-
-.button {
-    font: 20px "Font Awesome 5 Free";
-    display: inline-block;
-    cursor: pointer;
-}
-
-
-.button:hover>a {
-    display: inline-block;
-    transform: translateY(-2px);
-}
-
-.button:active>a {
-    color: #0084ff;
-    transform: translateY(0);
-}
-
-.button>a:link,
-.button>a:visited {
-    color: inherit;
-    text-decoration: inherit;
-}
-
-.bg_loading {
-    z-index: 9;
 }
 
 body:not(.root) .root {
@@ -105,8 +34,10 @@ function createItem(user) {
     const tr = document.createElement("tr");
     
     tr.appendChild(document.createElement("td")).textContent = user.id;
-    tr.appendChild(document.createElement("td")).textContent = user.level === 0? "관리자": user.level === 1? "사용자": "수신자";
-    tr.appendChild(document.createElement("td")).textContent = user.name || "";
+    tr.appendChild(document.createElement("td")).textContent = user.name;
+    tr.appendChild(document.createElement("td")).textContent = user.level === 0?
+        "관리자": user.level === 1?
+        "사용자": "수신자";
     tr.appendChild(document.createElement("td")).textContent = user.email || "";
     tr.appendChild(document.createElement("td")).textContent = user.sms || "";
 
@@ -115,23 +46,59 @@ function createItem(user) {
 	return tr;
 }
 
-function onAddUser (e) {
-    top.showDialog("/dialog/user.html", window);
+function save(name) {
+    const
+        headers = document.body.querySelector("main thead tr").children,
+        trs = document.body.querySelector("main tbody").children,
+        rows = [];
+    let cols = [];
+
+    document.body.classList.add("loading");
+    
+    for (let i=0; i<headers.length; i++) {
+        cols.push(`"${headers[i].textContent.replace(/\"/g, "'")}"`)
+    }
+
+    rows.push(cols.join(","));
+
+    for (let i=0, tds; i<trs.length; i++) {
+        tds = trs[i].children;
+
+        cols = [];
+
+        for (let j=0; j<tds.length; j++) {
+            cols.push(`"${tds[j].textContent.replace(/\"/g, "'")}"`);
+        }
+
+        rows.push(cols.join(","));
+    }
+
+    ITAhM.util.download(new Blob(["\ufeff", rows.join("\n")] ,{
+		type: "text/csv;charset=utf-8;"
+	}), name);
+
+    document.body.classList.remove("loading");
 }
 
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(`Error!\n\n오류코드: ${xhr.status}.`);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
             
         </script>
@@ -139,12 +106,10 @@ function showMessage(xhr) {
 	
 	<body class="loading">
         <header>
-            <span id="add" class="button root" title="사용자 추가">
-                <a>&#xf234;</a>
-            </span>
-            <span id="export" class="button" title="CSV 내보내기">
-                <a>&#xf019;</a>
-            </span>
+            <nav>
+                <input type="button" value="&#xf067; Add" id="add" class="root" title="사용자 추가">
+                <input type="button" value="&#xf019; Export" id="export" title="CSV 내보내기">
+            </nav>
         </header>
         <main>
             <table>
@@ -158,8 +123,8 @@ function showMessage(xhr) {
                 <thead>
                     <tr>
                         <th>&#xf507; 아이디</th>
-                        <th>&#xf005; 권한</th>
                         <th>&#xf004; 이름</th>
+                        <th>&#xf005; 권한</th>
                         <th>&#xf0e0; 이메일</th>
                         <th>&#xf3cd; 모바일</th>
                     </tr>
@@ -168,80 +133,46 @@ function showMessage(xhr) {
             </table>
         </main>
         
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
         
         <script src="/js/ITAhM.js"></script>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
 		<script>
 
-const
-    $ = {
-        list: document.getElementById("list")
-    };
+document.getElementById("export").onclick = e => save("user.csv");
 
-if (top.account.level === 0) {
-    document.body.classList.add("root");
+        </script>
+        <script type="module">
+import Channel from "../js/module/channel.js";
 
-    document.getElementById("add").onclick = onAddUser;
-}
+Channel.request("account", account => {
+    if (account.level === 0) {
+        document.body.classList.add("root");
 
-document.getElementById("export").onclick = function (e) {
-    const rows = [];
-	
-	rows[0] = "Index,ID,Level,Name,Email,Mobile";
-
-    {
-        let user, count=0;
-
-        for (let key in $.userData) {
-            user = $.userData[key];
-
-            rows.push([
-                count++,
-                `"${user.id.replace(/\"/g, "'")}"`,
-                user.level === 0? "관리자": user.level === 1? "사용자": "수신자",
-                `"${user.name.replace(/\"/g, "'")}"`,
-                user.email || "",
-                user.sms && user.sms.replace(/(^02.{0}|^01.{1}|[0-9]{3})([0-9]+)([0-9]{4})/,"$1-$2-$3") || ""
-            ].join(","));    
-        }
+        document.getElementById("add").onclick = e => top.showDialog("/dialog/user.html", window);
     }
-    
-    ITAhM.util.download(new Blob(["\ufeff", rows.join("\n")] ,{
-		type: "text/csv;charset=utf-8;"
-	}), $.fileName);
-};
 
-{
-    new Request().execute({
+    new Request().query({
         command: "get",
         target: "user"
-    }, function () {
-        switch (this.status) {
-        case 200:
-            $.fileName = "user.csv";
-            $.userData = JSON.parse(this.responseText);
-            
-            const df = document.createDocumentFragment();
-            let item;
+    })
+    .then(data => {
+        const df = document.createDocumentFragment();
+        let item;
 
-            for (let key in $.userData) {
-                if (item = createItem($.userData[key])) {
-                    df.appendChild(item);
-                }
+        for (let key in data) {
+            if (item = createItem(data[key])) {
+                df.appendChild(item);
             }
-            
-            $.list.appendChild(df);
-            
-            document.body.classList.remove("loading");
-    
-            break;
-        default:
-            showMessage(this);
         }
-    });
-}
+        
+        document.getElementById("list").appendChild(df);
 
+        document.body.classList.remove("loading");
+    })
+    .catch(showMessage);
+});
 		</script>
 	
 	</body>

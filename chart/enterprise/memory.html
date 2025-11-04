@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="Cache-Control" content="No-Cache">
+		
+		<title>CHART_ENTERPRISE_MEMORY</title>
+		
+		<style>
+		
+@import "/css/style.css";
+@import "/css/fa.css";
+@import "/chart/chart.css";
+
+        </style>
+        
+		<script>
+
+function toString(value) {
+    return value.toFixed(2) +"%"
+}
+
+function toChartValue(value) {
+    return value;
+}
+
+		</script>
+	</head>
+	
+	<body class="loading">
+        <h2><i>"</i> <span id="title">Memory</span> <i>"</i></h2>
+		<header>
+            <form title="입력값 초과시 임계 (Greater than)">
+                <span>임계</span>
+                <input name="limit" type="number" min="0" max="99" required>
+                <span>%</span>
+                <button type="submit">설정</button>
+                <button type="reset">해제</button>
+            </form>
+            <div>Max memory : 100%</div>
+		</header>
+		<main>
+            <iframe id="chart"></iframe>
+            <dialog>
+                <iframe id="realtime"></iframe>
+            </dialog>
+            <div class="loading mask"></div>
+        </main>
+		<script src="/js/ITAhM.js"></script>	
+        <script src="/js/object.js"></script>
+        <script src="/js/snmp.js"></script>
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script src="/chart/chart.js"></script>
+        <script type="module">
+
+import Channel from "../../js/module/channel.js";
+
+Channel.request("account", account => {
+    const search = new URLSearchParams(window.location.search);
+
+    if (account.level == 0) {
+        document.body.classList.add("root");
+    }
+
+    initialize(search.get("oid"), search.get("index"));
+});
+	    </script>
+	</body>
+	
+</html>

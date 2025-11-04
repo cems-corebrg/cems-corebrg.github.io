@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <title>test</title>
+		<meta charset="UTF-8">		
+		<style>
+@import "/css/style.css";
+@import "/css/fa.css";
+
+body {
+	position: fixed; inset: 0;
+	margin: 0; padding: 0;
+}
+
+ul {
+	list-style: none;
+	margin: 0; padding: 0;
+	height: 100%;
+	display: flex;
+	flex-direction: row;
+}
+
+ul.column {
+	flex-direction: column;
+}
+
+li {
+	flex: 1;
+	position: relative;
+}
+
+li:first-of-type {
+	flex: none;
+}
+
+ul.row >li:first-of-type:not(:only-child) {
+	width: 50%;
+}
+
+ul.column >li:first-of-type:not(:only-child) {
+	height: 50%;
+}
+
+li:only-child {
+	height: 100%;
+	width: 100%;
+}
+
+iframe {
+	border: none;
+	width: 100%; height: 100%;
+}
+		</style>
+	</head>
+	
+	<body>
+		<ul>
+			<li>
+				<iframe src="/topology/viewer.html"></iframe>
+			</li>
+		</ul>
+
+		<script src="/js/constants.js"></script>
+		<script src="/js/request.js"></script>
+		<script>
+const config = localStorage.getItem("dashboard");
+
+if (config) {
+	const
+		dom = JSON.parse(config),
+		ul = document.body.querySelector("ul");
+	
+	for (let li; li = ul.firstChild; ) {
+		ul.removeChild(li);
+	}
+	
+	(function test (ul, config) {
+		if (config.flex) {
+			ul.classList.add(config.flex);
+		}
+		
+		config.li.forEach(config => {
+			const li = document.createElement("li");
+			
+			if (config.height) {
+				li.style.height = config.height;
+			}
+
+			if (config.width) {
+				li.style.width = config.width;
+			}
+
+			if (config.src) {
+				li.appendChild(document.createElement("iframe")).src = config.src;
+			}
+
+			ul.appendChild(li);
+
+			if (config.ul) {
+				test(li.appendChild(document.createElement("ul")), config.ul);
+			}
+		});
+	})(ul, dom.ul);
+}
+
+		</script>	
+
+	</body>
+	
+</html>

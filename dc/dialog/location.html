@@ -100,32 +100,25 @@ body:not(.rack) tr.rack,
 		
 		<script>
 
-function onSelectSpace() {/*
-    const position = this.dataset.position;
-    var limit = 1;
-
-    for (let i=position; i<$.facility.unit; limit++) {
-        if ($.used.indexOf(++i) !== -1) {
-            break;
-        }
-    }
-*/
-    document.body.querySelector("input[name=position]").value = this.dataset.position;
-}
-
 function showMessage(xhr) {
-    switch (xhr.status) {
-    case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+    if (xhr instanceof XMLHttpRequest) {
+        switch (xhr.status) {
+        case 401:
+            alert(NOTICE_SESS_EXPIRE["kr"]);
 
-        break;
-    default:
-        alert(`Error!\n\n오류코드 ${xhr.status}.`);
+            break;
+        default:
+            alert(ERROR_RES_CODE(xhr.status)["kr"]);
+        }
+
+        try {
+            console.log(JSON.parse(xhr.responseText).error);
+        } catch (e) {}
+    } else if (xhr instanceof Error) {
+        console.error(xhr);
+    } else {
+        console.trace(xhr);
     }
-
-    try {
-        console.log(JSON.parse(xhr.responseText).error);
-    } catch (e) {}
 }
 
 		</script>
@@ -210,7 +203,7 @@ function showMessage(xhr) {
                             <input type="submit" value="&#xf0c7; Save">
                         </footer>
         
-                        <div class="bg_loading"></div>
+                        <div class="loading mask"></div>
                     </form>
                 </article>
                 <article class="rack">
@@ -266,8 +259,9 @@ function showMessage(xhr) {
                 <ul></ul>
             </section>
 		</main>
-        <div class="bg_loading"></div>
+        <div class="loading mask"></div>
         <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
         <script src="/dc/model.js"></script>
         <script src="/dc/dialog/rack.js"></script>
         <script src="/dc/dialog/facility.js"></script>
@@ -296,10 +290,6 @@ document.addEventListener("keydown", function (e) {
 
 document.getElementById("close").onclick = e => top.closeDialog();
 
-if (top.account.level === 0) {
-    document.body.classList.add("root");
-}
-
 function initFacility() {
     switch (this.status) {
     case 200:
@@ -325,7 +315,9 @@ function initFacility() {
         $.request.execute({
             command: "get",
             target: "location",
-            rack: $.id
+            location: {
+                rack: $.id
+            }
         }, initLocation);
     } else {
         form.elements["image"].value = $.facility.image;
@@ -357,17 +349,29 @@ function initLocation() {
     document.body.classList.remove("loading");
 }
 
-if ($.id) {
-    $.request.execute({
-        command: "get",
-        target: "facility",
-        id: $.id
-    }, initFacility);
+        </script>
+        <script type="module">
+import Channel from "../js/module/channel.js";
 
-    document.body.classList.add("edit");
-} else {
-    document.body.classList.remove("loading");
-}
+Channel.request("account", account => {
+    if (account.level === 0) {
+        document.body.classList.add("root");
+    }
+
+    if ($.id) {
+        $.request.execute({
+            command: "get",
+            target: "facility",
+            facility: {
+                id: $.id
+            }
+        }, initFacility);
+
+        document.body.classList.add("edit");
+    } else {
+        document.body.classList.remove("loading");
+    }
+    });
 	</script>
 	
 	</body>
